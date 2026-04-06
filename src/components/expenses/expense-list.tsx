@@ -1,0 +1,248 @@
+"use client";
+
+import { useMemo, useState, useCallback } from "react";
+import { format, parseISO } from "date-fns";
+import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Receipt,
+} from "lucide-react";
+
+import type { Expense } from "@/types/budget";
+import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { useTranslations } from "@/i18n/client";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+
+interface SubcategoryInfo {
+  name: string;
+  icon: string | null;
+  categoryName: string;
+}
+
+interface ExpenseListProps {
+  expenses: Expense[];
+  currency: string;
+  subcategories: Map<string, SubcategoryInfo>;
+  onEdit?: (expense: Expense) => void;
+  onDelete?: (expenseId: string) => void;
+}
+
+interface GroupedExpenses {
+  date: string;
+  label: string;
+  expenses: Expense[];
+}
+
+export function ExpenseList({
+  expenses,
+  currency,
+  subcategories,
+  onEdit,
+  onDelete,
+}: ExpenseListProps) {
+  const t = useTranslations("expense");
+  const tc = useTranslations("common");
+  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+
+  const grouped = useMemo((): GroupedExpenses[] => {
+    const sorted = [...expenses].sort(
+      (a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()
+    );
+
+    const groups = new Map<string, Expense[]>();
+    for (const expense of sorted) {
+      const dateKey = expense.expense_date;
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, []);
+      }
+      groups.get(dateKey)!.push(expense);
+    }
+
+    return Array.from(groups.entries()).map(([date, exps]) => ({
+      date,
+      label: format(parseISO(date), "EEEE, MMMM d, yyyy"),
+      expenses: exps,
+    }));
+  }, [expenses]);
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (deleteTarget && onDelete) {
+      onDelete(deleteTarget.id);
+    }
+    setDeleteTarget(null);
+  }, [deleteTarget, onDelete]);
+
+  if (expenses.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 rounded-full bg-muted p-4">
+          <Receipt className="size-8 text-muted-foreground" />
+        </div>
+        <h3 className="mb-1 text-base font-medium text-foreground">{t("noExpenses")}</h3>
+        <p className="max-w-xs text-sm text-muted-foreground">
+          {t("noExpensesHint")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <ScrollArea className="h-full">
+        <div className="space-y-1">
+          {grouped.map((group) => (
+            <div key={group.date}>
+              {/* Date Header */}
+              <div className="sticky top-0 z-10 bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {group.label}
+                </p>
+              </div>
+
+              {/* Expense Items */}
+              <div>
+                {group.expenses.map((expense) => {
+                  const subInfo = subcategories.get(expense.subcategory_id);
+                  return (
+                    <ExpenseRow
+                      key={expense.id}
+                      expense={expense}
+                      currency={currency}
+                      subcategoryInfo={subInfo}
+                      onEdit={onEdit}
+                      onDelete={() => setDeleteTarget(expense)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("deleteExpense")}</DialogTitle>
+            <DialogDescription>
+              {deleteTarget
+                ? t("deleteConfirmMessage", { amount: formatCurrency(deleteTarget.amount, currency) })
+                : t("deleteConfirmMessageGeneric")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              {tc("delete")}
+            </Button>
+            <DialogClose render={<Button variant="outline" />}>
+              {tc("cancel")}
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+interface ExpenseRowProps {
+  expense: Expense;
+  currency: string;
+  subcategoryInfo?: SubcategoryInfo;
+  onEdit?: (expense: Expense) => void;
+  onDelete?: () => void;
+}
+
+function ExpenseRow({
+  expense,
+  currency,
+  subcategoryInfo,
+  onEdit,
+  onDelete,
+}: ExpenseRowProps) {
+  const t = useTranslations("expense");
+  const tc = useTranslations("common");
+
+  return (
+    <div
+      className={cn(
+        "group flex items-center gap-3 border-b border-border/50 px-2 py-3",
+        "transition-colors duration-200 hover:bg-accent/50"
+      )}
+    >
+      {/* Icon */}
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-base">
+        {subcategoryInfo?.icon || "📝"}
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">
+          {subcategoryInfo?.name || "Unknown"}
+        </p>
+        {expense.description && (
+          <p className="truncate text-xs text-muted-foreground">
+            {expense.description}
+          </p>
+        )}
+      </div>
+
+      {/* Amount */}
+      <div className="shrink-0 text-right">
+        <p className="font-mono text-sm font-medium text-foreground">
+          {formatCurrency(expense.amount, currency)}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {subcategoryInfo?.categoryName}
+        </p>
+      </div>
+
+      {/* Actions */}
+      {(onEdit || onDelete) && (
+        <div className="shrink-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">{t("actions")}</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(expense)}>
+                  <Pencil className="mr-2 size-4" />
+                  {tc("edit")}
+                </DropdownMenuItem>
+              )}
+              {onEdit && onDelete && <DropdownMenuSeparator />}
+              {onDelete && (
+                <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                  <Trash2 className="mr-2 size-4" />
+                  {tc("delete")}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+    </div>
+  );
+}
