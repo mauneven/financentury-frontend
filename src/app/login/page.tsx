@@ -7,19 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
+import Link from "next/link";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
-  const { signInWithGoogle, session, initialized } = useAuthStore();
+  const tLocal = useTranslations("localMode");
+  const { signInWithGoogle, mode, initialized } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
   useEffect(() => {
-    if (initialized && session) {
+    if (initialized && mode === "online") {
       router.replace("/");
     }
-  }, [initialized, session, router]);
+  }, [initialized, mode, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
@@ -76,6 +78,14 @@ export default function LoginPage() {
             </svg>
             {t("continueWithGoogle")}
           </Button>
+
+          {/* Continue without signing in */}
+          <Link
+            href="/"
+            className="text-xs text-muted-foreground underline transition-colors hover:text-foreground"
+          >
+            {tLocal("continueWithout")}
+          </Link>
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground">

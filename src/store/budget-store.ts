@@ -5,9 +5,14 @@ import type {
   Budget,
   BudgetSummary,
   Category,
+  CreateBudgetInput,
+  CreateCategoryInput,
+  CreateExpenseInput,
   Expense,
 } from "@/types/budget";
 import { budgetApi, categoryApi, expenseApi } from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
+import { localBudgetStorage } from "@/lib/local-storage";
 
 interface BudgetState {
   budgets: Budget[];
@@ -20,12 +25,12 @@ interface BudgetState {
   // Actions
   fetchBudgets: () => Promise<void>;
   setActiveBudget: (id: string) => Promise<void>;
-  createBudget: (data: Parameters<typeof budgetApi.create>[0]) => Promise<Budget>;
+  createBudget: (data: CreateBudgetInput) => Promise<Budget>;
   deleteBudget: (id: string) => Promise<void>;
   refreshSummary: () => Promise<void>;
-  addExpense: (data: Parameters<typeof expenseApi.create>[1]) => Promise<Expense>;
+  addExpense: (data: CreateExpenseInput) => Promise<Expense>;
   deleteExpense: (expenseId: string) => Promise<void>;
-  addCategory: (data: Parameters<typeof categoryApi.create>[1]) => Promise<Category>;
+  addCategory: (data: CreateCategoryInput) => Promise<Category>;
 }
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -39,8 +44,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   fetchBudgets: async () => {
     set({ loading: true, error: null });
     try {
-      const budgets = await budgetApi.list();
-      set({ budgets, loading: false });
+      const { mode } = useAuthStore.getState();
+      if (mode === "local") {
+        const budgets = localBudgetStorage.getBudgets();
+        set({ budgets, loading: false });
+      } else {
+        const budgets = await budgetApi.list();
+        set({ budgets, loading: false });
+      }
     } catch (e) {
       set({ error: (e as Error).message, loading: false });
     }
@@ -49,11 +60,18 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   setActiveBudget: async (id: string) => {
     set({ activeBudgetId: id, loading: true, error: null });
     try {
-      const [summary, expenses] = await Promise.all([
-        budgetApi.summary(id),
-        expenseApi.list(id),
-      ]);
-      set({ summary, expenses, loading: false });
+      const { mode } = useAuthStore.getState();
+      if (mode === "local") {
+        const summary = localBudgetStorage.computeSummary(id);
+        const expenses = localBudgetStorage.getExpenses(id);
+        set({ summary, expenses, loading: false });
+      } else {
+        const [summary, expenses] = await Promise.all([
+          budgetApi.summary(id),
+          expenseApi.list(id),
+        ]);
+        set({ summary, expenses, loading: false });
+      }
     } catch (e) {
       set({ error: (e as Error).message, loading: false });
     }
@@ -62,11 +80,27 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   createBudget: async (data) => {
     set({ loading: true, error: null });
     try {
-      const budget = await budgetApi.create(data);
-      set((state) => ({ budgets: [...state.budgets, budget], loading: false }));
-      return budget;
+      const { mode } = useAuthStore.getState();
+      if (mode === "local") {
+        const budget = localBudgetStorage.saveBudget(data);
+        set((state) => ({
+          budgets: [...state.budgets, budget],
+          loading: false,
+        }));
+        return budget;
+      } else {
+        const budget = await budgetApi.create(data);
+        set((state) => ({
+          budgets: [...state.budgets, budget],
+          loading: false,
+        }));
+        return budget;
+      }
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : String(e), loading: false });
+      set({
+        error: e instanceof Error ? e.message : String(e),
+        loading: false,
+      });
       throw e;
     }
   },
@@ -74,15 +108,24 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   deleteBudget: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      await budgetApi.delete(id);
+      const { mode } = useAuthStore.getState();
+      if (mode === "local") {
+        localBudgetStorage.deleteBudget(id);
+      } else {
+        await budgetApi.delete(id);
+      }
       set((state) => ({
         budgets: state.budgets.filter((b) => b.id !== id),
-        activeBudgetId: state.activeBudgetId === id ? null : state.activeBudgetId,
+        activeBudgetId:
+          state.activeBudgetId === id ? null : state.activeBudgetId,
         summary: state.activeBudgetId === id ? null : state.summary,
         loading: false,
       }));
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : String(e), loading: false });
+      set({
+        error: e instanceof Error ? e.message : String(e),
+        loading: false,
+      });
       throw e;
     }
   },
@@ -91,11 +134,18 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     const { activeBudgetId } = get();
     if (!activeBudgetId) return;
     try {
-      const [summary, expenses] = await Promise.all([
-        budgetApi.summary(activeBudgetId),
-        expenseApi.list(activeBudgetId),
-      ]);
-      set({ summary, expenses, error: null });
+      const { mode } = useAuthStore.getState();
+      if (mode === "local") {
+        const summary = localBudgetStorage.computeSummary(activeBudgetId);
+        const expenses = localBudgetStorage.getExpenses(activeBudgetId);
+        set({ summary, expenses, error: null });
+      } else {
+        const [summary, expenses] = await Promise.all([
+          budgetApi.summary(activeBudgetId),
+          expenseApi.list(activeBudgetId),
+        ]);
+        set({ summary, expenses, error: null });
+      }
     } catch (e) {
       set({ error: (e as Error).message });
     }
@@ -104,28 +154,61 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   addExpense: async (data) => {
     const { activeBudgetId } = get();
     if (!activeBudgetId) throw new Error("No active budget");
-    const expense = await expenseApi.create(activeBudgetId, data);
-    set((state) => ({ expenses: [...state.expenses, expense] }));
-    // Refresh summary to update totals
-    get().refreshSummary();
-    return expense;
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      const expense = localBudgetStorage.saveExpense(activeBudgetId, data);
+      set((state) => ({ expenses: [...state.expenses, expense] }));
+      // Refresh summary to update totals
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      set({ summary });
+      return expense;
+    } else {
+      const expense = await expenseApi.create(activeBudgetId, data);
+      set((state) => ({ expenses: [...state.expenses, expense] }));
+      // Refresh summary to update totals
+      get().refreshSummary();
+      return expense;
+    }
   },
 
   deleteExpense: async (expenseId: string) => {
     const { activeBudgetId } = get();
     if (!activeBudgetId) throw new Error("No active budget");
-    await expenseApi.delete(activeBudgetId, expenseId);
-    set((state) => ({
-      expenses: state.expenses.filter((e) => e.id !== expenseId),
-    }));
-    get().refreshSummary();
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      localBudgetStorage.deleteExpense(expenseId);
+      set((state) => ({
+        expenses: state.expenses.filter((e) => e.id !== expenseId),
+      }));
+      // Refresh summary to update totals
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      set({ summary });
+    } else {
+      await expenseApi.delete(activeBudgetId, expenseId);
+      set((state) => ({
+        expenses: state.expenses.filter((e) => e.id !== expenseId),
+      }));
+      get().refreshSummary();
+    }
   },
 
   addCategory: async (data) => {
     const { activeBudgetId } = get();
     if (!activeBudgetId) throw new Error("No active budget");
-    const category = await categoryApi.create(activeBudgetId, data);
-    get().refreshSummary();
-    return category;
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      const category = localBudgetStorage.saveCategory(activeBudgetId, data);
+      // Refresh summary to include the new category
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      set({ summary });
+      return category;
+    } else {
+      const category = await categoryApi.create(activeBudgetId, data);
+      get().refreshSummary();
+      return category;
+    }
   },
 }));

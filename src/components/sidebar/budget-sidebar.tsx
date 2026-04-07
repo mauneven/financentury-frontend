@@ -17,12 +17,14 @@ import {
   Folder,
   FileText,
   Wallet,
+  LogIn,
 } from "lucide-react";
 import type { Category, Subcategory } from "@/types/budget";
 import { useTranslations } from "@/i18n/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useAuthStore } from "@/store/auth-store";
+import { LocalModeBanner } from "@/components/auth/local-mode-banner";
 import Link from "next/link";
 
 interface BudgetSidebarProps {
@@ -255,6 +257,9 @@ export function BudgetSidebar({
         </Button>
       </div>
 
+      {/* Local mode banner */}
+      <LocalModeBanner />
+
       {/* User footer */}
       <Separator />
       <div className="flex items-center justify-between px-4 py-2.5">
@@ -266,9 +271,23 @@ export function BudgetSidebar({
 }
 
 function UserFooterLink() {
-  const { profile, user } = useAuthStore();
+  const { user, mode, signInWithGoogle } = useAuthStore();
+  const t = useTranslations("localMode");
 
-  const displayName = profile?.full_name || user?.email || "User";
+  if (mode === "local") {
+    return (
+      <button
+        type="button"
+        onClick={signInWithGoogle}
+        className="flex items-center gap-2 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <LogIn className="size-3.5" />
+        <span>{t("signIn")}</span>
+      </button>
+    );
+  }
+
+  const displayName = user?.full_name || user?.email || "User";
   const initials = displayName
     .split(" ")
     .map((n) => n[0])
@@ -282,7 +301,7 @@ function UserFooterLink() {
       className="flex items-center gap-2 rounded-md transition-colors hover:opacity-80"
     >
       <Avatar size="sm">
-        {profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+        {user?.avatar_url && <AvatarImage src={user.avatar_url} />}
         <AvatarFallback>{initials}</AvatarFallback>
       </Avatar>
       <span className="text-xs text-muted-foreground truncate max-w-[120px]">

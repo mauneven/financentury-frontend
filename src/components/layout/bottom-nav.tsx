@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 import { useLocaleStore } from "@/i18n/locale";
 import { useBudgetStore } from "@/store/budget-store";
+import { useAuthStore } from "@/store/auth-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,8 +29,10 @@ export function BottomNav({
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("bottomNav");
+  const tAuth = useTranslations("auth");
   const { locale, setLocale } = useLocaleStore();
   const { activeBudgetId } = useBudgetStore();
+  const { mode, signInWithGoogle } = useAuthStore();
 
   const isHome = pathname === "/";
 
@@ -81,9 +84,15 @@ export function BottomNav({
             sideOffset={12}
             className="min-w-[180px]"
           >
-            <DropdownMenuItem onClick={() => router.push("/account")}>
-              {t("account")}
-            </DropdownMenuItem>
+            {mode === "local" ? (
+              <DropdownMenuItem onClick={signInWithGoogle}>
+                {tAuth("signIn")}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push("/account")}>
+                {t("account")}
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuSeparator />
 

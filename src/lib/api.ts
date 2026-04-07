@@ -10,51 +10,63 @@ import type {
   Subcategory,
   TrendsResponse,
 } from "@/types/budget";
-import { createClient } from "@/lib/supabase";
+import type { AuthUser } from "@/store/auth-store";
+import type { MigratePayload } from "@/types/migrate";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || (() => {
-  if (process.env.NODE_ENV === "production") {
-    console.error("NEXT_PUBLIC_API_URL is not set in production!");
-  }
-  return "http://localhost:8080/api";
-})();
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (() => {
+    if (process.env.NODE_ENV === "production") {
+      console.error("NEXT_PUBLIC_API_URL is not set in production!");
+    }
+    return "http://localhost:8080/api";
+  })();
 
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("financentury_token")
+      : null;
 
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(session?.access_token
-        ? { Authorization: `Bearer ${session.access_token}` }
-        : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.error || error.message || `Request failed: ${res.status}`);
+    if (res.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("financentury_token");
+    }
+    const error = await res
+      .json()
+      .catch(() => ({ message: res.statusText }));
+    throw new Error(
+      error.error || error.message || `Request failed: ${res.status}`
+    );
   }
 
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
 // Auth
 export const authApi = {
-  register: (data: { email: string; password: string; first_name: string; last_name?: string }) =>
-    request<{ token: string; user: { id: string; email: string; first_name: string; last_name: string } }>("/auth/register", {
+  googleLogin: (code: string, redirectUri: string) =>
+    request<{ token: string; user: AuthUser }>("/auth/google", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ code, redirect_uri: redirectUri }),
     }),
-  login: (data: { email: string; password: string }) =>
-    request<{ token: string; user: { id: string; email: string; first_name: string; last_name: string } }>("/auth/login", {
+  me: () => request<AuthUser>("/auth/me"),
+  migrate: (data: MigratePayload) =>
+    request<{ budgets: Budget[] }>("/migrate", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -99,7 +111,11 @@ export const categoryApi = {
       body: JSON.stringify(data),
     }),
 
-  update: (budgetId: string, catId: string, data: Partial<CreateCategoryInput>) =>
+  update: (
+    budgetId: string,
+    catId: string,
+    data: Partial<CreateCategoryInput>
+  ) =>
     request<Category>(`/budgets/${budgetId}/categories/${catId}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -113,7 +129,11 @@ export const categoryApi = {
 
 // Subcategories
 export const subcategoryApi = {
-  create: (budgetId: string, catId: string, data: CreateSubcategoryInput) =>
+  create: (
+    budgetId: string,
+    catId: string,
+    data: CreateSubcategoryInput
+  ) =>
     request<Subcategory>(
       `/budgets/${budgetId}/categories/${catId}/subcategories`,
       { method: "POST", body: JSON.stringify(data) }
@@ -148,7 +168,11 @@ export const expenseApi = {
       body: JSON.stringify(data),
     }),
 
-  update: (budgetId: string, expId: string, data: Partial<CreateExpenseInput>) =>
+  update: (
+    budgetId: string,
+    expId: string,
+    data: Partial<CreateExpenseInput>
+  ) =>
     request<Expense>(`/budgets/${budgetId}/expenses/${expId}`, {
       method: "PUT",
       body: JSON.stringify(data),

@@ -220,5 +220,18 @@
     "signOut": "Sign Out",
     "profile": "Profile",
     "settings": "Settings"
+  },
+  "localMode": {
+    "warning": "Local mode",
+    "warningDescription": "Your data is stored locally and may be lost if you clear browser data.",
+    "signIn": "Sign in to save your data",
+    "continueWithout": "Continue without signing in"
+  },
+  "migration": {
+    "title": "Local data found",
+    "description": "You have {count} budget(s) stored locally. Would you like to save them to your account?",
+    "saveToAccount": "Save to my account",
+    "discardLocal": "Start fresh",
+    "migrating": "Saving your data..."
   }
 }

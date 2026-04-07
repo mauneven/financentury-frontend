@@ -220,5 +220,18 @@
     "signOut": "Cerrar Sesión",
     "profile": "Perfil",
     "settings": "Configuración"
+  },
+  "localMode": {
+    "warning": "Modo local",
+    "warningDescription": "Tus datos están guardados localmente y se pueden perder si borras los datos del navegador.",
+    "signIn": "Inicia sesión para guardar tus datos",
+    "continueWithout": "Continuar sin iniciar sesión"
+  },
+  "migration": {
+    "title": "Datos locales encontrados",
+    "description": "Tienes {count} presupuesto(s) guardados localmente. ¿Deseas guardarlos en tu cuenta?",
+    "saveToAccount": "Guardar en mi cuenta",
+    "discardLocal": "Empezar de nuevo",
+    "migrating": "Guardando tus datos..."
   }
 }
