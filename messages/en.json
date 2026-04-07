@@ -233,5 +233,32 @@
     "saveToAccount": "Save to my account",
     "discardLocal": "Start fresh",
     "migrating": "Saving your data..."
+  },
+  "invite": {
+    "title": "Invite Collaborator",
+    "generate": "Generate Invite Link",
+    "copyLink": "Copy Link",
+    "copied": "Copied!",
+    "expires": "Expires",
+    "expired": "This invitation has expired",
+    "used": "This invitation has already been used",
+    "accept": "Accept Invitation",
+    "signInToAccept": "Sign in to accept this invitation",
+    "acceptSuccess": "You have joined the budget!",
+    "invitedBy": "Invited by",
+    "budgetName": "Budget",
+    "accepting": "Joining...",
+    "invalidLink": "This invite link is invalid",
+    "generating": "Generating..."
+  },
+  "collaborators": {
+    "title": "Collaborators",
+    "owner": "Owner",
+    "collaborator": "Collaborator",
+    "remove": "Remove",
+    "removeConfirm": "Remove this collaborator? They will lose access to this budget.",
+    "noCollaborators": "No collaborators yet",
+    "you": "You",
+    "addedBy": "Added by {name}"
   }
 }

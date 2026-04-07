@@ -41,22 +41,22 @@ export function CategoryCard({
 
   return (
     <Card className="shadow-sm transition-shadow duration-200 hover:shadow-md">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         {/* Category header */}
         <button
           type="button"
           onClick={toggleExpanded}
-          className="flex w-full items-center justify-between text-left"
+          className="flex w-full items-center justify-between text-left min-h-[44px]"
         >
           <div className="flex items-center gap-3">
-            <span className="text-xl" role="img" aria-label={category.name}>
+            <span className="text-2xl" role="img" aria-label={category.name}>
               {category.icon || "📁"}
             </span>
             <div>
               <h3 className="text-base font-semibold text-foreground">
                 {category.name}
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {category.allocation_percent}% {t("ofIncome")}
               </p>
             </div>
@@ -67,7 +67,7 @@ export function CategoryCard({
             </span>
             <ChevronDown
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                "h-5 w-5 text-muted-foreground transition-transform duration-200",
                 isExpanded && "rotate-180"
               )}
             />
@@ -75,7 +75,7 @@ export function CategoryCard({
         </button>
 
         {/* Budget / Spent / Left summary */}
-        <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {t("budgetLabel")}:{" "}
             <span className="font-medium text-foreground">
@@ -106,7 +106,7 @@ export function CategoryCard({
 
         {/* Overall progress bar */}
         <div className="mt-3">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-300",
@@ -125,7 +125,7 @@ export function CategoryCard({
           )}
         >
           <div className="overflow-hidden">
-            <div className="mt-4 space-y-3 border-t pt-4">
+            <div className="mt-4 space-y-2 border-t pt-4">
               {subcategories.map((sub) => {
                 const subPercentage = getPercentage(
                   sub.total_spent,
@@ -139,18 +139,18 @@ export function CategoryCard({
                     key={sub.subcategory.id}
                     type="button"
                     onClick={() => onSubcategoryClick?.(sub.subcategory.id)}
-                    className="group flex w-full flex-col gap-1.5 rounded-lg px-2 py-1.5 text-left transition-colors duration-200 hover:bg-muted/50"
+                    className="group flex w-full flex-col gap-2 rounded-lg px-2 py-2.5 text-left transition-colors duration-200 hover:bg-muted/50 min-h-[44px]"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm" role="img" aria-label={sub.subcategory.name}>
+                        <span className="text-base" role="img" aria-label={sub.subcategory.name}>
                           {sub.subcategory.icon || "📌"}
                         </span>
                         <span className="text-sm font-medium text-foreground">
                           {sub.subcategory.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-2 text-sm">
                         <span className="tabular-nums text-muted-foreground">
                           {formatCompact(sub.total_spent, currency)} /{" "}
                           {formatCompact(sub.allocated_amount, currency)}
@@ -166,7 +166,7 @@ export function CategoryCard({
                       </div>
                     </div>
                     {/* Mini progress bar */}
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-300",
@@ -181,7 +181,7 @@ export function CategoryCard({
                 );
               })}
               {subcategories.length === 0 && (
-                <p className="py-2 text-center text-xs text-muted-foreground">
+                <p className="py-3 text-center text-sm text-muted-foreground">
                   {t("noSubcategories")}
                 </p>
               )}

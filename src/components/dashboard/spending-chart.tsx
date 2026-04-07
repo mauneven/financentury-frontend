@@ -150,10 +150,10 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
           {t("spendingTrends")}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-72 w-full">
+      <CardContent className="px-2 sm:px-6">
+        <div className="h-64 sm:h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
               <defs>
                 {categoryNames.map((name, i) => (
                   <linearGradient
@@ -185,25 +185,25 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
               />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value: number) =>
                   formatCompact(value, currency)
                 }
-                width={60}
+                width={50}
               />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--background))",
                   borderColor: "hsl(var(--border))",
                   borderRadius: "0.5rem",
-                  fontSize: "0.75rem",
+                  fontSize: "0.8125rem",
                 }}
                 labelStyle={{ fontWeight: 600, marginBottom: 4 }}
                 formatter={(value, name) => [
@@ -216,7 +216,7 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
                 height={36}
                 iconType="circle"
                 iconSize={8}
-                wrapperStyle={{ fontSize: "0.75rem" }}
+                wrapperStyle={{ fontSize: "0.8125rem" }}
               />
               {categoryNames.map((name, i) => (
                 <Area

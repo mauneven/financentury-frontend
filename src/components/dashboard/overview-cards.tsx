@@ -20,23 +20,23 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
   const tc = useTranslations("common");
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
       {/* Total Budget */}
       <Card className="shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
               {t("totalBudget")}
             </p>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
               <Wallet className="h-5 w-5 text-emerald-500" />
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-bold text-foreground">
+            <p className="text-xl sm:text-2xl font-bold text-foreground">
               {formatCurrency(total_budget, budget.currency)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               {budget.billing_period_months === 1
                 ? tc("monthly")
                 : `Every ${budget.billing_period_months} months`}
@@ -47,22 +47,22 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
 
       {/* Total Spent */}
       <Card className="shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
               {t("totalSpent")}
             </p>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/30">
               <TrendingUp className="h-5 w-5 text-blue-500" />
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-bold text-foreground">
+            <p className="text-xl sm:text-2xl font-bold text-foreground">
               {formatCurrency(total_spent, budget.currency)}
             </p>
             <div className="mt-1 flex items-center gap-1">
-              <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">
+              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
                 {spentPercentage}% {t("ofBudgetUsed")}
               </p>
             </div>
@@ -71,15 +71,15 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
       </Card>
 
       {/* Remaining */}
-      <Card className="shadow-sm">
-        <CardContent className="p-6">
+      <Card className="shadow-sm sm:col-span-2 md:col-span-1">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
               {t("remaining")}
             </p>
             <div
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg",
+                "flex h-10 w-10 items-center justify-center rounded-lg",
                 isOverBudget
                   ? "bg-red-50 dark:bg-red-950/30"
                   : "bg-emerald-50 dark:bg-emerald-950/30"
@@ -95,7 +95,7 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
           <div className="mt-3">
             <p
               className={cn(
-                "text-2xl font-bold",
+                "text-xl sm:text-2xl font-bold",
                 isOverBudget ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
               )}
             >
@@ -104,13 +104,13 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
             </p>
             <div className="mt-1 flex items-center gap-1">
               {isOverBudget ? (
-                <ArrowDownRight className="h-3 w-3 text-red-500" />
+                <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />
               ) : (
-                <ArrowDownRight className="h-3 w-3 text-emerald-500" />
+                <ArrowDownRight className="h-3.5 w-3.5 text-emerald-500" />
               )}
               <p
                 className={cn(
-                  "text-xs",
+                  "text-sm",
                   isOverBudget
                     ? "text-red-500"
                     : "text-emerald-600 dark:text-emerald-400"

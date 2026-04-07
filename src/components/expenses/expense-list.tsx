@@ -39,10 +39,17 @@ interface SubcategoryInfo {
   categoryName: string;
 }
 
+export interface CollaboratorInfo {
+  name: string;
+  avatar_url?: string;
+}
+
 interface ExpenseListProps {
   expenses: Expense[];
   currency: string;
   subcategories: Map<string, SubcategoryInfo>;
+  collaborators?: Map<string, CollaboratorInfo>;
+  currentUserId?: string;
   onEdit?: (expense: Expense) => void;
   onDelete?: (expenseId: string) => void;
 }
@@ -57,6 +64,8 @@ export function ExpenseList({
   expenses,
   currency,
   subcategories,
+  collaborators,
+  currentUserId,
   onEdit,
   onDelete,
 }: ExpenseListProps) {
@@ -94,12 +103,12 @@ export function ExpenseList({
 
   if (expenses.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
         <div className="mb-4 rounded-full bg-muted p-4">
           <Receipt className="size-8 text-muted-foreground" />
         </div>
         <h3 className="mb-1 text-base font-medium text-foreground">{t("noExpenses")}</h3>
-        <p className="max-w-xs text-sm text-muted-foreground">
+        <p className="max-w-xs text-sm text-muted-foreground leading-relaxed">
           {t("noExpensesHint")}
         </p>
       </div>
@@ -113,8 +122,8 @@ export function ExpenseList({
           {grouped.map((group) => (
             <div key={group.date}>
               {/* Date Header */}
-              <div className="sticky top-0 z-10 bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <div className="sticky top-0 z-10 bg-background/95 px-2 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <p className="text-xs sm:text-sm font-medium uppercase tracking-wider text-muted-foreground">
                   {group.label}
                 </p>
               </div>
@@ -129,6 +138,8 @@ export function ExpenseList({
                       expense={expense}
                       currency={currency}
                       subcategoryInfo={subInfo}
+                      collaborators={collaborators}
+                      currentUserId={currentUserId}
                       onEdit={onEdit}
                       onDelete={() => setDeleteTarget(expense)}
                     />
@@ -142,7 +153,7 @@ export function ExpenseList({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("deleteExpense")}</DialogTitle>
             <DialogDescription>
@@ -169,6 +180,8 @@ interface ExpenseRowProps {
   expense: Expense;
   currency: string;
   subcategoryInfo?: SubcategoryInfo;
+  collaborators?: Map<string, CollaboratorInfo>;
+  currentUserId?: string;
   onEdit?: (expense: Expense) => void;
   onDelete?: () => void;
 }
@@ -177,21 +190,30 @@ function ExpenseRow({
   expense,
   currency,
   subcategoryInfo,
+  collaborators,
+  currentUserId,
   onEdit,
   onDelete,
 }: ExpenseRowProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
 
+  // Resolve creator info
+  const createdByOther =
+    expense.created_by && currentUserId && expense.created_by !== currentUserId;
+  const creatorInfo = createdByOther && collaborators
+    ? collaborators.get(expense.created_by!)
+    : null;
+
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 border-b border-border/50 px-2 py-3",
+        "group flex items-center gap-3 border-b border-border/50 px-2 py-3 sm:py-3.5",
         "transition-colors duration-200 hover:bg-accent/50"
       )}
     >
       {/* Icon */}
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-base">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-lg">
         {subcategoryInfo?.icon || "📝"}
       </div>
 
@@ -201,8 +223,13 @@ function ExpenseRow({
           {subcategoryInfo?.name || "Unknown"}
         </p>
         {expense.description && (
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="truncate text-sm text-muted-foreground">
             {expense.description}
+          </p>
+        )}
+        {creatorInfo && (
+          <p className="truncate text-xs text-muted-foreground/70 mt-0.5">
+            {creatorInfo.name}
           </p>
         )}
       </div>
@@ -212,29 +239,29 @@ function ExpenseRow({
         <p className="font-mono text-sm font-medium text-foreground">
           {formatCurrency(expense.amount, currency)}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {subcategoryInfo?.categoryName}
         </p>
       </div>
 
       {/* Actions */}
       {(onEdit || onDelete) && (
-        <div className="shrink-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="shrink-0 sm:opacity-0 sm:transition-opacity sm:duration-200 sm:group-hover:opacity-100">
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-              <MoreHorizontal className="size-4" />
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="min-h-[44px] min-w-[44px]" />}>
+              <MoreHorizontal className="size-5" />
               <span className="sr-only">{t("actions")}</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(expense)}>
+                <DropdownMenuItem onClick={() => onEdit(expense)} className="min-h-[44px]">
                   <Pencil className="mr-2 size-4" />
                   {tc("edit")}
                 </DropdownMenuItem>
               )}
               {onEdit && onDelete && <DropdownMenuSeparator />}
               {onDelete && (
-                <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                <DropdownMenuItem variant="destructive" onClick={onDelete} className="min-h-[44px]">
                   <Trash2 className="mr-2 size-4" />
                   {tc("delete")}
                 </DropdownMenuItem>

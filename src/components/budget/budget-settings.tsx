@@ -4,14 +4,18 @@ import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Settings, Trash2, Loader2, Check } from "lucide-react";
+import { Settings, Trash2, Loader2, Check, Users, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
 import { budgetApi } from "@/lib/api";
 import { useBudgetStore } from "@/store/budget-store";
+import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
+
+import { CollaboratorsList } from "@/components/budget/collaborators-list";
+import { InviteDialog } from "@/components/budget/invite-dialog";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,11 +79,17 @@ interface BudgetSettingsProps {
 export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const t = useTranslations("budget");
   const tc = useTranslations("common");
+  const tInvite = useTranslations("invite");
+  const tCollab = useTranslations("collaborators");
   const router = useRouter();
   const deleteBudget = useBudgetStore((s) => s.deleteBudget);
+  const { user, mode } = useAuthStore();
+  const isOwner = mode === "online" && budget.user_id === user?.id;
+  const isOnline = mode === "online";
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
   const [customPeriod, setCustomPeriod] = React.useState(() => {
     return !BILLING_PERIODS.some((p) => p.value === budget.billing_period_months);
   });
@@ -130,10 +140,10 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <div className="flex items-center gap-2">
-        <Settings className="size-4 text-muted-foreground" />
-        <h2 className="text-lg font-medium">{t("settings")}</h2>
+        <Settings className="size-5 text-muted-foreground" />
+        <h2 className="text-lg sm:text-xl font-medium">{t("settings")}</h2>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -257,9 +267,8 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
         {/* Save */}
         <Button
           type="submit"
-          size="sm"
           disabled={isSaving || !isDirty}
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
+          className="bg-emerald-600 text-white hover:bg-emerald-700 min-h-[44px]"
         >
           {isSaving ? (
             <>
@@ -275,19 +284,54 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
         </Button>
       </form>
 
+      {/* Collaborators section (only for online users) */}
+      {isOnline && (
+        <>
+          <Separator />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="size-5 text-muted-foreground" />
+                <h2 className="text-lg sm:text-xl font-medium">{tCollab("title")}</h2>
+              </div>
+              {isOwner && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setInviteDialogOpen(true)}
+                  className="min-h-[44px]"
+                >
+                  <Link2 className="size-4 mr-1" />
+                  {tInvite("generate")}
+                </Button>
+              )}
+            </div>
+
+            <CollaboratorsList budgetId={budget.id} isOwner={isOwner} />
+          </div>
+
+          <InviteDialog
+            budgetId={budget.id}
+            open={inviteDialogOpen}
+            onOpenChange={setInviteDialogOpen}
+          />
+        </>
+      )}
+
       <Separator />
 
       {/* Danger zone */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-destructive">{t("dangerZone")}</h3>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {t("deleteDescription")}
         </p>
         <Button
           type="button"
           variant="destructive"
-          size="sm"
           onClick={() => setDeleteDialogOpen(true)}
+          className="min-h-[44px]"
         >
           <Trash2 className="size-4 mr-1" />
           {t("deleteBudget")}
@@ -299,7 +343,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
         open={deleteDialogOpen}
         onOpenChange={(val) => setDeleteDialogOpen(val)}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
             <DialogDescription>
@@ -308,15 +352,15 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
           </DialogHeader>
           <DialogFooter>
             <DialogClose
-              render={<Button variant="outline" size="sm" />}
+              render={<Button variant="outline" className="min-h-[44px]" />}
             >
               {tc("cancel")}
             </DialogClose>
             <Button
               variant="destructive"
-              size="sm"
               disabled={isDeleting}
               onClick={handleDelete}
+              className="min-h-[44px]"
             >
               {isDeleting ? (
                 <>

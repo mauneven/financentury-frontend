@@ -14,7 +14,9 @@ export const useLocaleStore = create<LocaleState>((set) => ({
     ? (localStorage.getItem("locale") as Locale) || detectLocale()
     : "en") as Locale,
   setLocale: (locale: Locale) => {
-    localStorage.setItem("locale", locale);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("locale", locale);
+    }
     set({ locale });
   },
 }));

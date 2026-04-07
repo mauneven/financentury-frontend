@@ -41,8 +41,8 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
           {t("budgetOverview")}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="relative h-64 w-full">
+      <CardContent className="px-3 sm:px-6">
+        <div className="relative h-56 sm:h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -67,7 +67,7 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
                   backgroundColor: "hsl(var(--background))",
                   borderColor: "hsl(var(--border))",
                   borderRadius: "0.5rem",
-                  fontSize: "0.75rem",
+                  fontSize: "0.8125rem",
                 }}
                 formatter={(value, name) => [
                   formatCompact(Number(value), budget.currency),
@@ -81,29 +81,29 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
             <p className="text-lg font-bold text-foreground">
               {formatCompact(total_spent, budget.currency)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {t("ofBudget")} {formatCompact(total_budget, budget.currency)}
             </p>
-            <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+            <p className="mt-0.5 text-sm font-medium text-muted-foreground">
               {spentPercentage}% {t("used")}
             </p>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
           {categories.map((cat, i) => (
-            <div key={cat.category.id} className="flex items-center gap-2">
+            <div key={cat.category.id} className="flex items-center gap-2 min-h-[28px]">
               <div
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                className="h-3 w-3 shrink-0 rounded-full"
                 style={{
                   backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
                 }}
               />
-              <span className="truncate text-xs text-muted-foreground">
+              <span className="truncate text-sm text-muted-foreground">
                 {cat.category.name}
               </span>
-              <span className="ml-auto text-xs font-medium tabular-nums text-foreground">
+              <span className="ml-auto text-sm font-medium tabular-nums text-foreground">
                 {formatCompact(cat.total_spent, budget.currency)}
               </span>
             </div>

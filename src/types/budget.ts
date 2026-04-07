@@ -39,6 +39,20 @@ export interface Expense {
   description: string;
   expense_date: string;
   created_at: string;
+  created_by?: string;
+}
+
+export interface Collaborator {
+  id: string;
+  budget_id: string;
+  user_id: string;
+  role: "owner" | "collaborator";
+  added_at: string;
+  profile?: {
+    email: string;
+    full_name: string;
+    avatar_url: string;
+  };
 }
 
 export interface BudgetSummary {

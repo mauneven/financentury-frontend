@@ -233,5 +233,32 @@
     "saveToAccount": "Guardar en mi cuenta",
     "discardLocal": "Empezar de nuevo",
     "migrating": "Guardando tus datos..."
+  },
+  "invite": {
+    "title": "Invitar Colaborador",
+    "generate": "Generar Enlace de Invitacion",
+    "copyLink": "Copiar Enlace",
+    "copied": "Copiado!",
+    "expires": "Expira",
+    "expired": "Esta invitacion ha expirado",
+    "used": "Esta invitacion ya fue utilizada",
+    "accept": "Aceptar Invitacion",
+    "signInToAccept": "Inicia sesion para aceptar esta invitacion",
+    "acceptSuccess": "Te has unido al presupuesto!",
+    "invitedBy": "Invitado por",
+    "budgetName": "Presupuesto",
+    "accepting": "Uniendose...",
+    "invalidLink": "Este enlace de invitacion no es valido",
+    "generating": "Generando..."
+  },
+  "collaborators": {
+    "title": "Colaboradores",
+    "owner": "Propietario",
+    "collaborator": "Colaborador",
+    "remove": "Eliminar",
+    "removeConfirm": "Eliminar este colaborador? Perdera acceso a este presupuesto.",
+    "noCollaborators": "Aun no hay colaboradores",
+    "you": "Tu",
+    "addedBy": "Agregado por {name}"
   }
 }

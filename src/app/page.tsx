@@ -32,33 +32,33 @@ export default function HomePage() {
         }}
         onAddBudget={() => setShowCreateBudget(true)}
       >
-        <div className="flex flex-1 flex-col items-center justify-center p-6 lg:p-12">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 lg:p-12">
           {loading ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+            <div className="flex flex-col items-center gap-4">
+              <div className="size-10 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
               <p className="text-sm text-muted-foreground">
                 {t("loadingBudgets")}
               </p>
             </div>
           ) : budgets.length === 0 ? (
-            <div className="flex max-w-md flex-col items-center gap-6 text-center">
-              <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
-                <Wallet className="size-8 text-muted-foreground" />
+            <div className="flex max-w-md flex-col items-center gap-8 text-center">
+              <div className="flex size-20 items-center justify-center rounded-2xl bg-muted">
+                <Wallet className="size-10 text-muted-foreground" />
               </div>
-              <div className="space-y-2">
-                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              <div className="space-y-3">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
                   {t("welcome")}
                 </h1>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-base leading-relaxed text-muted-foreground">
                   {t("welcomeDescription")}
                 </p>
               </div>
               <Button
                 size="lg"
                 onClick={() => setShowCreateBudget(true)}
-                className="gap-2"
+                className="gap-2 h-12 px-8 text-base"
               >
-                <Plus className="size-4" />
+                <Plus className="size-5" />
                 {t("createFirst")}
               </Button>
             </div>
@@ -66,10 +66,10 @@ export default function HomePage() {
             <div className="w-full max-w-3xl space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                  <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
                     {t("yourBudgets")}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {budgets.length === 1
                       ? t("budgetCount", { count: budgets.length })
                       : t("budgetCountPlural", { count: budgets.length })}
@@ -77,12 +77,11 @@ export default function HomePage() {
                 </div>
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => setShowCreateBudget(true)}
-                  className="gap-1.5"
+                  className="gap-1.5 h-10 min-w-[44px]"
                 >
-                  <Plus className="size-3.5" />
-                  {t("newBudget")}
+                  <Plus className="size-4" />
+                  <span className="hidden sm:inline">{t("newBudget")}</span>
                 </Button>
               </div>
 

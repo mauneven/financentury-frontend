@@ -65,14 +65,14 @@ function EmojiPicker({
   onChange: (emoji: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-8 gap-1">
+    <div className="grid grid-cols-8 gap-1.5">
       {EMOJI_OPTIONS.map((emoji) => (
         <button
           key={emoji}
           type="button"
           onClick={() => onChange(emoji)}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-md text-base transition-all duration-150",
+            "flex h-10 w-10 items-center justify-center rounded-md text-lg transition-all duration-150",
             "hover:bg-muted",
             value === emoji
               ? "bg-emerald-500/10 ring-2 ring-emerald-500/40"
@@ -289,7 +289,7 @@ export function AddCategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("addCategory")}</DialogTitle>
           <DialogDescription>
@@ -360,9 +360,8 @@ export function AddCategoryDialog({
           <div className="flex justify-end pt-2">
             <Button
               type="submit"
-              size="sm"
               disabled={isSubmitting}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="bg-emerald-600 text-white hover:bg-emerald-700 min-h-[44px]"
             >
               {isSubmitting ? (
                 <>

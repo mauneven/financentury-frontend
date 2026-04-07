@@ -391,11 +391,11 @@ export function CreateBudgetDialog({
               : "border-border"
           )}
         >
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
             <Sparkles className="size-5" />
           </div>
-          <h3 className="font-medium text-sm mb-1">{t("guidedMode")}</h3>
-          <p className="text-xs text-muted-foreground mb-3">
+          <h3 className="font-medium text-sm sm:text-base mb-1">{t("guidedMode")}</h3>
+          <p className="text-sm text-muted-foreground mb-3">
             {t("guidedDescription")}
           </p>
           <div className="w-full space-y-1.5">
@@ -447,11 +447,11 @@ export function CreateBudgetDialog({
               : "border-border"
           )}
         >
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600">
             <PenLine className="size-5" />
           </div>
-          <h3 className="font-medium text-sm mb-1">{t("manualMode")}</h3>
-          <p className="text-xs text-muted-foreground mb-3">
+          <h3 className="font-medium text-sm sm:text-base mb-1">{t("manualMode")}</h3>
+          <p className="text-sm text-muted-foreground mb-3">
             {t("manualDescription")}
           </p>
           <div className="flex h-[52px] w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20">
@@ -624,15 +624,14 @@ export function CreateBudgetDialog({
 
     return (
       <div className="flex items-center justify-between pt-2">
-        <Button type="button" variant="ghost" size="sm" onClick={handleBack}>
+        <Button type="button" variant="ghost" onClick={handleBack} className="min-h-[44px]">
           <ArrowLeft className="size-4 mr-1" />
           {tc("back")}
         </Button>
         <Button
           type="submit"
-          size="sm"
           disabled={isSubmitting}
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
+          className="bg-emerald-600 text-white hover:bg-emerald-700 min-h-[44px]"
         >
           {isSubmitting ? (
             <>
@@ -662,7 +661,7 @@ export function CreateBudgetDialog({
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
       <DialogContent
-        className="sm:max-w-2xl"
+        className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
         showCloseButton
       >
         <DialogHeader>

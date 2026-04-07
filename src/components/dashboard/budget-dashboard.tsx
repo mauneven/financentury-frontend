@@ -131,11 +131,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const hasAnySpending = total_spent > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{budget.name}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{budget.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {budget.currency} &middot; {billingLabel}
           </p>
@@ -144,14 +144,14 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           type="button"
           onClick={refreshSummary}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground disabled:opacity-50 min-h-[44px] min-w-[44px] justify-center"
         >
           {loading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
+            <RefreshCw className="h-4 w-4" />
           )}
-          {t("refresh")}
+          <span className="hidden sm:inline">{t("refresh")}</span>
         </button>
       </div>
 
@@ -160,7 +160,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
       {/* Charts row */}
       {hasAnySpending ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <SpendingChart budgetId={budgetId} currency={budget.currency} />
           </div>
@@ -175,7 +175,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       {/* Category breakdown */}
       {categories.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-base font-semibold text-foreground">
+          <h2 className="text-base sm:text-lg font-semibold text-foreground">
             {t("categoryBreakdown")}
           </h2>
           <div className="space-y-4">
