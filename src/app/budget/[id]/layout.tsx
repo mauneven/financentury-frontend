@@ -6,6 +6,7 @@ import { useBudgetStore } from "@/store/budget-store";
 import { AppShell } from "@/components/layout/app-shell";
 import { CreateBudgetDialog } from "@/components/budget/create-budget-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 export default function BudgetLayout({
   children,
@@ -37,7 +38,7 @@ export default function BudgetLayout({
   })) ?? [];
 
   return (
-    <>
+    <AuthGuard>
       <AppShell
         onAddExpense={() => setShowAddExpense(true)}
         onAddBudget={() => setShowCreateBudget(true)}
@@ -62,6 +63,6 @@ export default function BudgetLayout({
           currency={summary.budget.currency}
         />
       )}
-    </>
+    </AuthGuard>
   );
 }

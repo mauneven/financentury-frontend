@@ -199,6 +199,26 @@
     "more": "M\u00e1s",
     "newBudget": "Nuevo Presupuesto",
     "budgetSettings": "Configuraci\u00f3n",
-    "switchLanguage": "Switch to English"
+    "switchLanguage": "Switch to English",
+    "account": "Cuenta"
+  },
+  "auth": {
+    "tagline": "Presupuesto inteligente para tu futuro financiero",
+    "continueWithGoogle": "Continuar con Google",
+    "authFailed": "La autenticación falló. Inténtalo de nuevo.",
+    "termsNotice": "Al continuar, aceptas nuestros términos de servicio y política de privacidad.",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "signingIn": "Iniciando sesión...",
+    "welcomeBack": "Bienvenido de vuelta"
+  },
+  "account": {
+    "title": "Cuenta",
+    "back": "Volver",
+    "noName": "Sin nombre",
+    "language": "Idioma",
+    "signOut": "Cerrar Sesión",
+    "profile": "Perfil",
+    "settings": "Configuración"
   }
 }

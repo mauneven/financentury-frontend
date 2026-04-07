@@ -20,8 +20,10 @@ import {
 } from "lucide-react";
 import type { Category, Subcategory } from "@/types/budget";
 import { useTranslations } from "@/i18n/client";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { useAuthStore } from "@/store/auth-store";
+import Link from "next/link";
 
 interface BudgetSidebarProps {
   onAddExpense: () => void;
@@ -256,14 +258,36 @@ export function BudgetSidebar({
       {/* User footer */}
       <Separator />
       <div className="flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <Avatar size="sm">
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground">User</span>
-        </div>
+        <UserFooterLink />
         <LanguageSwitcher />
       </div>
     </div>
+  );
+}
+
+function UserFooterLink() {
+  const { profile, user } = useAuthStore();
+
+  const displayName = profile?.full_name || user?.email || "User";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <Link
+      href="/account"
+      className="flex items-center gap-2 rounded-md transition-colors hover:opacity-80"
+    >
+      <Avatar size="sm">
+        {profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+        <AvatarFallback>{initials}</AvatarFallback>
+      </Avatar>
+      <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+        {displayName}
+      </span>
+    </Link>
   );
 }

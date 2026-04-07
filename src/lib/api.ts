@@ -10,6 +10,7 @@ import type {
   Subcategory,
   TrendsResponse,
 } from "@/types/budget";
+import { createClient } from "@/lib/supabase";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || (() => {
   if (process.env.NODE_ENV === "production") {
@@ -22,11 +23,17 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {}),
       ...options.headers,
     },
   });

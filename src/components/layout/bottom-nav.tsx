@@ -81,6 +81,12 @@ export function BottomNav({
             sideOffset={12}
             className="min-w-[180px]"
           >
+            <DropdownMenuItem onClick={() => router.push("/account")}>
+              {t("account")}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
             <DropdownMenuItem
               onClick={() => setLocale(locale === "en" ? "es" : "en")}
             >

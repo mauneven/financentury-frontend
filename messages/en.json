@@ -199,6 +199,26 @@
     "more": "More",
     "newBudget": "New Budget",
     "budgetSettings": "Settings",
-    "switchLanguage": "Cambiar a Espa\u00f1ol"
+    "switchLanguage": "Cambiar a Espa\u00f1ol",
+    "account": "Account"
+  },
+  "auth": {
+    "tagline": "Smart budgeting for your financial future",
+    "continueWithGoogle": "Continue with Google",
+    "authFailed": "Authentication failed. Please try again.",
+    "termsNotice": "By continuing, you agree to our terms of service and privacy policy.",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signingIn": "Signing in...",
+    "welcomeBack": "Welcome back"
+  },
+  "account": {
+    "title": "Account",
+    "back": "Back",
+    "noName": "No name set",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "profile": "Profile",
+    "settings": "Settings"
   }
 }

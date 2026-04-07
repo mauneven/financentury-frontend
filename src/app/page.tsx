@@ -9,6 +9,7 @@ import { BudgetCard } from "@/components/budget/budget-card";
 import { Button } from "@/components/ui/button";
 import { Wallet, Plus } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 export default function HomePage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function HomePage() {
   }, [fetchBudgets]);
 
   return (
-    <>
+    <AuthGuard>
       <AppShell
         onAddExpense={() => {
           // If we have budgets, go to the first one then open expense dialog
@@ -103,6 +104,6 @@ export default function HomePage() {
         open={showCreateBudget}
         onOpenChange={setShowCreateBudget}
       />
-    </>
+    </AuthGuard>
   );
 }
