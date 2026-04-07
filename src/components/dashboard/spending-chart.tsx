@@ -18,6 +18,8 @@ import type { TrendsResponse } from "@/types/budget";
 import { formatCompact } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/chart-config";
 import { useTranslations } from "@/i18n/client";
+import { useAuthStore } from "@/store/auth-store";
+import { useBudgetStore } from "@/store/budget-store";
 
 interface SpendingChartProps {
   budgetId: string;
@@ -29,9 +31,55 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("dashboard");
+  const { mode } = useAuthStore();
+  const expenses = useBudgetStore((s) => s.expenses);
+  const summary = useBudgetStore((s) => s.summary);
 
   useEffect(() => {
     let cancelled = false;
+
+    if (mode === "local") {
+      // Compute trends from local expenses grouped by month and category
+      if (summary && expenses.length > 0) {
+        const categoryMap = new Map<string, { id: string; name: string }>();
+        for (const cat of summary.categories) {
+          for (const sub of cat.subcategories) {
+            categoryMap.set(sub.subcategory.id, {
+              id: cat.category.id,
+              name: cat.category.name,
+            });
+          }
+        }
+
+        const grouped = new Map<string, Map<string, number>>();
+        for (const exp of expenses) {
+          const month = exp.expense_date.slice(0, 7); // "YYYY-MM"
+          const catInfo = categoryMap.get(exp.subcategory_id);
+          if (!catInfo) continue;
+          if (!grouped.has(catInfo.name)) grouped.set(catInfo.name, new Map());
+          const monthMap = grouped.get(catInfo.name)!;
+          monthMap.set(month, (monthMap.get(month) || 0) + exp.amount);
+        }
+
+        const localTrends: TrendsResponse = {
+          budget_id: budgetId,
+          categories: Array.from(grouped.entries()).map(([name, monthMap]) => ({
+            category_id: categoryMap.get(
+              [...categoryMap.entries()].find(([, v]) => v.name === name)?.[0] || ""
+            )?.id || "",
+            category_name: name,
+            months: Array.from(monthMap.entries())
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([month, total]) => ({ month, total_spent: total })),
+          })),
+        };
+        setTrendsData(localTrends);
+      } else {
+        setTrendsData(null);
+      }
+      setLoading(false);
+      return;
+    }
 
     async function fetchTrends() {
       setLoading(true);
@@ -56,7 +104,7 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
     return () => {
       cancelled = true;
     };
-  }, [budgetId]);
+  }, [budgetId, mode, expenses, summary]);
 
   // Transform nested TrendsResponse into recharts-friendly flat rows keyed by month.
   // Each row: { month: string, [categoryName]: number }

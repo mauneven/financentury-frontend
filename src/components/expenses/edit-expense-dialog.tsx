@@ -14,7 +14,6 @@ import {
 
 import type { Expense, Category } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
-import { expenseApi } from "@/lib/api";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
@@ -93,7 +92,7 @@ export function EditExpenseDialog({
 }: EditExpenseDialogProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
-  const refreshSummary = useBudgetStore((s) => s.refreshSummary);
+  const updateExpense = useBudgetStore((s) => s.updateExpense);
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -191,13 +190,12 @@ export function EditExpenseDialog({
   const onSubmit = async (data: ExpenseFormValues) => {
     setIsSubmitting(true);
     try {
-      await expenseApi.update(budgetId, expense.id, {
+      await updateExpense(budgetId, expense.id, {
         subcategory_id: data.subcategory_id,
         amount: data.amount,
         description: data.description || undefined,
         expense_date: data.expense_date,
       });
-      await refreshSummary();
       onOpenChange(false);
     } catch {
       setIsSubmitting(false);

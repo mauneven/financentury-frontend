@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { BudgetSummary } from "@/types/budget";
 import { formatCurrency, getPercentage } from "@/lib/format";
@@ -16,6 +16,8 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
   const remaining = total_budget - total_spent;
   const spentPercentage = getPercentage(total_spent, total_budget);
   const isOverBudget = remaining < 0;
+  const overBudgetPercent = total_budget > 0 ? Math.round(((total_spent - total_budget) / total_budget) * 100) : 0;
+  const remainingPercent = total_budget > 0 ? Math.round(((total_budget - total_spent) / total_budget) * 100) : 0;
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
 
@@ -88,7 +90,7 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
               {isOverBudget ? (
                 <TrendingDown className="h-5 w-5 text-red-500" />
               ) : (
-                <TrendingDown className="h-5 w-5 text-emerald-500" />
+                <CheckCircle className="h-5 w-5 text-emerald-500" />
               )}
             </div>
           </div>
@@ -106,7 +108,7 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
               {isOverBudget ? (
                 <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />
               ) : (
-                <ArrowDownRight className="h-3.5 w-3.5 text-emerald-500" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
               )}
               <p
                 className={cn(
@@ -117,8 +119,8 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
                 )}
               >
                 {isOverBudget
-                  ? `${Math.abs(100 - spentPercentage)}% ${t("overBudgetPercent")}`
-                  : `${100 - spentPercentage}% ${t("remainingPercent")}`}
+                  ? `${overBudgetPercent}% ${t("overBudgetPercent")}`
+                  : `${remainingPercent}% ${t("remainingPercent")}`}
               </p>
             </div>
           </div>

@@ -50,9 +50,9 @@ export function SubcategoryDetail({
 
   const { subcategory, allocated_amount, total_spent, expense_count } = subcategorySummary;
 
-  const remaining = Math.max(0, allocated_amount - total_spent);
+  const remaining = allocated_amount - total_spent;
   const percentage = getPercentage(total_spent, allocated_amount);
-  const overBudget = total_spent > allocated_amount;
+  const overBudget = remaining < 0;
   const averageExpense = expense_count > 0 ? total_spent / expense_count : 0;
 
   // Build subcategories map for expense list
@@ -142,7 +142,7 @@ export function SubcategoryDetail({
         />
         <StatCard
           label={t("remaining")}
-          value={formatCurrency(remaining, currency)}
+          value={`${overBudget ? "-" : ""}${formatCurrency(Math.abs(remaining), currency)}`}
           className={overBudget ? "text-destructive" : "text-emerald-600"}
           icon={
             overBudget

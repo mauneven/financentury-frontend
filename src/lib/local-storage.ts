@@ -305,11 +305,27 @@ export const localBudgetStorage = {
     const categories = this.getCategories(budgetId);
     const allExpenses = this.getExpenses(budgetId);
 
+    // BUG FIX 1: Scale budget by billing_period_months instead of using
+    // a single month's income, and filter expenses to the current period.
+    const periodMonths = budget.billing_period_months;
+    const totalBudget = budget.monthly_income * periodMonths;
+
+    // Filter expenses to the current billing period window
+    const now = new Date();
+    const periodStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - (periodMonths - 1),
+      1
+    );
+    const periodExpenses = allExpenses.filter(
+      (e) => new Date(e.expense_date) >= periodStart
+    );
+
     let totalSpent = 0;
 
     const categorySummaries: CategorySummary[] = categories.map((category) => {
       const allocatedAmount =
-        (budget.monthly_income * category.allocation_percent) / 100;
+        (totalBudget * category.allocation_percent) / 100;
 
       const subcategories = this.getSubcategories(category.id);
 
@@ -317,10 +333,12 @@ export const localBudgetStorage = {
 
       const subcategorySummaries: SubcategorySummary[] = subcategories.map(
         (subcategory) => {
+          // BUG FIX 2: Subcategory allocation_percent is a percentage of
+          // total income, NOT of the parent category. Use totalBudget directly.
           const subAllocated =
-            (allocatedAmount * subcategory.allocation_percent) / 100;
+            (totalBudget * subcategory.allocation_percent) / 100;
 
-          const subExpenses = allExpenses.filter(
+          const subExpenses = periodExpenses.filter(
             (e) => e.subcategory_id === subcategory.id
           );
           const subSpent = subExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -348,7 +366,7 @@ export const localBudgetStorage = {
     return {
       budget,
       categories: categorySummaries,
-      total_budget: budget.monthly_income,
+      total_budget: totalBudget,
       total_spent: totalSpent,
     } satisfies BudgetSummary;
   },

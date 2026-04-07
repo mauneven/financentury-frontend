@@ -14,13 +14,17 @@ export function formatCurrency(amount: number, currencyCode: string): string {
 
 export function formatCompact(amount: number, currencyCode: string): string {
   const currency = CURRENCIES.find((c) => c.code === currencyCode);
+  const symbol = currency?.symbol || "$";
   const locale = currency?.locale || "en-US";
 
-  if (amount >= 1_000_000) {
-    return `${(amount / 1_000_000).toFixed(1)}M`;
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+
+  if (abs >= 1_000_000) {
+    return `${sign}${symbol} ${(abs / 1_000_000).toFixed(1)}M`;
   }
-  if (amount >= 1_000) {
-    return `${(amount / 1_000).toFixed(0)}K`;
+  if (abs >= 1_000) {
+    return `${sign}${symbol} ${(abs / 1_000).toFixed(0)}K`;
   }
 
   return new Intl.NumberFormat(locale, {

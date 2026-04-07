@@ -31,6 +31,7 @@ interface BudgetState {
   deleteBudget: (id: string) => Promise<void>;
   refreshSummary: () => Promise<void>;
   addExpense: (data: CreateExpenseInput) => Promise<Expense>;
+  updateExpense: (budgetId: string, expenseId: string, data: Partial<CreateExpenseInput>) => Promise<Expense>;
   deleteExpense: (expenseId: string) => Promise<void>;
   addCategory: (data: CreateCategoryInput) => Promise<Category>;
   updateCategory: (categoryId: string, data: Partial<CreateCategoryInput>) => Promise<Category>;
@@ -176,6 +177,24 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       // Refresh summary to update totals
       get().refreshSummary();
       return expense;
+    }
+  },
+
+  updateExpense: async (budgetId: string, expenseId: string, data: Partial<CreateExpenseInput>) => {
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      const updated = localBudgetStorage.updateExpense(expenseId, data);
+      const summary = localBudgetStorage.computeSummary(budgetId);
+      const expenses = localBudgetStorage.getExpenses(budgetId);
+      set({ summary, expenses, error: null });
+      return updated;
+    } else {
+      const updated = await expenseApi.update(budgetId, expenseId, data);
+      set((state) => ({
+        expenses: state.expenses.map((e) => e.id === expenseId ? updated : e),
+      }));
+      await get().refreshSummary();
+      return updated;
     }
   },
 

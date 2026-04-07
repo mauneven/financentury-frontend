@@ -17,21 +17,33 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
   const spentPercentage = getPercentage(total_spent, total_budget);
   const t = useTranslations("dashboard");
 
-  const chartData = categories.map((cat) => ({
+  const chartData = categories.map((cat, i) => ({
     name: cat.category.name,
     value: cat.total_spent,
     allocated: cat.allocated_amount,
+    colorIndex: i,
   }));
 
   // If nothing spent yet, show allocated amounts instead
   const hasSpending = total_spent > 0;
   const displayData = hasSpending
-    ? chartData
-    : categories.map((cat) => ({
+    ? chartData.filter((item) => item.value > 0)
+    : categories.map((cat, i) => ({
         name: cat.category.name,
         value: cat.allocated_amount,
         allocated: cat.allocated_amount,
+        colorIndex: i,
       }));
+
+  // If all categories have zero spending, fall back to allocation view
+  const finalDisplayData = hasSpending && displayData.length === 0
+    ? categories.map((cat, i) => ({
+        name: cat.category.name,
+        value: cat.allocated_amount,
+        allocated: cat.allocated_amount,
+        colorIndex: i,
+      }))
+    : displayData;
 
   return (
     <Card className="shadow-sm">
@@ -46,7 +58,7 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={displayData}
+                data={finalDisplayData}
                 cx="50%"
                 cy="50%"
                 innerRadius="55%"
@@ -55,10 +67,10 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
                 dataKey="value"
                 strokeWidth={0}
               >
-                {displayData.map((_entry, index) => (
+                {finalDisplayData.map((entry, index) => (
                   <Cell
                     key={index}
-                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    fill={CHART_COLORS[entry.colorIndex % CHART_COLORS.length]}
                   />
                 ))}
               </Pie>
@@ -92,22 +104,25 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
 
         {/* Legend */}
         <div className="mt-4 grid grid-cols-2 gap-2.5">
-          {categories.map((cat, i) => (
-            <div key={cat.category.id} className="flex items-center gap-2 min-h-[28px]">
-              <div
-                className="h-3 w-3 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
-                }}
-              />
-              <span className="truncate text-sm text-muted-foreground">
-                {cat.category.name}
-              </span>
-              <span className="ml-auto text-sm font-medium tabular-nums text-foreground">
-                {formatCompact(cat.total_spent, budget.currency)}
-              </span>
-            </div>
-          ))}
+          {finalDisplayData.map((entry) => {
+            const cat = categories[entry.colorIndex];
+            return (
+              <div key={cat.category.id} className="flex items-center gap-2 min-h-[28px]">
+                <div
+                  className="h-3 w-3 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor: CHART_COLORS[entry.colorIndex % CHART_COLORS.length],
+                  }}
+                />
+                <span className="truncate text-sm text-muted-foreground">
+                  {cat.category.name}
+                </span>
+                <span className="ml-auto text-sm font-medium tabular-nums text-foreground">
+                  {formatCompact(cat.total_spent, budget.currency)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

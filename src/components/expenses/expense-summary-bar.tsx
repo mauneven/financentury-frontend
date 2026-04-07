@@ -24,7 +24,8 @@ export function ExpenseSummaryBar({
 }: ExpenseSummaryBarProps) {
   const t = useTranslations("expense");
   const percentage = getPercentage(totalSpent, totalBudget);
-  const remaining = Math.max(0, totalBudget - totalSpent);
+  const remaining = totalBudget - totalSpent;
+  const isOverBudget = remaining < 0;
 
   return (
     <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-2.5">
@@ -42,14 +43,25 @@ export function ExpenseSummaryBar({
               total: formatCurrency(totalBudget, currency),
             })}
           </span>
-          <span
-            className={cn(
-              "shrink-0 text-sm font-mono font-medium",
-              getProgressTextColor(percentage)
-            )}
-          >
-            {percentage}%
-          </span>
+          <div className="flex items-center gap-3 shrink-0">
+            <span
+              className={cn(
+                "text-sm font-mono font-medium",
+                isOverBudget ? "text-red-600" : "text-emerald-600"
+              )}
+            >
+              {isOverBudget ? "-" : ""}
+              {formatCurrency(Math.abs(remaining), currency)}
+            </span>
+            <span
+              className={cn(
+                "text-sm font-mono font-medium",
+                getProgressTextColor(percentage)
+              )}
+            >
+              {percentage}%
+            </span>
+          </div>
         </div>
 
         {/* Progress bar */}
