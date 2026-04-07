@@ -84,15 +84,15 @@ export function SubcategoryDetail({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex size-12 items-center justify-center rounded-lg bg-muted text-xl">
+      <div className="flex items-center gap-4">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-muted text-xl">
           {subcategory.icon || "📂"}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg sm:text-xl font-semibold truncate">{subcategory.name}</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{subcategory.name}</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {expense_count !== 1
               ? t("expensesRecordedPlural", { count: String(expense_count) })
               : t("expensesRecorded", { count: String(expense_count) })}
@@ -129,7 +129,7 @@ export function SubcategoryDetail({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
         <StatCard
           label={t("budgeted")}
           value={formatCurrency(allocated_amount, currency)}
@@ -160,15 +160,15 @@ export function SubcategoryDetail({
       <Separator />
 
       {/* Expense List */}
-      <div>
-        <h3 className="mb-3 text-sm font-medium text-muted-foreground">{t("allExpenses")}</h3>
+      <div className="space-y-4">
+        <h3 className="text-base font-semibold text-foreground">{t("allExpenses")}</h3>
         {filteredExpenses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-4 py-10 sm:py-12 text-center">
-            <div className="mb-3 rounded-full bg-muted p-3">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-4 py-12 sm:py-16 text-center">
+            <div className="mb-4 rounded-full bg-muted p-3.5">
               <Receipt className="size-6 text-muted-foreground" />
             </div>
             <p className="mb-1 text-sm font-medium">{t("noExpenses")}</p>
-            <p className="mb-4 max-w-xs text-sm text-muted-foreground">
+            <p className="mb-5 max-w-xs text-sm text-muted-foreground">
               {t("addExpenseHere", { name: subcategory.name })}
             </p>
             <Button variant="outline" onClick={() => setAddDialogOpen(true)} className="min-h-[44px]">
@@ -222,12 +222,12 @@ interface StatCardProps {
 function StatCard({ label, value, icon, className }: StatCardProps) {
   return (
     <Card size="sm">
-      <CardContent className="flex flex-col gap-1.5 p-3 sm:p-4 pt-3 sm:pt-4">
+      <CardContent className="flex flex-col gap-2 p-3.5 sm:p-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{label}</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">{label}</span>
           {icon}
         </div>
-        <span className={cn("font-mono text-sm font-semibold", className)}>
+        <span className={cn("font-mono text-sm sm:text-base font-semibold", className)}>
           {value}
         </span>
       </CardContent>

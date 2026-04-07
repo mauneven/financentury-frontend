@@ -104,7 +104,17 @@
     "creating": "Creating...",
     "subcategoriesOptional": "Subcategories (optional)",
     "add": "Add",
-    "createDescription": "Create a new spending category for your budget."
+    "createDescription": "Create a new spending category for your budget.",
+    "editCategory": "Edit Category",
+    "editSubcategory": "Edit Subcategory",
+    "deleteCategory": "Delete Category",
+    "deleteSubcategory": "Delete Subcategory",
+    "confirmDeleteCategory": "Delete this category? All subcategories and their expenses will be permanently removed.",
+    "confirmDeleteSubcategory": "Delete this subcategory? All its expenses will be permanently removed.",
+    "editDescription": "Update this category's details.",
+    "editSubcategoryDescription": "Update this subcategory's details.",
+    "saving": "Saving...",
+    "deleting": "Deleting..."
   },
   "dashboard": {
     "refresh": "Refresh",

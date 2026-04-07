@@ -195,7 +195,18 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
                 onValueChange={(val) => field.onChange(val)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t("selectCurrency")} />
+                  {field.value ? (() => {
+                    const curr = CURRENCIES.find((c) => c.code === field.value);
+                    return curr ? (
+                      <span className="flex flex-1 text-left">
+                        {curr.symbol} {curr.code} - {curr.name}
+                      </span>
+                    ) : (
+                      <SelectValue placeholder={t("selectCurrency")} />
+                    );
+                  })() : (
+                    <SelectValue placeholder={t("selectCurrency")} />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
@@ -215,52 +226,62 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
           <Controller
             name="billing_period_months"
             control={control}
-            render={({ field }) => (
-              <>
-                <Select
-                  value={customPeriod ? "custom" : String(field.value)}
-                  onValueChange={(val) => {
-                    if (val === "custom") {
-                      setCustomPeriod(true);
-                      field.onChange(1);
-                    } else {
-                      setCustomPeriod(false);
-                      field.onChange(Number(val));
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("selectPeriod")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BILLING_PERIODS.map((p) => (
-                      <SelectItem key={p.value} value={String(p.value)}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="custom">{tc("custom")}</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {customPeriod && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={12}
-                      value={field.value}
-                      onChange={(e) =>
-                        field.onChange(Number(e.target.value) || 1)
+            render={({ field }) => {
+              const selectValue = customPeriod ? "custom" : String(field.value);
+              const displayLabel = customPeriod
+                ? tc("custom")
+                : BILLING_PERIODS.find((p) => String(p.value) === selectValue)?.label;
+              return (
+                <>
+                  <Select
+                    value={selectValue}
+                    onValueChange={(val) => {
+                      if (val === "custom") {
+                        setCustomPeriod(true);
+                        field.onChange(1);
+                      } else {
+                        setCustomPeriod(false);
+                        field.onChange(Number(val));
                       }
-                      className="w-20"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {t("months")}
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      {displayLabel ? (
+                        <span className="flex flex-1 text-left">{displayLabel}</span>
+                      ) : (
+                        <SelectValue placeholder={t("selectPeriod")} />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BILLING_PERIODS.map((p) => (
+                        <SelectItem key={p.value} value={String(p.value)}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">{tc("custom")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {customPeriod && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={field.value}
+                        onChange={(e) =>
+                          field.onChange(Number(e.target.value) || 1)
+                        }
+                        className="w-20"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {t("months")}
+                      </span>
+                    </div>
+                  )}
+                </>
+              );
+            }}
           />
         </div>
 

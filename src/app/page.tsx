@@ -32,7 +32,7 @@ export default function HomePage() {
         }}
         onAddBudget={() => setShowCreateBudget(true)}
       >
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 lg:p-12">
+        <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
           {loading ? (
             <div className="flex flex-col items-center gap-4">
               <div className="size-10 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
@@ -63,13 +63,13 @@ export default function HomePage() {
               </Button>
             </div>
           ) : (
-            <div className="w-full max-w-3xl space-y-6">
+            <div className="w-full max-w-3xl space-y-6 sm:space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                     {t("yourBudgets")}
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1.5">
                     {budgets.length === 1
                       ? t("budgetCount", { count: budgets.length })
                       : t("budgetCountPlural", { count: budgets.length })}
@@ -85,7 +85,7 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
                 {budgets.map((budget) => (
                   <BudgetCard
                     key={budget.id}

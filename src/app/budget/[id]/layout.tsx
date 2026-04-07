@@ -46,7 +46,9 @@ export default function BudgetLayout({
           router.push(`/budget/${budgetId}?sub=${subcategoryId}`);
         }}
       >
-        {children}
+        <div className="p-4 sm:p-6 lg:p-8">
+          {children}
+        </div>
       </AppShell>
 
       <CreateBudgetDialog

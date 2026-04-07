@@ -233,7 +233,14 @@ export function EditExpenseDialog({
               onValueChange={handleCategoryChange}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={t("selectCategory")} />
+                {selectedCategoryId ? (
+                  <span className="flex flex-1 items-center gap-1.5 text-left">
+                    <span>{categories.find((c) => c.id === selectedCategoryId)?.icon}</span>
+                    {categories.find((c) => c.id === selectedCategoryId)?.name}
+                  </span>
+                ) : (
+                  <SelectValue placeholder={t("selectCategory")} />
+                )}
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -257,7 +264,19 @@ export function EditExpenseDialog({
               disabled={!selectedCategoryId}
             >
               <SelectTrigger className={cn("w-full", !selectedCategoryId && "opacity-50")}>
-                <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                {watchedSubcategoryId ? (() => {
+                  const sub = subcategories.find((s) => s.id === watchedSubcategoryId);
+                  return sub ? (
+                    <span className="flex flex-1 items-center gap-1.5 text-left">
+                      <span>{sub.icon}</span>
+                      {sub.name}
+                    </span>
+                  ) : (
+                    <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                  );
+                })() : (
+                  <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                )}
               </SelectTrigger>
               <SelectContent>
                 {subcategories.map((sub) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, Settings } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useTranslations } from "@/i18n/client";
 import { OverviewCards } from "./overview-cards";
@@ -10,6 +10,7 @@ import { BudgetOverviewChart } from "./budget-overview-chart";
 import { EmptyDashboard } from "./empty-dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { BILLING_PERIODS } from "@/types/budget";
+import Link from "next/link";
 
 interface BudgetDashboardProps {
   budgetId: string;
@@ -133,10 +134,19 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{budget.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{budget.name}</h1>
+            <Link
+              href={`/budget/${budgetId}/settings`}
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
+              aria-label="Budget settings"
+            >
+              <Settings className="size-4" />
+            </Link>
+          </div>
+          <p className="mt-1.5 text-sm text-muted-foreground">
             {budget.currency} &middot; {billingLabel}
           </p>
         </div>
@@ -174,11 +184,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
       {/* Category breakdown */}
       {categories.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-base sm:text-lg font-semibold text-foreground">
+        <div className="space-y-5">
+          <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
             {t("categoryBreakdown")}
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-4 sm:space-y-5">
             {categories.map((cat) => (
               <CategoryCard
                 key={cat.category.id}

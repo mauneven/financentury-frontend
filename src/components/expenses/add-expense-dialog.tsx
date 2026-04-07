@@ -223,16 +223,23 @@ export function AddExpenseDialog({
           <DialogDescription>{t("addExpenseDescription")}</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Category Select */}
           <div className="space-y-2">
-            <Label>{t("category")}</Label>
+            <Label className="text-sm font-medium">{t("category")}</Label>
             <Select
               value={selectedCategoryId}
               onValueChange={handleCategoryChange}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={t("selectCategory")} />
+                {selectedCategoryId ? (
+                  <span className="flex flex-1 items-center gap-1.5 text-left">
+                    <span>{categories.find((c) => c.id === selectedCategoryId)?.icon}</span>
+                    {categories.find((c) => c.id === selectedCategoryId)?.name}
+                  </span>
+                ) : (
+                  <SelectValue placeholder={t("selectCategory")} />
+                )}
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -247,7 +254,7 @@ export function AddExpenseDialog({
 
           {/* Subcategory Select */}
           <div className="space-y-2">
-            <Label>{t("subcategory")}</Label>
+            <Label className="text-sm font-medium">{t("subcategory")}</Label>
             <Select
               value={watchedSubcategoryId || null}
               onValueChange={(val) => {
@@ -256,7 +263,19 @@ export function AddExpenseDialog({
               disabled={!selectedCategoryId}
             >
               <SelectTrigger className={cn("w-full", !selectedCategoryId && "opacity-50")}>
-                <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                {watchedSubcategoryId ? (() => {
+                  const sub = subcategories.find((s) => s.id === watchedSubcategoryId);
+                  return sub ? (
+                    <span className="flex flex-1 items-center gap-1.5 text-left">
+                      <span>{sub.icon}</span>
+                      {sub.name}
+                    </span>
+                  ) : (
+                    <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                  );
+                })() : (
+                  <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                )}
               </SelectTrigger>
               <SelectContent>
                 {subcategories.map((sub) => (
@@ -277,7 +296,7 @@ export function AddExpenseDialog({
 
           {/* Remaining Budget Info */}
           {subcategorySummary && (
-            <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+            <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{t("remainingBudget")}</span>
                 <span
@@ -294,7 +313,7 @@ export function AddExpenseDialog({
                   )}
                 </span>
               </div>
-              <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+              <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                   {t("spentOf", {
                     spent: formatCurrency(subcategorySummary.total_spent, currency),
@@ -307,7 +326,7 @@ export function AddExpenseDialog({
 
           {/* Amount Input */}
           <div className="space-y-2">
-            <Label>{t("amount")}</Label>
+            <Label className="text-sm font-medium">{t("amount")}</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg text-muted-foreground">
                 {currencySymbol}
@@ -332,9 +351,9 @@ export function AddExpenseDialog({
 
           {/* Description */}
           <div className="space-y-2">
-            <Label>
+            <Label className="text-sm font-medium">
               {t("description")}
-              <span className="ml-1 text-xs text-muted-foreground">({t("optional")})</span>
+              <span className="ml-1 text-xs font-normal text-muted-foreground">({t("optional")})</span>
             </Label>
             <Textarea
               {...register("description")}
@@ -352,7 +371,7 @@ export function AddExpenseDialog({
 
           {/* Date Picker */}
           <div className="space-y-2">
-            <Label>{t("date")}</Label>
+            <Label className="text-sm font-medium">{t("date")}</Label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger
                 render={
@@ -381,7 +400,7 @@ export function AddExpenseDialog({
           </div>
 
           {/* Footer */}
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
               {isSubmitting ? t("saving") : t("addExpense")}

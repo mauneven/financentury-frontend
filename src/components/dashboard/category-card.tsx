@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { CategorySummary } from "@/types/budget";
+import type { CategorySummary, Category, Subcategory } from "@/types/budget";
 import {
   formatCurrency,
   formatCompact,
@@ -13,6 +13,8 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { EditSubcategoryDialog } from "@/components/budget/edit-subcategory-dialog";
 
 interface CategoryCardProps {
   categorySummary: CategorySummary;
@@ -26,6 +28,8 @@ export function CategoryCard({
   onSubcategoryClick,
 }: CategoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
+  const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const t = useTranslations("dashboard");
 
   const { category, subcategories, allocated_amount, total_spent } =
@@ -40,39 +44,52 @@ export function CategoryCard({
   }, []);
 
   return (
-    <Card className="shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <Card className="group shadow-sm transition-shadow duration-200 hover:shadow-md">
       <CardContent className="p-4 sm:p-6">
         {/* Category header */}
-        <button
-          type="button"
-          onClick={toggleExpanded}
-          className="flex w-full items-center justify-between text-left min-h-[44px]"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl" role="img" aria-label={category.name}>
-              {category.icon || "📁"}
-            </span>
-            <div>
-              <h3 className="text-base font-semibold text-foreground">
-                {category.name}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {category.allocation_percent}% {t("ofIncome")}
-              </p>
+        <div className="flex w-full items-center justify-between min-h-[44px]">
+          <button
+            type="button"
+            onClick={toggleExpanded}
+            className="flex flex-1 items-center justify-between text-left"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl" role="img" aria-label={category.name}>
+                {category.icon || "\ud83d\udcc1"}
+              </span>
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  {category.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {category.allocation_percent}% {t("ofIncome")}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className={cn("text-sm font-semibold tabular-nums", textColor)}>
-              {percentage}%
-            </span>
-            <ChevronDown
-              className={cn(
-                "h-5 w-5 text-muted-foreground transition-transform duration-200",
-                isExpanded && "rotate-180"
-              )}
-            />
-          </div>
-        </button>
+            <div className="flex items-center gap-3">
+              <span className={cn("text-sm font-semibold tabular-nums", textColor)}>
+                {percentage}%
+              </span>
+              <ChevronDown
+                className={cn(
+                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                  isExpanded && "rotate-180"
+                )}
+              />
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditCategoryOpen(true);
+            }}
+            className="ml-2 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
+            aria-label={`Edit ${category.name}`}
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        </div>
 
         {/* Budget / Spent / Left summary */}
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
@@ -135,49 +152,64 @@ export function CategoryCard({
                 const subTextColor = getProgressTextColor(subPercentage);
 
                 return (
-                  <button
+                  <div
                     key={sub.subcategory.id}
-                    type="button"
-                    onClick={() => onSubcategoryClick?.(sub.subcategory.id)}
-                    className="group flex w-full flex-col gap-2 rounded-lg px-2 py-2.5 text-left transition-colors duration-200 hover:bg-muted/50 min-h-[44px]"
+                    className="group/sub flex items-start gap-1 rounded-lg px-2 py-2.5 transition-colors duration-200 hover:bg-muted/50 min-h-[44px]"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base" role="img" aria-label={sub.subcategory.name}>
-                          {sub.subcategory.icon || "📌"}
-                        </span>
-                        <span className="text-sm font-medium text-foreground">
-                          {sub.subcategory.name}
-                        </span>
+                    <button
+                      type="button"
+                      onClick={() => onSubcategoryClick?.(sub.subcategory.id)}
+                      className="flex w-full flex-col gap-2 text-left"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base" role="img" aria-label={sub.subcategory.name}>
+                            {sub.subcategory.icon || "\ud83d\udccc"}
+                          </span>
+                          <span className="text-sm font-medium text-foreground">
+                            {sub.subcategory.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="tabular-nums text-muted-foreground">
+                            {formatCompact(sub.total_spent, currency)} /{" "}
+                            {formatCompact(sub.allocated_amount, currency)}
+                          </span>
+                          <span
+                            className={cn(
+                              "min-w-[2.5rem] text-right font-semibold tabular-nums",
+                              subTextColor
+                            )}
+                          >
+                            {subPercentage}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="tabular-nums text-muted-foreground">
-                          {formatCompact(sub.total_spent, currency)} /{" "}
-                          {formatCompact(sub.allocated_amount, currency)}
-                        </span>
-                        <span
+                      {/* Mini progress bar */}
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div
                           className={cn(
-                            "min-w-[2.5rem] text-right font-semibold tabular-nums",
-                            subTextColor
+                            "h-full rounded-full transition-all duration-300",
+                            subProgressColor
                           )}
-                        >
-                          {subPercentage}%
-                        </span>
+                          style={{
+                            width: `${Math.min(subPercentage, 100)}%`,
+                          }}
+                        />
                       </div>
-                    </div>
-                    {/* Mini progress bar */}
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all duration-300",
-                          subProgressColor
-                        )}
-                        style={{
-                          width: `${Math.min(subPercentage, 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingSubcategory(sub.subcategory);
+                      }}
+                      className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
+                      aria-label={`Edit ${sub.subcategory.name}`}
+                    >
+                      <Pencil className="size-3" />
+                    </button>
+                  </div>
                 );
               })}
               {subcategories.length === 0 && (
@@ -189,6 +221,23 @@ export function CategoryCard({
           </div>
         </div>
       </CardContent>
+
+      {/* Edit dialogs */}
+      <EditCategoryDialog
+        category={category}
+        open={editCategoryOpen}
+        onOpenChange={setEditCategoryOpen}
+      />
+      {editingSubcategory && (
+        <EditSubcategoryDialog
+          categoryId={category.id}
+          subcategory={editingSubcategory}
+          open={!!editingSubcategory}
+          onOpenChange={(open) => {
+            if (!open) setEditingSubcategory(null);
+          }}
+        />
+      )}
     </Card>
   );
 }

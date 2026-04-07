@@ -20,10 +20,10 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
   const tc = useTranslations("common");
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 md:grid-cols-3">
       {/* Total Budget */}
       <Card className="shadow-sm">
-        <CardContent className="p-4 sm:p-6">
+        <CardContent className="p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
               {t("totalBudget")}
@@ -32,11 +32,11 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
               <Wallet className="h-5 w-5 text-emerald-500" />
             </div>
           </div>
-          <div className="mt-3">
-            <p className="text-xl sm:text-2xl font-bold text-foreground">
+          <div className="mt-4">
+            <p className="text-2xl font-bold tabular-nums text-foreground">
               {formatCurrency(total_budget, budget.currency)}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {budget.billing_period_months === 1
                 ? tc("monthly")
                 : `Every ${budget.billing_period_months} months`}
@@ -47,7 +47,7 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
 
       {/* Total Spent */}
       <Card className="shadow-sm">
-        <CardContent className="p-4 sm:p-6">
+        <CardContent className="p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
               {t("totalSpent")}
@@ -56,11 +56,11 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
               <TrendingUp className="h-5 w-5 text-blue-500" />
             </div>
           </div>
-          <div className="mt-3">
-            <p className="text-xl sm:text-2xl font-bold text-foreground">
+          <div className="mt-4">
+            <p className="text-2xl font-bold tabular-nums text-foreground">
               {formatCurrency(total_spent, budget.currency)}
             </p>
-            <div className="mt-1 flex items-center gap-1">
+            <div className="mt-1.5 flex items-center gap-1">
               <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 {spentPercentage}% {t("ofBudgetUsed")}
@@ -72,7 +72,7 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
 
       {/* Remaining */}
       <Card className="shadow-sm sm:col-span-2 md:col-span-1">
-        <CardContent className="p-4 sm:p-6">
+        <CardContent className="p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
               {t("remaining")}
@@ -92,17 +92,17 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
               )}
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-4">
             <p
               className={cn(
-                "text-xl sm:text-2xl font-bold",
+                "text-2xl font-bold tabular-nums",
                 isOverBudget ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
               )}
             >
               {isOverBudget ? "-" : ""}
               {formatCurrency(Math.abs(remaining), budget.currency)}
             </p>
-            <div className="mt-1 flex items-center gap-1">
+            <div className="mt-1.5 flex items-center gap-1">
               {isOverBudget ? (
                 <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />
               ) : (

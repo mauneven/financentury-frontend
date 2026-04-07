@@ -8,9 +8,11 @@ import type {
   CreateBudgetInput,
   CreateCategoryInput,
   CreateExpenseInput,
+  CreateSubcategoryInput,
   Expense,
+  Subcategory,
 } from "@/types/budget";
-import { budgetApi, categoryApi, expenseApi } from "@/lib/api";
+import { budgetApi, categoryApi, expenseApi, subcategoryApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 import { localBudgetStorage } from "@/lib/local-storage";
 
@@ -31,6 +33,11 @@ interface BudgetState {
   addExpense: (data: CreateExpenseInput) => Promise<Expense>;
   deleteExpense: (expenseId: string) => Promise<void>;
   addCategory: (data: CreateCategoryInput) => Promise<Category>;
+  updateCategory: (categoryId: string, data: Partial<CreateCategoryInput>) => Promise<Category>;
+  deleteCategory: (categoryId: string) => Promise<void>;
+  addSubcategory: (categoryId: string, data: CreateSubcategoryInput) => Promise<Subcategory>;
+  updateSubcategory: (categoryId: string, subcategoryId: string, data: Partial<CreateSubcategoryInput>) => Promise<Subcategory>;
+  deleteSubcategory: (categoryId: string, subcategoryId: string) => Promise<void>;
 }
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -209,6 +216,89 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       const category = await categoryApi.create(activeBudgetId, data);
       get().refreshSummary();
       return category;
+    }
+  },
+
+  updateCategory: async (categoryId, data) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      const category = localBudgetStorage.updateCategory(categoryId, data);
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      set({ summary });
+      return category;
+    } else {
+      const category = await categoryApi.update(activeBudgetId, categoryId, data);
+      get().refreshSummary();
+      return category;
+    }
+  },
+
+  deleteCategory: async (categoryId) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      localBudgetStorage.deleteCategory(categoryId);
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      const expenses = localBudgetStorage.getExpenses(activeBudgetId);
+      set({ summary, expenses });
+    } else {
+      await categoryApi.delete(activeBudgetId, categoryId);
+      get().refreshSummary();
+    }
+  },
+
+  addSubcategory: async (categoryId, data) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      const subcategory = localBudgetStorage.saveSubcategory(categoryId, data);
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      set({ summary });
+      return subcategory;
+    } else {
+      const subcategory = await subcategoryApi.create(activeBudgetId, categoryId, data);
+      get().refreshSummary();
+      return subcategory;
+    }
+  },
+
+  updateSubcategory: async (categoryId, subcategoryId, data) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      const subcategory = localBudgetStorage.updateSubcategory(subcategoryId, data);
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      set({ summary });
+      return subcategory;
+    } else {
+      const subcategory = await subcategoryApi.update(activeBudgetId, categoryId, subcategoryId, data);
+      get().refreshSummary();
+      return subcategory;
+    }
+  },
+
+  deleteSubcategory: async (categoryId, subcategoryId) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    const { mode } = useAuthStore.getState();
+    if (mode === "local") {
+      localBudgetStorage.deleteSubcategory(subcategoryId);
+      const summary = localBudgetStorage.computeSummary(activeBudgetId);
+      const expenses = localBudgetStorage.getExpenses(activeBudgetId);
+      set({ summary, expenses });
+    } else {
+      await subcategoryApi.delete(activeBudgetId, categoryId, subcategoryId);
+      get().refreshSummary();
     }
   },
 }));

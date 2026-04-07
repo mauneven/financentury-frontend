@@ -18,6 +18,8 @@ import {
   FileText,
   Wallet,
   LogIn,
+  Pencil,
+  Settings,
 } from "lucide-react";
 import type { Category, Subcategory } from "@/types/budget";
 import { useTranslations } from "@/i18n/client";
@@ -26,6 +28,8 @@ import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useAuthStore } from "@/store/auth-store";
 import { LocalModeBanner } from "@/components/auth/local-mode-banner";
 import Link from "next/link";
+import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { EditSubcategoryDialog } from "@/components/budget/edit-subcategory-dialog";
 
 interface BudgetSidebarProps {
   onAddExpense: () => void;
@@ -48,6 +52,11 @@ export function BudgetSidebar({
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({});
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<{
+    categoryId: string;
+    subcategory: Subcategory;
+  } | null>(null);
 
   const toggleBudget = (budgetId: string) => {
     setExpandedBudgets((prev) => ({
@@ -88,8 +97,8 @@ export function BudgetSidebar({
       <Separator />
 
       {/* Section header */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center justify-between px-4 py-3.5">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           {t("myBudgets")}
         </span>
         <Button
@@ -106,11 +115,11 @@ export function BudgetSidebar({
       <Separator />
 
       {/* Add Expense button */}
-      <div className="px-3 pt-3 pb-1">
+      <div className="px-3 pt-3 pb-2">
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2 text-xs"
+          className="w-full justify-start gap-2 text-xs font-medium shadow-sm"
           onClick={onAddExpense}
         >
           <Plus className="size-3.5" />
@@ -140,7 +149,7 @@ export function BudgetSidebar({
                   open={isExpanded}
                   onOpenChange={() => toggleBudget(budget.id)}
                 >
-                  <div className="group flex items-center">
+                  <div className="group/budget flex items-center px-1">
                     <CollapsibleTrigger className="flex size-6 shrink-0 items-center justify-center rounded-md transition-colors duration-200 hover:bg-accent">
                       <ChevronRight
                         className={`size-3.5 text-muted-foreground transition-transform duration-200 ${
@@ -151,9 +160,9 @@ export function BudgetSidebar({
                     <button
                       type="button"
                       onClick={() => handleBudgetClick(budget.id)}
-                      className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors duration-200 hover:bg-accent ${
+                      className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-200 hover:bg-accent ${
                         isActive
-                          ? "bg-accent font-medium text-foreground"
+                          ? "bg-accent/80 font-semibold text-foreground"
                           : "text-foreground/80"
                       }`}
                     >
@@ -164,12 +173,19 @@ export function BudgetSidebar({
                       )}
                       <span className="truncate">{budget.name}</span>
                     </button>
+                    <Link
+                      href={`/budget/${budget.id}/settings`}
+                      className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                      aria-label="Budget settings"
+                    >
+                      <Settings className="size-3" />
+                    </Link>
                   </div>
 
                   <CollapsibleContent>
-                    <div className="ml-3 border-l border-border pl-2">
+                    <div className="ml-4 border-l border-border pl-2">
                       {budgetCategories.length === 0 && isActive && (
-                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                        <div className="px-2 py-2 text-xs text-muted-foreground">
                           {t("loading")}
                         </div>
                       )}
@@ -187,7 +203,7 @@ export function BudgetSidebar({
                             open={catExpanded}
                             onOpenChange={() => toggleCategory(category.id)}
                           >
-                            <div className="group flex items-center">
+                            <div className="group/cat flex items-center">
                               <CollapsibleTrigger className="flex size-5 shrink-0 items-center justify-center rounded-md transition-colors duration-200 hover:bg-accent">
                                 <ChevronRight
                                   className={`size-3 text-muted-foreground transition-transform duration-200 ${
@@ -195,39 +211,68 @@ export function BudgetSidebar({
                                   }`}
                                 />
                               </CollapsibleTrigger>
-                              <div className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-xs transition-colors duration-200 hover:bg-accent">
+                              <div className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-xs transition-colors duration-200 hover:bg-accent">
                                 <span className="shrink-0 text-sm leading-none">
                                   {category.icon || ""}
                                 </span>
-                                <span className="truncate text-foreground/80">
+                                <span className="truncate font-medium text-foreground/80">
                                   {category.name}
                                 </span>
                                 <span className="ml-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
                                   {category.allocation_percent}%
                                 </span>
                               </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingCategory(category);
+                                }}
+                                className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/cat:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                                aria-label={`Edit ${category.name}`}
+                              >
+                                <Pencil className="size-2.5" />
+                              </button>
                             </div>
 
                             <CollapsibleContent>
-                              <div className="ml-2.5 border-l border-border pl-2">
+                              <div className="ml-3 border-l border-border pl-2">
                                 {subcategories.map((sub) => (
-                                  <button
+                                  <div
                                     key={sub.id}
-                                    type="button"
-                                    onClick={() =>
-                                      onSelectSubcategory?.(budget.id, sub.id)
-                                    }
-                                    className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-xs transition-colors duration-200 hover:bg-accent"
+                                    className="group/sub flex items-center"
                                   >
-                                    <FileText className="size-3 shrink-0 text-muted-foreground" />
-                                    <span className="truncate text-foreground/70">
-                                      {sub.icon ? `${sub.icon} ` : ""}
-                                      {sub.name}
-                                    </span>
-                                    <span className="ml-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                                      {sub.allocation_percent}%
-                                    </span>
-                                  </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        onSelectSubcategory?.(budget.id, sub.id)
+                                      }
+                                      className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-xs transition-colors duration-200 hover:bg-accent"
+                                    >
+                                      <FileText className="size-3 shrink-0 text-muted-foreground" />
+                                      <span className="truncate text-foreground/70">
+                                        {sub.icon ? `${sub.icon} ` : ""}
+                                        {sub.name}
+                                      </span>
+                                      <span className="ml-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                                        {sub.allocation_percent}%
+                                      </span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingSubcategory({
+                                          categoryId: category.id,
+                                          subcategory: sub,
+                                        });
+                                      }}
+                                      className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                                      aria-label={`Edit ${sub.name}`}
+                                    >
+                                      <Pencil className="size-2.5" />
+                                    </button>
+                                  </div>
                                 ))}
                               </div>
                             </CollapsibleContent>
@@ -245,11 +290,11 @@ export function BudgetSidebar({
 
       {/* Add Budget */}
       <Separator />
-      <div className="p-3">
+      <div className="px-3 py-3">
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground"
+          className="w-full justify-start gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
           onClick={onAddBudget}
         >
           <Plus className="size-3.5" />
@@ -262,10 +307,31 @@ export function BudgetSidebar({
 
       {/* User footer */}
       <Separator />
-      <div className="flex items-center justify-between px-4 py-2.5">
+      <div className="flex items-center justify-between px-4 py-3">
         <UserFooterLink />
         <LanguageSwitcher />
       </div>
+
+      {/* Edit dialogs */}
+      {editingCategory && (
+        <EditCategoryDialog
+          category={editingCategory}
+          open={!!editingCategory}
+          onOpenChange={(open) => {
+            if (!open) setEditingCategory(null);
+          }}
+        />
+      )}
+      {editingSubcategory && (
+        <EditSubcategoryDialog
+          categoryId={editingSubcategory.categoryId}
+          subcategory={editingSubcategory.subcategory}
+          open={!!editingSubcategory}
+          onOpenChange={(open) => {
+            if (!open) setEditingSubcategory(null);
+          }}
+        />
+      )}
     </div>
   );
 }

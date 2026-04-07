@@ -226,6 +226,20 @@ export const localBudgetStorage = {
     return subcategory;
   },
 
+  updateSubcategory(
+    id: string,
+    data: Partial<CreateSubcategoryInput>
+  ): Subcategory {
+    const subcategories = getItem<Subcategory>(KEYS.subcategories);
+    const idx = subcategories.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error(`Subcategory not found: ${id}`);
+
+    const updated: Subcategory = { ...subcategories[idx], ...data };
+    subcategories[idx] = updated;
+    setItem(KEYS.subcategories, subcategories);
+    return updated;
+  },
+
   deleteSubcategory(id: string): void {
     // Cascade: delete expenses with this subcategory_id
     const allExpenses = getItem<Expense>(KEYS.expenses).filter(

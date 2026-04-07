@@ -104,7 +104,17 @@
     "creating": "Creando...",
     "subcategoriesOptional": "Subcategorías (opcional)",
     "add": "Agregar",
-    "createDescription": "Crea una nueva categoría de gastos para tu presupuesto."
+    "createDescription": "Crea una nueva categoría de gastos para tu presupuesto.",
+    "editCategory": "Editar Categoría",
+    "editSubcategory": "Editar Subcategoría",
+    "deleteCategory": "Eliminar Categoría",
+    "deleteSubcategory": "Eliminar Subcategoría",
+    "confirmDeleteCategory": "¿Eliminar esta categoría? Todas las subcategorías y sus gastos serán eliminados permanentemente.",
+    "confirmDeleteSubcategory": "¿Eliminar esta subcategoría? Todos sus gastos serán eliminados permanentemente.",
+    "editDescription": "Actualiza los detalles de esta categoría.",
+    "editSubcategoryDescription": "Actualiza los detalles de esta subcategoría.",
+    "saving": "Guardando...",
+    "deleting": "Eliminando..."
   },
   "dashboard": {
     "refresh": "Actualizar",

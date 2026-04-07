@@ -38,17 +38,17 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
     <Card
       className={cn(
         "cursor-pointer transition-all duration-200",
-        "hover:shadow-md hover:scale-[1.01]",
+        "hover:shadow-md hover:scale-[1.01] hover:border-border/80",
         "active:scale-[0.99]"
       )}
       onClick={onClick}
     >
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-lg",
+                "flex h-9 w-9 items-center justify-center rounded-lg",
                 budget.mode === "guided"
                   ? "bg-emerald-500/10 text-emerald-600"
                   : "bg-violet-500/10 text-violet-600"
@@ -61,20 +61,20 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
               )}
             </div>
             <div>
-              <CardTitle>{budget.name}</CardTitle>
-              <CardDescription>{formattedDate}</CardDescription>
+              <CardTitle className="text-base">{budget.name}</CardTitle>
+              <CardDescription className="mt-0.5">{formattedDate}</CardDescription>
             </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="pt-0">
         <div className="flex items-end justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground mb-0.5">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">
               {tb("monthlyIncome")}
             </p>
-            <p className="text-lg font-semibold tabular-nums">
+            <p className="text-lg font-bold tabular-nums">
               {formatCurrency(budget.monthly_income, budget.currency)}
             </p>
           </div>
