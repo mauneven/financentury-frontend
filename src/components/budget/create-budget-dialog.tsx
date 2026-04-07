@@ -18,7 +18,6 @@ import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS, GUIDED_CATEGORIES } from "@/types/budget";
 import { detectCurrency, formatCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
-import { categoryApi, subcategoryApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 
@@ -362,24 +361,6 @@ export function CreateBudgetDialog({
         ...values,
         mode,
       });
-
-      // For guided mode, create the default categories and subcategories
-      if (mode === "guided") {
-        for (const cat of guidedCategories) {
-          const created = await categoryApi.create(budget.id, {
-            name: cat.name,
-            allocation_percent: cat.allocation_percent,
-            icon: cat.icon,
-          });
-          for (const sub of cat.subcategories) {
-            await subcategoryApi.create(budget.id, created.id, {
-              name: sub.name,
-              allocation_percent: sub.allocation_percent,
-              icon: sub.icon,
-            });
-          }
-        }
-      }
 
       onCreated?.(budget);
       onOpenChange(false);

@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Settings, Trash2, Loader2, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
@@ -74,6 +75,7 @@ interface BudgetSettingsProps {
 export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const t = useTranslations("budget");
   const tc = useTranslations("common");
+  const router = useRouter();
   const deleteBudget = useBudgetStore((s) => s.deleteBudget);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -119,6 +121,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
     try {
       await deleteBudget(budget.id);
       setDeleteDialogOpen(false);
+      router.push("/");
     } catch {
       // error handling upstream
     } finally {

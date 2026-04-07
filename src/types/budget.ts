@@ -15,7 +15,7 @@ export interface Category {
   budget_id: string;
   name: string;
   allocation_percent: number;
-  icon: string | null;
+  icon: string;
   sort_order: number;
   created_at: string;
   subcategories?: Subcategory[];
@@ -26,7 +26,7 @@ export interface Subcategory {
   category_id: string;
   name: string;
   allocation_percent: number;
-  icon: string | null;
+  icon: string;
   sort_order: number;
   created_at: string;
 }
@@ -36,7 +36,7 @@ export interface Expense {
   budget_id: string;
   subcategory_id: string;
   amount: number;
-  description: string | null;
+  description: string;
   expense_date: string;
   created_at: string;
 }
@@ -62,10 +62,20 @@ export interface SubcategorySummary {
   expense_count: number;
 }
 
-export interface TrendData {
+export interface MonthlyTrend {
   month: string;
   total_spent: number;
-  categories: Record<string, number>;
+}
+
+export interface CategoryTrend {
+  category_id: string;
+  category_name: string;
+  months: MonthlyTrend[];
+}
+
+export interface TrendsResponse {
+  budget_id: string;
+  categories: CategoryTrend[];
 }
 
 export interface CreateBudgetInput {

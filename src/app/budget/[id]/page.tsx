@@ -10,7 +10,7 @@ export default function BudgetDashboardPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const subcategoryId = searchParams.get("sub");
-  const { summary } = useBudgetStore();
+  const { summary, expenses } = useBudgetStore();
 
   if (subcategoryId && summary) {
     // Find the subcategory in summary
@@ -27,7 +27,7 @@ export default function BudgetDashboardPage() {
         return (
           <SubcategoryDetail
             subcategorySummary={subSummary}
-            expenses={[]}
+            expenses={expenses}
             currency={summary.budget.currency}
             budgetId={params.id}
             categories={allCategories}

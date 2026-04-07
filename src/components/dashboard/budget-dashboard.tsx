@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useTranslations } from "@/i18n/client";
@@ -89,10 +88,6 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     useBudgetStore();
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
-
-  useEffect(() => {
-    setActiveBudget(budgetId);
-  }, [budgetId, setActiveBudget]);
 
   if (loading && !summary) {
     return <DashboardSkeleton />;
@@ -189,7 +184,6 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
                 key={cat.category.id}
                 categorySummary={cat}
                 currency={budget.currency}
-                monthlyIncome={budget.monthly_income}
               />
             ))}
           </div>

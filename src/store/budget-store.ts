@@ -60,18 +60,31 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   },
 
   createBudget: async (data) => {
-    const budget = await budgetApi.create(data);
-    set((state) => ({ budgets: [...state.budgets, budget] }));
-    return budget;
+    set({ loading: true, error: null });
+    try {
+      const budget = await budgetApi.create(data);
+      set((state) => ({ budgets: [...state.budgets, budget], loading: false }));
+      return budget;
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : String(e), loading: false });
+      throw e;
+    }
   },
 
   deleteBudget: async (id: string) => {
-    await budgetApi.delete(id);
-    set((state) => ({
-      budgets: state.budgets.filter((b) => b.id !== id),
-      activeBudgetId: state.activeBudgetId === id ? null : state.activeBudgetId,
-      summary: state.activeBudgetId === id ? null : state.summary,
-    }));
+    set({ loading: true, error: null });
+    try {
+      await budgetApi.delete(id);
+      set((state) => ({
+        budgets: state.budgets.filter((b) => b.id !== id),
+        activeBudgetId: state.activeBudgetId === id ? null : state.activeBudgetId,
+        summary: state.activeBudgetId === id ? null : state.summary,
+        loading: false,
+      }));
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : String(e), loading: false });
+      throw e;
+    }
   },
 
   refreshSummary: async () => {
@@ -82,7 +95,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
         budgetApi.summary(activeBudgetId),
         expenseApi.list(activeBudgetId),
       ]);
-      set({ summary, expenses });
+      set({ summary, expenses, error: null });
     } catch (e) {
       set({ error: (e as Error).message });
     }

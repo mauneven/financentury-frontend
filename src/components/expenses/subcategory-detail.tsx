@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ExpenseList } from "./expense-list";
 import { AddExpenseDialog } from "./add-expense-dialog";

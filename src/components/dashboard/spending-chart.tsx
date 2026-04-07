@@ -14,8 +14,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Loader2 } from "lucide-react";
 import { budgetApi } from "@/lib/api";
-import type { TrendData } from "@/types/budget";
+import type { TrendsResponse } from "@/types/budget";
 import { formatCompact } from "@/lib/format";
+import { CHART_COLORS } from "@/lib/chart-config";
 import { useTranslations } from "@/i18n/client";
 
 interface SpendingChartProps {
@@ -23,17 +24,8 @@ interface SpendingChartProps {
   currency: string;
 }
 
-const CHART_COLORS = [
-  "#10b981", // emerald-500
-  "#3b82f6", // blue-500
-  "#f59e0b", // amber-500
-  "#f43f5e", // rose-500
-  "#8b5cf6", // violet-500
-  "#64748b", // slate-500
-];
-
 export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
-  const [trends, setTrends] = useState<TrendData[]>([]);
+  const [trendsData, setTrendsData] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("dashboard");
@@ -47,7 +39,7 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
       try {
         const data = await budgetApi.trends(budgetId);
         if (!cancelled) {
-          setTrends(data);
+          setTrendsData(data);
         }
       } catch (e) {
         if (!cancelled) {
@@ -66,16 +58,31 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
     };
   }, [budgetId]);
 
-  // Extract all unique category names from the trend data
-  const categoryNames = Array.from(
-    new Set(trends.flatMap((trend) => Object.keys(trend.categories)))
-  );
+  // Transform nested TrendsResponse into recharts-friendly flat rows keyed by month.
+  // Each row: { month: string, [categoryName]: number }
+  const categoryNames: string[] = [];
+  const chartData: Record<string, string | number>[] = [];
 
-  // Transform data for recharts: each month becomes a row with category columns
-  const chartData = trends.map((trend) => ({
-    month: trend.month,
-    ...trend.categories,
-  }));
+  if (trendsData && trendsData.categories.length > 0) {
+    // Collect all months across all categories (sorted).
+    const monthSet = new Set<string>();
+    for (const cat of trendsData.categories) {
+      categoryNames.push(cat.category_name);
+      for (const m of cat.months) {
+        monthSet.add(m.month);
+      }
+    }
+    const sortedMonths = Array.from(monthSet).sort();
+
+    for (const month of sortedMonths) {
+      const row: Record<string, string | number> = { month };
+      for (const cat of trendsData.categories) {
+        const monthEntry = cat.months.find((m) => m.month === month);
+        row[cat.category_name] = monthEntry ? monthEntry.total_spent : 0;
+      }
+      chartData.push(row);
+    }
+  }
 
   if (loading) {
     return (
@@ -115,7 +122,7 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
     );
   }
 
-  if (trends.length === 0) {
+  if (chartData.length === 0) {
     return (
       <Card className="shadow-sm">
         <CardHeader>

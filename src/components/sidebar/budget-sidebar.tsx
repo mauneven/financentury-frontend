@@ -145,6 +145,7 @@ export function BudgetSidebar({
                       />
                     </CollapsibleTrigger>
                     <button
+                      type="button"
                       onClick={() => handleBudgetClick(budget.id)}
                       className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors duration-200 hover:bg-accent ${
                         isActive
@@ -208,6 +209,7 @@ export function BudgetSidebar({
                                 {subcategories.map((sub) => (
                                   <button
                                     key={sub.id}
+                                    type="button"
                                     onClick={() =>
                                       onSelectSubcategory?.(budget.id, sub.id)
                                     }

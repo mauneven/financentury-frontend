@@ -17,14 +17,12 @@ import { useTranslations } from "@/i18n/client";
 interface CategoryCardProps {
   categorySummary: CategorySummary;
   currency: string;
-  monthlyIncome: number;
   onSubcategoryClick?: (subcategoryId: string) => void;
 }
 
 export function CategoryCard({
   categorySummary,
   currency,
-  monthlyIncome,
   onSubcategoryClick,
 }: CategoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);

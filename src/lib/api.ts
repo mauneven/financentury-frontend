@@ -8,10 +8,15 @@ import type {
   CreateSubcategoryInput,
   Expense,
   Subcategory,
-  TrendData,
+  TrendsResponse,
 } from "@/types/budget";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || (() => {
+  if (process.env.NODE_ENV === "production") {
+    console.error("NEXT_PUBLIC_API_URL is not set in production!");
+  }
+  return "http://localhost:8080/api";
+})();
 
 async function request<T>(
   path: string,
@@ -28,11 +33,25 @@ async function request<T>(
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || `Request failed: ${res.status}`);
+    throw new Error(error.error || error.message || `Request failed: ${res.status}`);
   }
 
   return res.json();
 }
+
+// Auth
+export const authApi = {
+  register: (data: { email: string; password: string; first_name: string; last_name?: string }) =>
+    request<{ token: string; user: { id: string; email: string; first_name: string; last_name: string } }>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  login: (data: { email: string; password: string }) =>
+    request<{ token: string; user: { id: string; email: string; first_name: string; last_name: string } }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
 
 // Budgets
 export const budgetApi = {
@@ -59,7 +78,7 @@ export const budgetApi = {
     request<BudgetSummary>(`/budgets/${id}/summary`),
 
   trends: (id: string) =>
-    request<TrendData[]>(`/budgets/${id}/trends`),
+    request<TrendsResponse>(`/budgets/${id}/trends`),
 };
 
 // Categories

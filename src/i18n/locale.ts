@@ -16,7 +16,6 @@ export const useLocaleStore = create<LocaleState>((set) => ({
   setLocale: (locale: Locale) => {
     localStorage.setItem("locale", locale);
     set({ locale });
-    window.location.reload();
   },
 }));
 

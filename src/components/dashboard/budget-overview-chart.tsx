@@ -4,21 +4,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart as PieChartIcon } from "lucide-react";
 import type { BudgetSummary } from "@/types/budget";
-import { formatCurrency, formatCompact, getPercentage } from "@/lib/format";
+import { formatCompact, getPercentage } from "@/lib/format";
 import { useTranslations } from "@/i18n/client";
+import { CHART_COLORS } from "@/lib/chart-config";
 
 interface BudgetOverviewChartProps {
   summary: BudgetSummary;
 }
-
-const CHART_COLORS = [
-  "#10b981", // emerald-500
-  "#3b82f6", // blue-500
-  "#f59e0b", // amber-500
-  "#f43f5e", // rose-500
-  "#8b5cf6", // violet-500
-  "#64748b", // slate-500
-];
 
 export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
   const { budget, categories, total_budget, total_spent } = summary;
