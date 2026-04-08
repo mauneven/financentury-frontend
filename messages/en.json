@@ -33,6 +33,11 @@
     "title": "Financentury",
     "description": "A modern budget management workspace"
   },
+  "navbar": {
+    "budgets": "Budgets",
+    "settings": "Settings",
+    "account": "Account"
+  },
   "sidebar": {
     "myBudgets": "My Budgets",
     "addExpense": "Add Expense",
@@ -143,7 +148,8 @@
     "ofBudgetUsed": "of budget used",
     "overBudgetPercent": "over budget",
     "remainingPercent": "remaining",
-    "startAddingExpense": "Start by adding your first expense"
+    "startAddingExpense": "Start by adding your first expense",
+    "addSection": "Add Section"
   },
   "expense": {
     "addExpense": "Add Expense",

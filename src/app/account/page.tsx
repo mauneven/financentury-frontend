@@ -1,14 +1,14 @@
 "use client";
 
 import { useAuthStore } from "@/store/auth-store";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { AuthGuard } from "@/components/auth/auth-guard";
-import { LogOut, ArrowLeft, Globe, Wallet } from "lucide-react";
+import { AppShell } from "@/components/layout/app-shell";
+import { LogOut, Globe, Wallet } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
 
 export default function AccountPage() {
@@ -16,19 +16,11 @@ export default function AccountPage() {
   const tAuth = useTranslations("auth");
   const tLocal = useTranslations("localMode");
   const { user, mode, signInWithGoogle, signOut } = useAuthStore();
-  const router = useRouter();
 
   return (
     <AuthGuard>
+      <AppShell>
       <div className="mx-auto max-w-lg p-4 pt-8">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          {t("back")}
-        </button>
 
         {mode === "local" ? (
           <Card>
@@ -123,6 +115,7 @@ export default function AccountPage() {
           </Card>
         )}
       </div>
+      </AppShell>
     </AuthGuard>
   );
 }

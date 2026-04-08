@@ -33,6 +33,11 @@
     "title": "Financentury",
     "description": "Un espacio moderno para la gestión de presupuestos"
   },
+  "navbar": {
+    "budgets": "Presupuestos",
+    "settings": "Configuración",
+    "account": "Cuenta"
+  },
   "sidebar": {
     "myBudgets": "Mis Presupuestos",
     "addExpense": "Agregar Gasto",
@@ -143,7 +148,8 @@
     "ofBudgetUsed": "del presupuesto usado",
     "overBudgetPercent": "excedido",
     "remainingPercent": "restante",
-    "startAddingExpense": "Comienza agregando tu primer gasto"
+    "startAddingExpense": "Comienza agregando tu primer gasto",
+    "addSection": "Agregar Sección"
   },
   "expense": {
     "addExpense": "Agregar Gasto",

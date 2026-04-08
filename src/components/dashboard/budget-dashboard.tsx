@@ -1,15 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
-import { RefreshCw, Settings, ArrowLeft } from "lucide-react";
+import { RefreshCw, Settings, Plus } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
-import { useRouter } from "next/navigation";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
 import { EmptyDashboard } from "./empty-dashboard";
 import { BILLING_PERIODS } from "@/types/budget";
+import { AddSectionDialog } from "@/components/budget/add-section-dialog";
 import Link from "next/link";
 
 // Lazy-load chart components (they import recharts which is heavy)
@@ -110,7 +111,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const mode = useAuthStore((s) => s.mode);
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
-  const router = useRouter();
+  const [addSectionOpen, setAddSectionOpen] = useState(false);
 
   // Show loading skeleton only on initial load (no summary and loading)
   // Once summary exists, show content even if still loading (e.g., refreshing data)
@@ -160,28 +161,18 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="shrink-0 flex items-center justify-center size-8 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Back to home"
-            >
-              <ArrowLeft className="size-5" />
-            </button>
-            <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
-            <Link
-              href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
-              className="inline-flex size-8 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
-              aria-label="Budget settings"
-            >
-              <Settings className="size-4" />
-            </Link>
-          </div>
+          <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {budget.currency} &middot; {billingLabel}
           </p>
         </div>
+        <Link
+          href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
+          className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
+          aria-label="Budget settings"
+        >
+          <Settings className="size-4" />
+        </Link>
       </div>
 
       {/* Overview cards */}
@@ -201,12 +192,22 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         <SpendingChart budgetId={budgetId} currency={budget.currency} />
       )}
 
-      {/* Category breakdown */}
-      {sections.length > 0 && (
+      {/* Section breakdown */}
+      {sections.length > 0 ? (
         <div className="space-y-5">
-          <h2 className="font-semibold text-foreground border-b border-border pb-2" style={{ fontSize: 'var(--text-fluid-lg)' }}>
-            {t("categoryBreakdown")}
-          </h2>
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
+              {t("categoryBreakdown")}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setAddSectionOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Plus className="size-3.5" />
+              {t("addSection")}
+            </button>
+          </div>
           <div className="space-y-4 sm:space-y-5">
             {sections.map((cat) => (
               <SectionCard
@@ -217,9 +218,16 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             ))}
           </div>
         </div>
+      ) : (
+        <EmptyDashboard />
       )}
 
-      {!hasAnySpending && sections.length === 0 && <EmptyDashboard />}
+      {/* Add Section Dialog */}
+      <AddSectionDialog
+        budgetId={budgetId}
+        open={addSectionOpen}
+        onOpenChange={setAddSectionOpen}
+      />
     </div>
   );
 }

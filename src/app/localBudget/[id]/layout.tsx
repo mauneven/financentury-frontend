@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { AppShell } from "@/components/layout/app-shell";
@@ -15,7 +15,6 @@ export default function LocalBudgetLayout({
   children: React.ReactNode;
 }) {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
   const budgets = useBudgetStore((s) => s.budgets);
@@ -50,9 +49,6 @@ export default function LocalBudgetLayout({
       <AppShell
         onAddExpense={() => setShowAddExpense(true)}
         onAddBudget={() => setShowCreateBudget(true)}
-        onSelectSubcategory={(budgetId, subcategoryId) => {
-          router.push(`/localBudget/${budgetId}?sub=${subcategoryId}`);
-        }}
       >
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-6xl">

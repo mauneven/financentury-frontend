@@ -26,11 +26,24 @@ export function LocalModeBanner() {
   };
 
   return (
-    <div className="mx-3 mb-2 border-2 border-red-500 bg-red-50 p-3 dark:border-red-500/50 dark:bg-red-500/10">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h3 className="text-xs font-bold text-red-700 dark:text-red-400">{t("title")}</h3>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <AlertTriangle className="size-3.5 text-red-500" />
+    <div className="border-b-2 border-red-500 bg-red-50 dark:border-red-500/50 dark:bg-red-500/10">
+      <div className="flex items-center gap-3 px-4 py-2">
+        <AlertTriangle className="size-3.5 shrink-0 text-red-500" />
+        <span className="text-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400">
+          {t("title")}
+        </span>
+        <span className="hidden sm:block text-xs text-red-600 dark:text-red-400 truncate">
+          {t("description")}
+        </span>
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs font-bold text-red-700 underline dark:text-red-300 hover:text-red-800 dark:hover:text-red-200"
+            onClick={signInWithGoogle}
+          >
+            {t("signIn")}
+          </Button>
           <button
             onClick={handleClose}
             className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200 transition-colors"
@@ -40,17 +53,6 @@ export function LocalModeBanner() {
           </button>
         </div>
       </div>
-      <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
-        {t("description")}
-      </p>
-      <Button
-        variant="link"
-        size="sm"
-        className="mt-2 h-auto p-0 text-xs font-bold text-red-700 underline dark:text-red-300 hover:text-red-800 dark:hover:text-red-200"
-        onClick={signInWithGoogle}
-      >
-        {t("signIn")}
-      </Button>
     </div>
   );
 }
