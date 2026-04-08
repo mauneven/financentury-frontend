@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
+import { useAuthStore } from "@/store/auth-store";
 import { AppShell } from "@/components/layout/app-shell";
 import { CreateBudgetDialog } from "@/components/budget/create-budget-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
@@ -19,21 +20,22 @@ export default function LocalBudgetLayout({
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
   const budgets = useBudgetStore((s) => s.budgets);
   const summary = useBudgetStore((s) => s.summary);
+  const authLoading = useAuthStore((s) => s.loading);
 
   const [showCreateBudget, setShowCreateBudget] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
 
   useEffect(() => {
-    if (budgets.length === 0) {
+    if (!authLoading && budgets.length === 0) {
       fetchBudgets();
     }
-  }, [budgets.length, fetchBudgets]);
+  }, [budgets.length, fetchBudgets, authLoading]);
 
   useEffect(() => {
-    if (params.id) {
+    if (!authLoading && params.id) {
       setActiveBudget(params.id);
     }
-  }, [params.id, setActiveBudget]);
+  }, [params.id, setActiveBudget, authLoading]);
 
   const categories = summary?.sections.map((c) => ({
     ...c.section,

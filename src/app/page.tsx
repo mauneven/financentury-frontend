@@ -19,11 +19,14 @@ export default function HomePage() {
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
   const loading = useBudgetStore((s) => s.loading);
   const mode = useAuthStore((s) => s.mode);
+  const authLoading = useAuthStore((s) => s.loading);
   const [showCreateBudget, setShowCreateBudget] = useState(false);
 
   useEffect(() => {
-    fetchBudgets();
-  }, [fetchBudgets]);
+    if (!authLoading) {
+      fetchBudgets();
+    }
+  }, [fetchBudgets, authLoading]);
 
   return (
     <AuthGuard>
