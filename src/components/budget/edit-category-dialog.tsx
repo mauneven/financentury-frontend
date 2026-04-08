@@ -21,16 +21,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useTranslations } from "@/i18n/client";
-import type { Category, Subcategory } from "@/types/budget";
+import type { Section, Category } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
-const subcategorySchema = z.object({
+const categorySchema = z.object({
   name: z
     .string()
-    .min(1, "Subcategory name is required")
+    .min(1, "Category name is required")
     .max(60, "Name must be 60 characters or less"),
   allocation_percent: z
     .number({ message: "Allocation is required" })
@@ -39,7 +39,7 @@ const subcategorySchema = z.object({
   icon: z.string().min(1, "Pick an icon"),
 });
 
-type SubcategoryFormValues = z.infer<typeof subcategorySchema>;
+type CategoryFormValues = z.infer<typeof categorySchema>;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -113,31 +113,31 @@ function EmojiPicker({
 }
 
 // ---------------------------------------------------------------------------
-// Parent impact preview — shown when subcategory allocation changes
+// Parent impact preview — shown when category allocation changes
 // ---------------------------------------------------------------------------
 
-interface SubcategoryImpactPreviewProps {
-  parentCategory: Category;
-  siblingSubcategories: Subcategory[];
-  currentSubcategoryId: string;
+interface CategoryImpactPreviewProps {
+  parentSection: Section;
+  siblingCategories: Category[];
+  currentCategoryId: string;
   newAllocationPercent: number;
   originalAllocationPercent: number;
 }
 
-function SubcategoryImpactPreview({
-  parentCategory,
-  siblingSubcategories,
-  currentSubcategoryId,
+function CategoryImpactPreview({
+  parentSection,
+  siblingCategories,
+  currentCategoryId,
   newAllocationPercent,
   originalAllocationPercent,
-}: SubcategoryImpactPreviewProps) {
+}: CategoryImpactPreviewProps) {
   const [expanded, setExpanded] = React.useState(true);
 
   // siblings = all subcategories except the one being edited
-  const siblings = siblingSubcategories.filter((s) => s.id !== currentSubcategoryId);
+  const siblings = siblingCategories.filter((s) => s.id !== currentCategoryId);
   const siblingsTotal = siblings.reduce((sum, s) => sum + s.allocation_percent, 0);
   const newTotal = siblingsTotal + newAllocationPercent;
-  const parentAlloc = parentCategory.allocation_percent;
+  const parentAlloc = parentSection.allocation_percent;
   const isOverflow = newTotal > parentAlloc;
 
   const direction = newAllocationPercent > originalAllocationPercent ? "increase" : "decrease";
@@ -180,7 +180,7 @@ function SubcategoryImpactPreview({
               isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
             )}
           >
-            {`Parent category "${parentCategory.icon ? parentCategory.icon + " " : ""}${parentCategory.name}" total would ${direction}: `}
+            {`Parent category "${parentSection.icon ? parentSection.icon + " " : ""}${parentSection.name}" total would ${direction}: `}
             <span className="tabular-nums">
               {originalAllocationPercent !== newAllocationPercent
                 ? `${(siblingsTotal + originalAllocationPercent).toFixed(1)}% → ${newTotal.toFixed(1)}%`
@@ -200,11 +200,11 @@ function SubcategoryImpactPreview({
 // Props
 // ---------------------------------------------------------------------------
 
-interface EditSubcategoryDialogProps {
-  categoryId: string;
-  subcategory: Subcategory;
-  parentCategory: Category;
-  siblingSubcategories: Subcategory[];
+interface EditCategoryDialogProps {
+  sectionId: string;
+  category: Category;
+  parentSection: Section;
+  siblingCategories: Category[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -213,18 +213,18 @@ interface EditSubcategoryDialogProps {
 // Main dialog
 // ---------------------------------------------------------------------------
 
-export function EditSubcategoryDialog({
-  categoryId,
-  subcategory,
-  parentCategory,
-  siblingSubcategories,
+export function EditCategoryDialog({
+  sectionId,
+  category,
+  parentSection,
+  siblingCategories,
   open,
   onOpenChange,
-}: EditSubcategoryDialogProps) {
-  const t = useTranslations("category");
+}: EditCategoryDialogProps) {
+  const t = useTranslations("section");
   const tc = useTranslations("common");
-  const updateSubcategory = useBudgetStore((s) => s.updateSubcategory);
-  const deleteSubcategoryAction = useBudgetStore((s) => s.deleteSubcategory);
+  const updateCategory = useBudgetStore((s) => s.updateCategory);
+  const deleteCategoryAction = useBudgetStore((s) => s.deleteCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
 
@@ -245,12 +245,12 @@ export function EditSubcategoryDialog({
     watch,
     reset,
     formState: { errors },
-  } = useForm<SubcategoryFormValues>({
-    resolver: zodResolver(subcategorySchema),
+  } = useForm<CategoryFormValues>({
+    resolver: zodResolver(categorySchema),
     defaultValues: {
-      name: subcategory.name,
-      allocation_percent: subcategory.allocation_percent,
-      icon: subcategory.icon || "📌",
+      name: category.name,
+      allocation_percent: category.allocation_percent,
+      icon: category.icon || "📌",
     },
   });
 
@@ -262,19 +262,19 @@ export function EditSubcategoryDialog({
     totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
   const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
 
-  // Reset form and amount input when subcategory changes or dialog opens
+  // Reset form and amount input when category changes or dialog opens
   React.useEffect(() => {
     if (open) {
       reset({
-        name: subcategory.name,
-        allocation_percent: subcategory.allocation_percent,
-        icon: subcategory.icon || "📌",
+        name: category.name,
+        allocation_percent: category.allocation_percent,
+        icon: category.icon || "📌",
       });
 
       // Convert stored percent to dollar amount
       const initialAmount =
         totalBudget > 0
-          ? (subcategory.allocation_percent / 100) * totalBudget
+          ? (category.allocation_percent / 100) * totalBudget
           : 0;
       setRawAmount(initialAmount);
       setAmountInput(formatAmount(initialAmount));
@@ -283,7 +283,7 @@ export function EditSubcategoryDialog({
       setIsSubmitting(false);
       setIsDeleting(false);
     }
-  }, [open, subcategory, reset, totalBudget]);
+  }, [open, category, reset, totalBudget]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskAmountInput(e.target.value);
@@ -299,10 +299,10 @@ export function EditSubcategoryDialog({
     });
   };
 
-  const onSubmit = async (values: SubcategoryFormValues) => {
+  const onSubmit = async (values: CategoryFormValues) => {
     setIsSubmitting(true);
     try {
-      await updateSubcategory(categoryId, subcategory.id, {
+      await updateCategory(sectionId, category.id, {
         name: values.name,
         allocation_percent: values.allocation_percent,
         icon: values.icon,
@@ -319,7 +319,7 @@ export function EditSubcategoryDialog({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deleteSubcategoryAction(categoryId, subcategory.id);
+      await deleteCategoryAction(sectionId, category.id);
       await refreshSummary();
       onOpenChange(false);
     } catch {
@@ -331,16 +331,16 @@ export function EditSubcategoryDialog({
 
   // Show impact preview only when allocation has actually changed
   const allocationChanged =
-    Math.abs(watchAllocation - subcategory.allocation_percent) > 0.001;
+    Math.abs(watchAllocation - category.allocation_percent) > 0.001;
   const showImpact = allocationChanged;
 
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("editSubcategory")}</DialogTitle>
+          <DialogTitle>{t("editCategory")}</DialogTitle>
           <DialogDescription>
-            {t("editSubcategoryDescription")}
+            {t("editCategoryDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -359,10 +359,10 @@ export function EditSubcategoryDialog({
 
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-sub-name">{t("subcategoryName")}</Label>
+            <Label htmlFor="edit-sub-name">{t("categoryName")}</Label>
             <Input
               id="edit-sub-name"
-              placeholder={t("subcategoryName")}
+              placeholder={t("categoryName")}
               autoFocus
               aria-invalid={!!errors.name}
               {...register("name")}
@@ -411,12 +411,12 @@ export function EditSubcategoryDialog({
 
           {/* Parent impact preview */}
           {showImpact && (
-            <SubcategoryImpactPreview
-              parentCategory={parentCategory}
-              siblingSubcategories={siblingSubcategories}
-              currentSubcategoryId={subcategory.id}
+            <CategoryImpactPreview
+              parentSection={parentSection}
+              siblingCategories={siblingCategories}
+              currentCategoryId={category.id}
               newAllocationPercent={watchAllocation}
-              originalAllocationPercent={subcategory.allocation_percent}
+              originalAllocationPercent={category.allocation_percent}
             />
           )}
 
@@ -434,7 +434,7 @@ export function EditSubcategoryDialog({
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="size-4 mr-1" />
-                {t("deleteSubcategory")}
+                {t("deleteCategory")}
               </Button>
             ) : (
               <div className="flex items-center gap-2">
@@ -487,7 +487,7 @@ export function EditSubcategoryDialog({
 
           {showDeleteConfirm && (
             <p className="text-xs text-destructive">
-              {t("confirmDeleteSubcategory")}
+              {t("confirmDeleteCategory")}
             </p>
           )}
         </form>

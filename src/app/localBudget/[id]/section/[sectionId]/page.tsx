@@ -15,19 +15,19 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
-import { EditSubcategoryDialog } from "@/components/budget/edit-subcategory-dialog";
-import type { Subcategory } from "@/types/budget";
+import type { Category } from "@/types/budget";
 
-export default function CategoryPage() {
-  const params = useParams<{ id: string; categoryId: string }>();
+export default function SectionPage() {
+  const params = useParams<{ id: string; sectionId: string }>();
   const router = useRouter();
   const { summary } = useBudgetStore();
   const { mode } = useAuthStore();
   const budgetBase = mode === "local" ? "localBudget" : "budget";
 
-  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
-  const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
+  const [editSectionOpen, setEditSectionOpen] = useState(false);
+  const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
 
   if (!summary) {
     return (
@@ -37,16 +37,16 @@ export default function CategoryPage() {
     );
   }
 
-  const catSummary = summary.categories.find(
-    (c) => c.category.id === params.categoryId
+  const sectionSummary = summary.categories.find(
+    (c) => c.category.id === params.sectionId
   );
 
-  if (!catSummary) {
+  if (!sectionSummary) {
     router.push(`/${budgetBase}/${params.id}`);
     return null;
   }
 
-  const { category, subcategories, allocated_amount, total_spent } = catSummary;
+  const { category: section, categories: subcategories, allocated_amount, total_spent } = sectionSummary;
   const remaining = allocated_amount - total_spent;
   const percentage = getPercentage(total_spent, allocated_amount);
   const progressColor = getProgressColor(percentage);
@@ -65,18 +65,18 @@ export default function CategoryPage() {
           <ArrowLeft className="size-4" />
         </Button>
         <div className="flex flex-1 items-center gap-3">
-          <span className="text-3xl">{category.icon || "📁"}</span>
+          <span className="text-3xl">{section.icon || "📁"}</span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{category.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{section.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {category.allocation_percent}% of total budget
+              {section.allocation_percent}% of total budget
             </p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setEditCategoryOpen(true)}
+          onClick={() => setEditSectionOpen(true)}
           className="shrink-0"
         >
           <Pencil className="size-4" />
@@ -149,7 +149,7 @@ export default function CategoryPage() {
 
             return (
               <Card
-                key={sub.subcategory.id}
+                key={sub.category.id}
                 className="group cursor-pointer transition-shadow hover:shadow-md"
               >
                 <CardContent className="p-4">
@@ -158,17 +158,17 @@ export default function CategoryPage() {
                       type="button"
                       onClick={() =>
                         router.push(
-                          `/${budgetBase}/${params.id}/category/${params.categoryId}/subcategory/${sub.subcategory.id}`
+                          `/${budgetBase}/${params.id}/section/${params.sectionId}/category/${sub.category.id}`
                         )
                       }
                       className="flex flex-1 items-start gap-3 text-left"
                     >
                       <span className="text-xl shrink-0 mt-0.5">
-                        {sub.subcategory.icon || "📌"}
+                        {sub.category.icon || "📌"}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-sm">{sub.subcategory.name}</span>
+                          <span className="font-medium text-sm">{sub.category.name}</span>
                           <div className="flex items-center gap-2 text-sm shrink-0 ml-2">
                             <span className="text-muted-foreground tabular-nums">
                               {formatCompact(sub.total_spent, summary.budget.currency)}
@@ -203,10 +203,10 @@ export default function CategoryPage() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setEditingSubcategory(sub.subcategory);
+                        setEditingSubcategory(sub.category);
                       }}
                       className="shrink-0 flex size-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground"
-                      aria-label={`Edit ${sub.subcategory.name}`}
+                      aria-label={`Edit ${sub.category.name}`}
                     >
                       <Pencil className="size-3.5" />
                     </button>
@@ -219,18 +219,18 @@ export default function CategoryPage() {
       </div>
 
       {/* Edit dialogs */}
-      <EditCategoryDialog
-        category={category}
-        subcategories={subcategories.map((s) => s.subcategory)}
-        open={editCategoryOpen}
-        onOpenChange={setEditCategoryOpen}
+      <EditSectionDialog
+        section={section}
+        categories={subcategories.map((s) => s.category)}
+        open={editSectionOpen}
+        onOpenChange={setEditSectionOpen}
       />
       {editingSubcategory && (
-        <EditSubcategoryDialog
-          categoryId={category.id}
-          subcategory={editingSubcategory}
-          parentCategory={category}
-          siblingSubcategories={subcategories.map((s) => s.subcategory)}
+        <EditCategoryDialog
+          sectionId={section.id}
+          category={editingSubcategory}
+          parentSection={section}
+          siblingCategories={subcategories.map((s) => s.category)}
           open={!!editingSubcategory}
           onOpenChange={(open) => {
             if (!open) setEditingSubcategory(null);

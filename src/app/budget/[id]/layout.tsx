@@ -34,7 +34,7 @@ export default function BudgetLayout({
 
   const categories = summary?.categories.map((c) => ({
     ...c.category,
-    subcategories: c.subcategories.map((s) => s.subcategory),
+    subcategories: c.categories.map((s) => s.category),
   })) ?? [];
 
   return (
@@ -47,7 +47,9 @@ export default function BudgetLayout({
         }}
       >
         <div className="p-4 sm:p-6 lg:p-8">
-          {children}
+          <div className="mx-auto max-w-6xl">
+            {children}
+          </div>
         </div>
       </AppShell>
 

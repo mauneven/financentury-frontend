@@ -1,23 +1,23 @@
 import type {
   Budget,
   BudgetSummary,
+  Section,
+  SectionSummary,
+  CreateBudgetInput,
+  CreateSectionInput,
+  CreateExpenseInput,
+  CreateCategoryInput,
+  Expense,
   Category,
   CategorySummary,
-  CreateBudgetInput,
-  CreateCategoryInput,
-  CreateExpenseInput,
-  CreateSubcategoryInput,
-  Expense,
-  Subcategory,
-  SubcategorySummary,
 } from "@/types/budget";
-import { GUIDED_CATEGORIES } from "@/types/budget";
+import { GUIDED_SECTIONS } from "@/types/budget";
 import type { MigratePayload } from "@/types/migrate";
 
 const KEYS = {
   budgets: "financentury_budgets",
-  categories: "financentury_categories",
-  subcategories: "financentury_subcategories",
+  sections: "financentury_categories",
+  categories: "financentury_subcategories",
   expenses: "financentury_expenses",
 } as const;
 
@@ -69,24 +69,24 @@ export const localBudgetStorage = {
     budgets.push(budget);
     setItem(KEYS.budgets, budgets);
 
-    // If guided mode, create the default categories and subcategories
+    // If guided mode, create the default sections and categories
     if (data.mode === "guided") {
-      let catSortOrder = 0;
-      for (const gc of GUIDED_CATEGORIES) {
-        const category = this.saveCategory(budget.id, {
+      let secSortOrder = 0;
+      for (const gc of GUIDED_SECTIONS) {
+        const section = this.saveSection(budget.id, {
           name: gc.name,
           allocation_percent: gc.allocation_percent,
           icon: gc.icon,
-          sort_order: catSortOrder++,
+          sort_order: secSortOrder++,
         });
 
-        let subSortOrder = 0;
+        let catSortOrder = 0;
         for (const gs of gc.subcategories) {
-          this.saveSubcategory(category.id, {
+          this.saveCategory(section.id, {
             name: gs.name,
             allocation_percent: gs.allocation_percent,
             icon: gs.icon,
-            sort_order: subSortOrder++,
+            sort_order: catSortOrder++,
           });
         }
       }
@@ -111,21 +111,21 @@ export const localBudgetStorage = {
   },
 
   deleteBudget(id: string): void {
-    // Cascade: delete categories, subcategories, and expenses for this budget
-    const categories = this.getCategories(id);
-    for (const cat of categories) {
-      const subcategories = this.getSubcategories(cat.id);
-      const allSubcategories = getItem<Subcategory>(KEYS.subcategories).filter(
-        (s) => !subcategories.some((sc) => sc.id === s.id)
+    // Cascade: delete sections, categories, and expenses for this budget
+    const sections = this.getSections(id);
+    for (const sec of sections) {
+      const categories = this.getCategories(sec.id);
+      const allCategories = getItem<Category>(KEYS.categories).filter(
+        (c) => !categories.some((cat) => cat.id === c.id)
       );
-      setItem(KEYS.subcategories, allSubcategories);
+      setItem(KEYS.categories, allCategories);
     }
 
-    // Remove categories for this budget
-    const allCategories = getItem<Category>(KEYS.categories).filter(
+    // Remove sections for this budget
+    const allSections = getItem<Section>(KEYS.sections).filter(
       (c) => c.budget_id !== id
     );
-    setItem(KEYS.categories, allCategories);
+    setItem(KEYS.sections, allSections);
 
     // Remove expenses for this budget
     const allExpenses = getItem<Expense>(KEYS.expenses).filter(
@@ -138,18 +138,81 @@ export const localBudgetStorage = {
     setItem(KEYS.budgets, budgets);
   },
 
-  // ── Categories ───────────────────────────────────────────────────────
-  getCategories(budgetId: string): Category[] {
-    return getItem<Category>(KEYS.categories).filter(
+  // ── Sections ─────────────────────────────────────────────────────────
+  getSections(budgetId: string): Section[] {
+    return getItem<Section>(KEYS.sections).filter(
       (c) => c.budget_id === budgetId
     );
   },
 
-  saveCategory(budgetId: string, data: CreateCategoryInput): Category {
+  saveSection(budgetId: string, data: CreateSectionInput): Section {
+    const now = new Date().toISOString();
+    const section: Section = {
+      id: crypto.randomUUID(),
+      budget_id: budgetId,
+      name: data.name,
+      allocation_percent: data.allocation_percent,
+      icon: data.icon ?? "",
+      sort_order: data.sort_order ?? 0,
+      created_at: now,
+    };
+
+    const sections = getItem<Section>(KEYS.sections);
+    sections.push(section);
+    setItem(KEYS.sections, sections);
+    return section;
+  },
+
+  updateSection(id: string, data: Partial<CreateSectionInput>): Section {
+    const sections = getItem<Section>(KEYS.sections);
+    const idx = sections.findIndex((c) => c.id === id);
+    if (idx === -1) throw new Error(`Section not found: ${id}`);
+
+    const updated: Section = { ...sections[idx], ...data };
+    sections[idx] = updated;
+    setItem(KEYS.sections, sections);
+    return updated;
+  },
+
+  deleteSection(id: string): void {
+    // Cascade: delete categories and their expenses
+    const categories = this.getCategories(id);
+    const categoryIds = new Set(categories.map((c) => c.id));
+
+    // Remove expenses that belong to these categories
+    const allExpenses = getItem<Expense>(KEYS.expenses).filter(
+      (e) => !categoryIds.has(e.category_id)
+    );
+    setItem(KEYS.expenses, allExpenses);
+
+    // Remove categories for this section
+    const remainingCategories = getItem<Category>(KEYS.categories).filter(
+      (c) => c.section_id !== id
+    );
+    setItem(KEYS.categories, remainingCategories);
+
+    // Remove the section itself
+    const sections = getItem<Section>(KEYS.sections).filter(
+      (c) => c.id !== id
+    );
+    setItem(KEYS.sections, sections);
+  },
+
+  // ── Categories (was Subcategories) ───────────────────────────────────
+  getCategories(sectionId: string): Category[] {
+    return getItem<Category>(KEYS.categories).filter(
+      (c) => c.section_id === sectionId
+    );
+  },
+
+  saveCategory(
+    sectionId: string,
+    data: CreateCategoryInput
+  ): Category {
     const now = new Date().toISOString();
     const category: Category = {
       id: crypto.randomUUID(),
-      budget_id: budgetId,
+      section_id: sectionId,
       name: data.name,
       allocation_percent: data.allocation_percent,
       icon: data.icon ?? "",
@@ -163,7 +226,10 @@ export const localBudgetStorage = {
     return category;
   },
 
-  updateCategory(id: string, data: Partial<CreateCategoryInput>): Category {
+  updateCategory(
+    id: string,
+    data: Partial<CreateCategoryInput>
+  ): Category {
     const categories = getItem<Category>(KEYS.categories);
     const idx = categories.findIndex((c) => c.id === id);
     if (idx === -1) throw new Error(`Category not found: ${id}`);
@@ -175,83 +241,17 @@ export const localBudgetStorage = {
   },
 
   deleteCategory(id: string): void {
-    // Cascade: delete subcategories and their expenses
-    const subcategories = this.getSubcategories(id);
-    const subcategoryIds = new Set(subcategories.map((s) => s.id));
-
-    // Remove expenses that belong to these subcategories
+    // Cascade: delete expenses with this category_id
     const allExpenses = getItem<Expense>(KEYS.expenses).filter(
-      (e) => !subcategoryIds.has(e.subcategory_id)
+      (e) => e.category_id !== id
     );
     setItem(KEYS.expenses, allExpenses);
-
-    // Remove subcategories for this category
-    const allSubcategories = getItem<Subcategory>(KEYS.subcategories).filter(
-      (s) => s.category_id !== id
-    );
-    setItem(KEYS.subcategories, allSubcategories);
 
     // Remove the category itself
     const categories = getItem<Category>(KEYS.categories).filter(
       (c) => c.id !== id
     );
     setItem(KEYS.categories, categories);
-  },
-
-  // ── Subcategories ────────────────────────────────────────────────────
-  getSubcategories(categoryId: string): Subcategory[] {
-    return getItem<Subcategory>(KEYS.subcategories).filter(
-      (s) => s.category_id === categoryId
-    );
-  },
-
-  saveSubcategory(
-    categoryId: string,
-    data: CreateSubcategoryInput
-  ): Subcategory {
-    const now = new Date().toISOString();
-    const subcategory: Subcategory = {
-      id: crypto.randomUUID(),
-      category_id: categoryId,
-      name: data.name,
-      allocation_percent: data.allocation_percent,
-      icon: data.icon ?? "",
-      sort_order: data.sort_order ?? 0,
-      created_at: now,
-    };
-
-    const subcategories = getItem<Subcategory>(KEYS.subcategories);
-    subcategories.push(subcategory);
-    setItem(KEYS.subcategories, subcategories);
-    return subcategory;
-  },
-
-  updateSubcategory(
-    id: string,
-    data: Partial<CreateSubcategoryInput>
-  ): Subcategory {
-    const subcategories = getItem<Subcategory>(KEYS.subcategories);
-    const idx = subcategories.findIndex((s) => s.id === id);
-    if (idx === -1) throw new Error(`Subcategory not found: ${id}`);
-
-    const updated: Subcategory = { ...subcategories[idx], ...data };
-    subcategories[idx] = updated;
-    setItem(KEYS.subcategories, subcategories);
-    return updated;
-  },
-
-  deleteSubcategory(id: string): void {
-    // Cascade: delete expenses with this subcategory_id
-    const allExpenses = getItem<Expense>(KEYS.expenses).filter(
-      (e) => e.subcategory_id !== id
-    );
-    setItem(KEYS.expenses, allExpenses);
-
-    // Remove the subcategory itself
-    const subcategories = getItem<Subcategory>(KEYS.subcategories).filter(
-      (s) => s.id !== id
-    );
-    setItem(KEYS.subcategories, subcategories);
   },
 
   // ── Expenses ─────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ export const localBudgetStorage = {
     const expense: Expense = {
       id: crypto.randomUUID(),
       budget_id: budgetId,
-      subcategory_id: data.subcategory_id,
+      category_id: data.category_id,
       amount: data.amount,
       description: data.description ?? "",
       expense_date: data.expense_date,
@@ -302,7 +302,7 @@ export const localBudgetStorage = {
     const budget = this.getBudget(budgetId);
     if (!budget) return null;
 
-    const categories = this.getCategories(budgetId);
+    const sections = this.getSections(budgetId);
     const allExpenses = this.getExpenses(budgetId);
 
     // BUG FIX 1: Scale budget by billing_period_months instead of using
@@ -323,49 +323,49 @@ export const localBudgetStorage = {
 
     let totalSpent = 0;
 
-    const categorySummaries: CategorySummary[] = categories.map((category) => {
+    const sectionSummaries: SectionSummary[] = sections.map((section) => {
       const allocatedAmount =
-        (totalBudget * category.allocation_percent) / 100;
+        (totalBudget * section.allocation_percent) / 100;
 
-      const subcategories = this.getSubcategories(category.id);
+      const categories = this.getCategories(section.id);
 
-      let categorySpent = 0;
+      let sectionSpent = 0;
 
-      const subcategorySummaries: SubcategorySummary[] = subcategories.map(
-        (subcategory) => {
-          // BUG FIX 2: Subcategory allocation_percent is a percentage of
-          // total income, NOT of the parent category. Use totalBudget directly.
-          const subAllocated =
-            (totalBudget * subcategory.allocation_percent) / 100;
+      const categorySummaries: CategorySummary[] = categories.map(
+        (cat) => {
+          // Category allocation_percent is a percentage of
+          // total income, NOT of the parent section. Use totalBudget directly.
+          const catAllocated =
+            (totalBudget * cat.allocation_percent) / 100;
 
-          const subExpenses = periodExpenses.filter(
-            (e) => e.subcategory_id === subcategory.id
+          const catExpenses = periodExpenses.filter(
+            (e) => e.category_id === cat.id
           );
-          const subSpent = subExpenses.reduce((sum, e) => sum + e.amount, 0);
-          categorySpent += subSpent;
+          const catSpent = catExpenses.reduce((sum, e) => sum + e.amount, 0);
+          sectionSpent += catSpent;
 
           return {
-            subcategory,
-            allocated_amount: subAllocated,
-            total_spent: subSpent,
-            expense_count: subExpenses.length,
-          } satisfies SubcategorySummary;
+            category: cat,
+            allocated_amount: catAllocated,
+            total_spent: catSpent,
+            expense_count: catExpenses.length,
+          } satisfies CategorySummary;
         }
       );
 
-      totalSpent += categorySpent;
+      totalSpent += sectionSpent;
 
       return {
-        category,
-        subcategories: subcategorySummaries,
+        category: section,
+        categories: categorySummaries,
         allocated_amount: allocatedAmount,
-        total_spent: categorySpent,
-      } satisfies CategorySummary;
+        total_spent: sectionSpent,
+      } satisfies SectionSummary;
     });
 
     return {
       budget,
-      categories: categorySummaries,
+      categories: sectionSummaries,
       total_budget: totalBudget,
       total_spent: totalSpent,
     } satisfies BudgetSummary;
@@ -377,7 +377,7 @@ export const localBudgetStorage = {
 
     return {
       budgets: budgets.map((budget) => {
-        const categories = this.getCategories(budget.id);
+        const sections = this.getSections(budget.id);
         const expenses = this.getExpenses(budget.id);
 
         return {
@@ -386,25 +386,25 @@ export const localBudgetStorage = {
           currency: budget.currency,
           billing_period_months: budget.billing_period_months,
           mode: budget.mode,
-          categories: categories.map((cat) => {
-            const subcategories = this.getSubcategories(cat.id);
+          categories: sections.map((sec) => {
+            const categories = this.getCategories(sec.id);
             return {
-              name: cat.name,
-              allocation_percent: cat.allocation_percent,
-              icon: cat.icon,
-              sort_order: cat.sort_order,
-              local_id: cat.id,
-              subcategories: subcategories.map((sub) => ({
-                name: sub.name,
-                allocation_percent: sub.allocation_percent,
-                icon: sub.icon,
-                sort_order: sub.sort_order,
-                local_id: sub.id,
+              name: sec.name,
+              allocation_percent: sec.allocation_percent,
+              icon: sec.icon,
+              sort_order: sec.sort_order,
+              local_id: sec.id,
+              subcategories: categories.map((cat) => ({
+                name: cat.name,
+                allocation_percent: cat.allocation_percent,
+                icon: cat.icon,
+                sort_order: cat.sort_order,
+                local_id: cat.id,
               })),
             };
           }),
           expenses: expenses.map((exp) => ({
-            local_subcategory_id: exp.subcategory_id,
+            local_subcategory_id: exp.category_id,
             amount: exp.amount,
             description: exp.description,
             expense_date: exp.expense_date,
@@ -421,8 +421,8 @@ export const localBudgetStorage = {
   clearAll(): void {
     if (typeof window === "undefined") return;
     localStorage.removeItem(KEYS.budgets);
+    localStorage.removeItem(KEYS.sections);
     localStorage.removeItem(KEYS.categories);
-    localStorage.removeItem(KEYS.subcategories);
     localStorage.removeItem(KEYS.expenses);
   },
 };

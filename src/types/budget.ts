@@ -10,7 +10,7 @@ export interface Budget {
   updated_at: string;
 }
 
-export interface Category {
+export interface Section {
   id: string;
   budget_id: string;
   name: string;
@@ -18,12 +18,12 @@ export interface Category {
   icon: string;
   sort_order: number;
   created_at: string;
-  subcategories?: Subcategory[];
+  categories?: Category[];
 }
 
-export interface Subcategory {
+export interface Category {
   id: string;
-  category_id: string;
+  section_id: string;
   name: string;
   allocation_percent: number;
   icon: string;
@@ -34,7 +34,7 @@ export interface Subcategory {
 export interface Expense {
   id: string;
   budget_id: string;
-  subcategory_id: string;
+  category_id: string;
   amount: number;
   description: string;
   expense_date: string;
@@ -57,20 +57,20 @@ export interface Collaborator {
 
 export interface BudgetSummary {
   budget: Budget;
-  categories: CategorySummary[];
+  categories: SectionSummary[];
   total_budget: number;
+  total_spent: number;
+}
+
+export interface SectionSummary {
+  category: Section;
+  categories: CategorySummary[];
+  allocated_amount: number;
   total_spent: number;
 }
 
 export interface CategorySummary {
   category: Category;
-  subcategories: SubcategorySummary[];
-  allocated_amount: number;
-  total_spent: number;
-}
-
-export interface SubcategorySummary {
-  subcategory: Subcategory;
   allocated_amount: number;
   total_spent: number;
   expense_count: number;
@@ -81,7 +81,7 @@ export interface MonthlyTrend {
   total_spent: number;
 }
 
-export interface CategoryTrend {
+export interface SectionTrend {
   category_id: string;
   category_name: string;
   months: MonthlyTrend[];
@@ -89,7 +89,7 @@ export interface CategoryTrend {
 
 export interface TrendsResponse {
   budget_id: string;
-  categories: CategoryTrend[];
+  categories: SectionTrend[];
 }
 
 export interface CreateBudgetInput {
@@ -100,6 +100,13 @@ export interface CreateBudgetInput {
   mode: "guided" | "manual";
 }
 
+export interface CreateSectionInput {
+  name: string;
+  allocation_percent: number;
+  icon?: string;
+  sort_order?: number;
+}
+
 export interface CreateCategoryInput {
   name: string;
   allocation_percent: number;
@@ -107,15 +114,8 @@ export interface CreateCategoryInput {
   sort_order?: number;
 }
 
-export interface CreateSubcategoryInput {
-  name: string;
-  allocation_percent: number;
-  icon?: string;
-  sort_order?: number;
-}
-
 export interface CreateExpenseInput {
-  subcategory_id: string;
+  category_id: string;
   amount: number;
   description?: string;
   expense_date: string;
@@ -140,7 +140,7 @@ export const BILLING_PERIODS = [
   { value: 12, label: "Annual" },
 ] as const;
 
-export const GUIDED_CATEGORIES = [
+export const GUIDED_SECTIONS = [
   {
     name: "Necesidades",
     allocation_percent: 50,

@@ -8,11 +8,11 @@ export interface MigrateBudget {
   currency: string;
   billing_period_months: number;
   mode: string;
-  categories: MigrateCategory[];
+  categories: MigrateSection[];
   expenses: MigrateExpense[];
 }
 
-export interface MigrateCategory {
+export interface MigrateSection {
   name: string;
   allocation_percent: number;
   icon: string;

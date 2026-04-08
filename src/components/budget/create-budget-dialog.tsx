@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import type { Budget } from "@/types/budget";
-import { CURRENCIES, BILLING_PERIODS, GUIDED_CATEGORIES } from "@/types/budget";
+import { CURRENCIES, BILLING_PERIODS, GUIDED_SECTIONS } from "@/types/budget";
 import { detectCurrency, formatCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -255,7 +255,7 @@ export function CreateBudgetDialog({
   const [guidedCategories, setGuidedCategories] = React.useState<
     GuidedCategoryState[]
   >(() =>
-    GUIDED_CATEGORIES.map((c) => ({
+    GUIDED_SECTIONS.map((c) => ({
       name: c.name,
       allocation_percent: c.allocation_percent,
       icon: c.icon,
@@ -320,7 +320,7 @@ export function CreateBudgetDialog({
         setIsSubmitting(false);
         setCustomPeriod(false);
         setGuidedCategories(
-          GUIDED_CATEGORIES.map((c) => ({
+          GUIDED_SECTIONS.map((c) => ({
             name: c.name,
             allocation_percent: c.allocation_percent,
             icon: c.icon,

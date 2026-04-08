@@ -2,11 +2,11 @@
 
 import { useParams } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
-import { SubcategoryDetail } from "@/components/expenses/subcategory-detail";
+import { CategoryDetail } from "@/components/expenses/category-detail";
 import { useRouter } from "next/navigation";
 
-export default function SubcategoryPage() {
-  const params = useParams<{ id: string; categoryId: string; subcategoryId: string }>();
+export default function CategoryPage() {
+  const params = useParams<{ id: string; sectionId: string; categoryId: string }>();
   const router = useRouter();
   const { summary, expenses } = useBudgetStore();
 
@@ -18,32 +18,32 @@ export default function SubcategoryPage() {
     );
   }
 
-  // Find the subcategory summary
-  for (const cat of summary.categories) {
-    if (cat.category.id === params.categoryId) {
-      const subSummary = cat.subcategories.find(
-        (s) => s.subcategory.id === params.subcategoryId
+  // Find the category summary
+  for (const sec of summary.categories) {
+    if (sec.category.id === params.sectionId) {
+      const catSummary = sec.categories.find(
+        (c) => c.category.id === params.categoryId
       );
-      if (subSummary) {
-        const allCategories = summary.categories.map((c) => ({
-          ...c.category,
-          subcategories: c.subcategories.map((s) => s.subcategory),
+      if (catSummary) {
+        const allSections = summary.categories.map((s) => ({
+          ...s.category,
+          categories: s.categories.map((c) => c.category),
         }));
 
         return (
-          <SubcategoryDetail
-            subcategorySummary={subSummary}
+          <CategoryDetail
+            subcategorySummary={catSummary}
             expenses={expenses}
             currency={summary.budget.currency}
             budgetId={params.id}
-            categories={allCategories}
+            categories={allSections}
           />
         );
       }
     }
   }
 
-  // Subcategory not found — go back
+  // Category not found -- go back
   router.back();
   return null;
 }

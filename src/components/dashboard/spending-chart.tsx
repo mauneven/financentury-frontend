@@ -43,8 +43,8 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
       if (summary && expenses.length > 0) {
         const categoryMap = new Map<string, { id: string; name: string }>();
         for (const cat of summary.categories) {
-          for (const sub of cat.subcategories) {
-            categoryMap.set(sub.subcategory.id, {
+          for (const sub of cat.categories) {
+            categoryMap.set(sub.category.id, {
               id: cat.category.id,
               name: cat.category.name,
             });
@@ -54,7 +54,7 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
         const grouped = new Map<string, Map<string, number>>();
         for (const exp of expenses) {
           const month = exp.expense_date.slice(0, 7); // "YYYY-MM"
-          const catInfo = categoryMap.get(exp.subcategory_id);
+          const catInfo = categoryMap.get(exp.category_id);
           if (!catInfo) continue;
           if (!grouped.has(catInfo.name)) grouped.set(catInfo.name, new Map());
           const monthMap = grouped.get(catInfo.name)!;

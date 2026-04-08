@@ -5,7 +5,7 @@ import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 import { OverviewCards } from "./overview-cards";
-import { CategoryCard } from "./category-card";
+import { SectionCard } from "./section-card";
 import { SpendingChart } from "./spending-chart";
 import { BudgetOverviewChart } from "./budget-overview-chart";
 import { EmptyDashboard } from "./empty-dashboard";
@@ -192,9 +192,9 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           </h2>
           <div className="space-y-4 sm:space-y-5">
             {categories.map((cat) => (
-              <CategoryCard
+              <SectionCard
                 key={cat.category.id}
-                categorySummary={cat}
+                sectionSummary={cat}
                 currency={budget.currency}
               />
             ))}

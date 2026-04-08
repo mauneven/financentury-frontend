@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
 import { budgetApi } from "@/lib/api";
+import { localBudgetStorage } from "@/lib/local-storage";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
@@ -83,6 +84,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const tCollab = useTranslations("collaborators");
   const router = useRouter();
   const deleteBudget = useBudgetStore((s) => s.deleteBudget);
+  const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const { user, mode } = useAuthStore();
   const isOwner = mode === "online" && budget.user_id === user?.id;
   const isOnline = mode === "online";
@@ -134,7 +136,12 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const onSubmit = async (values: SettingsFormValues) => {
     setIsSaving(true);
     try {
-      await budgetApi.update(budget.id, values);
+      if (mode === "local") {
+        localBudgetStorage.updateBudget(budget.id, values);
+      } else {
+        await budgetApi.update(budget.id, values);
+      }
+      await refreshSummary();
       onSaved?.();
     } catch {
       // error handling upstream

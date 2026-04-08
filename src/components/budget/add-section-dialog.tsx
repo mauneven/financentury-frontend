@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusCircle, Loader2, Check, Trash2 } from "lucide-react";
 
 import { useBudgetStore } from "@/store/budget-store";
-import { subcategoryApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import {
@@ -33,10 +32,10 @@ import { useTranslations } from "@/i18n/client";
 // Schema
 // ---------------------------------------------------------------------------
 
-const categorySchema = z.object({
+const sectionSchema = z.object({
   name: z
     .string()
-    .min(1, "Category name is required")
+    .min(1, "Section name is required")
     .max(60, "Name must be 60 characters or less"),
   allocation_percent: z
     .number({ message: "Allocation is required" })
@@ -45,7 +44,7 @@ const categorySchema = z.object({
   icon: z.string().min(1, "Pick an icon"),
 });
 
-type CategoryFormValues = z.infer<typeof categorySchema>;
+type SectionFormValues = z.infer<typeof sectionSchema>;
 
 // ---------------------------------------------------------------------------
 // Emoji picker (simple grid)
@@ -87,7 +86,7 @@ function EmojiPicker({
 }
 
 // ---------------------------------------------------------------------------
-// Subcategory inline editor
+// Category inline editor
 // ---------------------------------------------------------------------------
 
 interface SubcategoryDraft {
@@ -104,8 +103,8 @@ function SubcategoryEditor({
   subcategories: SubcategoryDraft[];
   onChange: (updated: SubcategoryDraft[]) => void;
 }) {
-  const t = useTranslations("category");
-  const addSubcategory = () => {
+  const t = useTranslations("section");
+  const addCategoryDraft = () => {
     onChange([
       ...subcategories,
       {
@@ -117,11 +116,11 @@ function SubcategoryEditor({
     ]);
   };
 
-  const removeSubcategory = (id: string) => {
+  const removeCategoryDraft = (id: string) => {
     onChange(subcategories.filter((s) => s.id !== id));
   };
 
-  const updateSubcategory = (
+  const updateCategoryDraft = (
     id: string,
     field: keyof SubcategoryDraft,
     value: string | number
@@ -141,7 +140,7 @@ function SubcategoryEditor({
           type="button"
           variant="ghost"
           size="xs"
-          onClick={addSubcategory}
+          onClick={addCategoryDraft}
         >
           <PlusCircle className="size-3 mr-1" />
           {t("add")}
@@ -160,7 +159,7 @@ function SubcategoryEditor({
                 placeholder={t("subcategoryName")}
                 value={sub.name}
                 onChange={(e) =>
-                  updateSubcategory(sub.id, "name", e.target.value)
+                  updateCategoryDraft(sub.id, "name", e.target.value)
                 }
                 className="h-7 text-xs flex-1"
               />
@@ -170,7 +169,7 @@ function SubcategoryEditor({
                   inputMode="numeric"
                   value={sub.allocation_percent}
                   onChange={(e) =>
-                    updateSubcategory(
+                    updateCategoryDraft(
                       sub.id,
                       "allocation_percent",
                       Number(e.target.value.replace(/[^\d.]/g, "")) || 0
@@ -186,7 +185,7 @@ function SubcategoryEditor({
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                onClick={() => removeSubcategory(sub.id)}
+                onClick={() => removeCategoryDraft(sub.id)}
                 className="text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="size-3" />
@@ -203,7 +202,7 @@ function SubcategoryEditor({
 // Props
 // ---------------------------------------------------------------------------
 
-interface AddCategoryDialogProps {
+interface AddSectionDialogProps {
   budgetId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -213,14 +212,15 @@ interface AddCategoryDialogProps {
 // Main dialog
 // ---------------------------------------------------------------------------
 
-export function AddCategoryDialog({
+export function AddSectionDialog({
   budgetId,
   open,
   onOpenChange,
-}: AddCategoryDialogProps) {
-  const t = useTranslations("category");
+}: AddSectionDialogProps) {
+  const t = useTranslations("section");
   const tc = useTranslations("common");
-  const addCategory = useBudgetStore((s) => s.addCategory);
+  const addSection = useBudgetStore((s) => s.addSection);
+  const addSubcategoryAction = useBudgetStore((s) => s.addCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -235,8 +235,8 @@ export function AddCategoryDialog({
     watch,
     reset,
     formState: { errors },
-  } = useForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema),
+  } = useForm<SectionFormValues>({
+    resolver: zodResolver(sectionSchema),
     defaultValues: {
       name: "",
       allocation_percent: 0,
@@ -258,10 +258,10 @@ export function AddCategoryDialog({
     }
   }, [open, reset]);
 
-  const onSubmit = async (values: CategoryFormValues) => {
+  const onSubmit = async (values: SectionFormValues) => {
     setIsSubmitting(true);
     try {
-      const category = await addCategory({
+      const section = await addSection({
         name: values.name,
         allocation_percent: values.allocation_percent,
         icon: values.icon,
@@ -270,7 +270,7 @@ export function AddCategoryDialog({
       // Create subcategories
       const validSubs = subcategories.filter((s) => s.name.trim().length > 0);
       for (const sub of validSubs) {
-        await subcategoryApi.create(budgetId, category.id, {
+        await addSubcategoryAction(section.id, {
           name: sub.name,
           allocation_percent: sub.allocation_percent,
           icon: sub.icon,
@@ -290,7 +290,7 @@ export function AddCategoryDialog({
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("addCategory")}</DialogTitle>
+          <DialogTitle>{t("addSection")}</DialogTitle>
           <DialogDescription>
             {t("createDescription")}
           </DialogDescription>
@@ -311,10 +311,10 @@ export function AddCategoryDialog({
 
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="cat-name">{t("categoryName")}</Label>
+            <Label htmlFor="cat-name">{t("sectionName")}</Label>
             <Input
               id="cat-name"
-              placeholder={t("categoryNamePlaceholder")}
+              placeholder={t("sectionNamePlaceholder")}
               autoFocus
               aria-invalid={!!errors.name}
               {...register("name")}
@@ -369,7 +369,7 @@ export function AddCategoryDialog({
               ) : (
                 <>
                   <Check className="size-4 mr-1" />
-                  {t("addCategory")}
+                  {t("addSection")}
                 </>
               )}
             </Button>

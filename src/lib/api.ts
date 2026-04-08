@@ -1,14 +1,14 @@
 import type {
   Budget,
   BudgetSummary,
-  Category,
+  Section,
   Collaborator,
   CreateBudgetInput,
-  CreateCategoryInput,
+  CreateSectionInput,
   CreateExpenseInput,
-  CreateSubcategoryInput,
+  CreateCategoryInput,
   Expense,
-  Subcategory,
+  Category,
   TrendsResponse,
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
@@ -149,59 +149,59 @@ export const budgetApi = {
     request<TrendsResponse>(`/budgets/${id}/trends`),
 };
 
-// Categories
-export const categoryApi = {
+// Sections (was Categories)
+export const sectionApi = {
   list: (budgetId: string) =>
-    request<Category[]>(`/budgets/${budgetId}/categories`),
+    request<Section[]>(`/budgets/${budgetId}/sections`),
 
-  create: (budgetId: string, data: CreateCategoryInput) =>
-    request<Category>(`/budgets/${budgetId}/categories`, {
+  create: (budgetId: string, data: CreateSectionInput) =>
+    request<Section>(`/budgets/${budgetId}/sections`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   update: (
     budgetId: string,
-    catId: string,
-    data: Partial<CreateCategoryInput>
+    sectionId: string,
+    data: Partial<CreateSectionInput>
   ) =>
-    request<Category>(`/budgets/${budgetId}/categories/${catId}`, {
+    request<Section>(`/budgets/${budgetId}/sections/${sectionId}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  delete: (budgetId: string, catId: string) =>
-    request<void>(`/budgets/${budgetId}/categories/${catId}`, {
+  delete: (budgetId: string, sectionId: string) =>
+    request<void>(`/budgets/${budgetId}/sections/${sectionId}`, {
       method: "DELETE",
     }),
 };
 
-// Subcategories
-export const subcategoryApi = {
+// Categories (was Subcategories)
+export const categoryApi = {
   create: (
     budgetId: string,
-    catId: string,
-    data: CreateSubcategoryInput
+    sectionId: string,
+    data: CreateCategoryInput
   ) =>
-    request<Subcategory>(
-      `/budgets/${budgetId}/categories/${catId}/subcategories`,
+    request<Category>(
+      `/budgets/${budgetId}/sections/${sectionId}/categories`,
       { method: "POST", body: JSON.stringify(data) }
     ),
 
   update: (
     budgetId: string,
+    sectionId: string,
     catId: string,
-    subId: string,
-    data: Partial<CreateSubcategoryInput>
+    data: Partial<CreateCategoryInput>
   ) =>
-    request<Subcategory>(
-      `/budgets/${budgetId}/categories/${catId}/subcategories/${subId}`,
+    request<Category>(
+      `/budgets/${budgetId}/sections/${sectionId}/categories/${catId}`,
       { method: "PUT", body: JSON.stringify(data) }
     ),
 
-  delete: (budgetId: string, catId: string, subId: string) =>
+  delete: (budgetId: string, sectionId: string, catId: string) =>
     request<void>(
-      `/budgets/${budgetId}/categories/${catId}/subcategories/${subId}`,
+      `/budgets/${budgetId}/sections/${sectionId}/categories/${catId}`,
       { method: "DELETE" }
     ),
 };

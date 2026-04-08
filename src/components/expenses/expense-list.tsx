@@ -131,7 +131,7 @@ export function ExpenseList({
               {/* Expense Items */}
               <div>
                 {group.expenses.map((expense) => {
-                  const subInfo = subcategories.get(expense.subcategory_id);
+                  const subInfo = subcategories.get(expense.category_id);
                   return (
                     <ExpenseRow
                       key={expense.id}

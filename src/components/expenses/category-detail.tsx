@@ -9,7 +9,7 @@ import {
   Receipt,
 } from "lucide-react";
 
-import type { Expense, Category, SubcategorySummary } from "@/types/budget";
+import type { Expense, Section, CategorySummary } from "@/types/budget";
 import {
   formatCurrency,
   getPercentage,
@@ -27,28 +27,28 @@ import { ExpenseList } from "./expense-list";
 import { AddExpenseDialog } from "./add-expense-dialog";
 import { EditExpenseDialog } from "./edit-expense-dialog";
 
-interface SubcategoryDetailProps {
-  subcategorySummary: SubcategorySummary;
+interface CategoryDetailProps {
+  subcategorySummary: CategorySummary;
   expenses: Expense[];
   currency: string;
   budgetId: string;
-  categories: Category[];
+  categories: Section[];
 }
 
-export function SubcategoryDetail({
+export function CategoryDetail({
   subcategorySummary,
   expenses,
   currency,
   budgetId,
   categories,
-}: SubcategoryDetailProps) {
+}: CategoryDetailProps) {
   const t = useTranslations("expense");
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
-  const { subcategory, allocated_amount, total_spent, expense_count } = subcategorySummary;
+  const { category: detailCategory, allocated_amount, total_spent, expense_count } = subcategorySummary;
 
   const remaining = allocated_amount - total_spent;
   const percentage = getPercentage(total_spent, allocated_amount);
@@ -59,7 +59,7 @@ export function SubcategoryDetail({
   const subcategoriesMap = useMemo(() => {
     const map = new Map<string, { name: string; icon: string | null; categoryName: string }>();
     for (const cat of categories) {
-      for (const sub of cat.subcategories || []) {
+      for (const sub of cat.categories || []) {
         map.set(sub.id, {
           name: sub.name,
           icon: sub.icon,
@@ -72,8 +72,8 @@ export function SubcategoryDetail({
 
   // Filter expenses for this subcategory
   const filteredExpenses = useMemo(
-    () => expenses.filter((e) => e.subcategory_id === subcategory.id),
-    [expenses, subcategory.id]
+    () => expenses.filter((e) => e.category_id === detailCategory.id),
+    [expenses, detailCategory.id]
   );
 
   const handleDelete = useCallback(
@@ -88,10 +88,10 @@ export function SubcategoryDetail({
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="flex size-12 items-center justify-center rounded-xl bg-muted text-xl">
-          {subcategory.icon || "📂"}
+          {detailCategory.icon || "📂"}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{subcategory.name}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{detailCategory.name}</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {expense_count !== 1
               ? t("expensesRecordedPlural", { count: String(expense_count) })
@@ -169,7 +169,7 @@ export function SubcategoryDetail({
             </div>
             <p className="mb-1 text-sm font-medium">{t("noExpenses")}</p>
             <p className="mb-5 max-w-xs text-sm text-muted-foreground">
-              {t("addExpenseHere", { name: subcategory.name })}
+              {t("addExpenseHere", { name: detailCategory.name })}
             </p>
             <Button variant="outline" onClick={() => setAddDialogOpen(true)} className="min-h-[44px]">
               <Plus className="mr-1.5 size-4" />
@@ -194,7 +194,7 @@ export function SubcategoryDetail({
         budgetId={budgetId}
         categories={categories}
         currency={currency}
-        preselectedSubcategoryId={subcategory.id}
+        preselectedSubcategoryId={detailCategory.id}
       />
 
       {/* Edit Expense Dialog */}

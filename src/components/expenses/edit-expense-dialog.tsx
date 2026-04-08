@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import {
   Calendar as CalendarIcon,
   Loader2,
@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import type { Expense, Category } from "@/types/budget";
+import type { Expense, Section } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
@@ -42,7 +42,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const expenseSchema = z.object({
-  subcategory_id: z.string().uuid("Please select a subcategory"),
+  category_id: z.string().uuid("Please select a subcategory"),
   amount: z.number().positive("Amount must be greater than 0"),
   description: z.string().max(500, "Description must be 500 characters or fewer").optional(),
   expense_date: z.string().min(1, "Date is required"),
@@ -55,7 +55,7 @@ interface EditExpenseDialogProps {
   onOpenChange: (open: boolean) => void;
   expense: Expense;
   budgetId: string;
-  categories: Category[];
+  categories: Section[];
   currency: string;
 }
 
@@ -116,7 +116,7 @@ export function EditExpenseDialog({
     resolver: zodResolver(expenseSchema),
   });
 
-  const watchedSubcategoryId = watch("subcategory_id");
+  const watchedSubcategoryId = watch("category_id");
   const watchedDate = watch("expense_date");
 
   const selectedCategory = useMemo(
@@ -125,7 +125,7 @@ export function EditExpenseDialog({
   );
 
   const subcategories = useMemo(
-    () => selectedCategory?.subcategories || [],
+    () => selectedCategory?.categories || [],
     [selectedCategory]
   );
 
@@ -133,7 +133,7 @@ export function EditExpenseDialog({
   const findCategoryForSubcategory = useCallback(
     (subcategoryId: string): string | null => {
       for (const cat of categories) {
-        if (cat.subcategories?.some((s) => s.id === subcategoryId)) {
+        if (cat.categories?.some((s) => s.id === subcategoryId)) {
           return cat.id;
         }
       }
@@ -145,13 +145,13 @@ export function EditExpenseDialog({
   // Populate form when dialog opens
   useEffect(() => {
     if (open && expense) {
-      const catId = findCategoryForSubcategory(expense.subcategory_id);
+      const catId = findCategoryForSubcategory(expense.category_id);
       setSelectedCategoryId(catId);
       setAmountDisplay(numberToDisplay(expense.amount));
       setShowDeleteConfirm(false);
 
       reset({
-        subcategory_id: expense.subcategory_id,
+        category_id: expense.category_id,
         amount: expense.amount,
         description: expense.description || "",
         expense_date: expense.expense_date,
@@ -162,7 +162,7 @@ export function EditExpenseDialog({
   const handleCategoryChange = useCallback(
     (value: string | null) => {
       setSelectedCategoryId(value);
-      setValue("subcategory_id", "");
+      setValue("category_id", "");
     },
     [setValue]
   );
@@ -191,7 +191,7 @@ export function EditExpenseDialog({
     setIsSubmitting(true);
     try {
       await updateExpense(budgetId, expense.id, {
-        subcategory_id: data.subcategory_id,
+        category_id: data.category_id,
         amount: data.amount,
         description: data.description || undefined,
         expense_date: data.expense_date,
@@ -251,13 +251,13 @@ export function EditExpenseDialog({
             </Select>
           </div>
 
-          {/* Subcategory Select */}
+          {/* Category Select */}
           <div className="space-y-2">
             <Label>{t("subcategory")}</Label>
             <Select
               value={watchedSubcategoryId || null}
               onValueChange={(val) => {
-                if (val) setValue("subcategory_id", val, { shouldValidate: true });
+                if (val) setValue("category_id", val, { shouldValidate: true });
               }}
               disabled={!selectedCategoryId}
             >
@@ -285,10 +285,10 @@ export function EditExpenseDialog({
                 ))}
               </SelectContent>
             </Select>
-            {errors.subcategory_id && (
+            {errors.category_id && (
               <p className="flex items-center gap-1 text-xs text-destructive">
                 <AlertCircle className="size-3" />
-                {errors.subcategory_id.message}
+                {errors.category_id.message}
               </p>
             )}
           </div>

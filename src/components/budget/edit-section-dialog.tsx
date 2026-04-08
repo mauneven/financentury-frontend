@@ -21,16 +21,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useTranslations } from "@/i18n/client";
-import type { Category, Subcategory } from "@/types/budget";
+import type { Section, Category } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
-const categorySchema = z.object({
+const sectionSchema = z.object({
   name: z
     .string()
-    .min(1, "Category name is required")
+    .min(1, "Section name is required")
     .max(60, "Name must be 60 characters or less"),
   allocation_percent: z
     .number({ message: "Allocation is required" })
@@ -39,7 +39,7 @@ const categorySchema = z.object({
   icon: z.string().min(1, "Pick an icon"),
 });
 
-type CategoryFormValues = z.infer<typeof categorySchema>;
+type SectionFormValues = z.infer<typeof sectionSchema>;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -119,24 +119,24 @@ function EmojiPicker({
 // Impact preview — shown when category allocation changes
 // ---------------------------------------------------------------------------
 
-interface CategoryImpactPreviewProps {
-  subcategories: Subcategory[];
-  newCategoryPercent: number;
+interface SectionImpactPreviewProps {
+  categories: Category[];
+  newSectionPercent: number;
 }
 
-function CategoryImpactPreview({
-  subcategories,
-  newCategoryPercent,
-}: CategoryImpactPreviewProps) {
+function SectionImpactPreview({
+  categories,
+  newSectionPercent,
+}: SectionImpactPreviewProps) {
   const [expanded, setExpanded] = React.useState(true);
 
-  if (subcategories.length === 0) return null;
+  if (categories.length === 0) return null;
 
-  const childTotal = subcategories.reduce(
+  const childTotal = categories.reduce(
     (sum, s) => sum + s.allocation_percent,
     0
   );
-  const isOverflow = childTotal > newCategoryPercent;
+  const isOverflow = childTotal > newSectionPercent;
 
   return (
     <div
@@ -176,14 +176,14 @@ function CategoryImpactPreview({
             )}
           >
             {isOverflow
-              ? `Subcategories total ${childTotal.toFixed(1)}% but category is only ${newCategoryPercent.toFixed(1)}%`
-              : `Subcategories total ${childTotal.toFixed(1)}% of ${newCategoryPercent.toFixed(1)}% allocated`}
+              ? `Subcategories total ${childTotal.toFixed(1)}% but category is only ${newSectionPercent.toFixed(1)}%`
+              : `Subcategories total ${childTotal.toFixed(1)}% of ${newSectionPercent.toFixed(1)}% allocated`}
           </p>
 
           {/* Per-subcategory rows */}
           <ul className="space-y-0.5 pl-1">
-            {subcategories.map((sub) => {
-              const overflow = sub.allocation_percent > newCategoryPercent;
+            {categories.map((sub) => {
+              const overflow = sub.allocation_percent > newSectionPercent;
               return (
                 <li
                   key={sub.id}
@@ -220,9 +220,9 @@ function CategoryImpactPreview({
 // Props
 // ---------------------------------------------------------------------------
 
-interface EditCategoryDialogProps {
-  category: Category;
-  subcategories: Subcategory[];
+interface EditSectionDialogProps {
+  section: Section;
+  categories: Category[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -231,16 +231,16 @@ interface EditCategoryDialogProps {
 // Main dialog
 // ---------------------------------------------------------------------------
 
-export function EditCategoryDialog({
-  category,
-  subcategories,
+export function EditSectionDialog({
+  section,
+  categories,
   open,
   onOpenChange,
-}: EditCategoryDialogProps) {
-  const t = useTranslations("category");
+}: EditSectionDialogProps) {
+  const t = useTranslations("section");
   const tc = useTranslations("common");
-  const updateCategory = useBudgetStore((s) => s.updateCategory);
-  const deleteCategoryAction = useBudgetStore((s) => s.deleteCategory);
+  const updateSection = useBudgetStore((s) => s.updateSection);
+  const deleteSectionAction = useBudgetStore((s) => s.deleteSection);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
 
@@ -261,12 +261,12 @@ export function EditCategoryDialog({
     watch,
     reset,
     formState: { errors },
-  } = useForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema),
+  } = useForm<SectionFormValues>({
+    resolver: zodResolver(sectionSchema),
     defaultValues: {
-      name: category.name,
-      allocation_percent: category.allocation_percent,
-      icon: category.icon || "🏠",
+      name: section.name,
+      allocation_percent: section.allocation_percent,
+      icon: section.icon || "🏠",
     },
   });
 
@@ -282,14 +282,14 @@ export function EditCategoryDialog({
   React.useEffect(() => {
     if (open) {
       reset({
-        name: category.name,
-        allocation_percent: category.allocation_percent,
-        icon: category.icon || "🏠",
+        name: section.name,
+        allocation_percent: section.allocation_percent,
+        icon: section.icon || "🏠",
       });
 
       // Convert stored percent to dollar amount
       const initialAmount =
-        totalBudget > 0 ? (category.allocation_percent / 100) * totalBudget : 0;
+        totalBudget > 0 ? (section.allocation_percent / 100) * totalBudget : 0;
       setRawAmount(initialAmount);
       setAmountInput(formatAmount(initialAmount));
 
@@ -297,7 +297,7 @@ export function EditCategoryDialog({
       setIsSubmitting(false);
       setIsDeleting(false);
     }
-  }, [open, category, reset, totalBudget]);
+  }, [open, section, reset, totalBudget]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskAmountInput(e.target.value);
@@ -313,10 +313,10 @@ export function EditCategoryDialog({
     });
   };
 
-  const onSubmit = async (values: CategoryFormValues) => {
+  const onSubmit = async (values: SectionFormValues) => {
     setIsSubmitting(true);
     try {
-      await updateCategory(category.id, {
+      await updateSection(section.id, {
         name: values.name,
         allocation_percent: values.allocation_percent,
         icon: values.icon,
@@ -333,7 +333,7 @@ export function EditCategoryDialog({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deleteCategoryAction(category.id);
+      await deleteSectionAction(section.id);
       await refreshSummary();
       onOpenChange(false);
     } catch {
@@ -345,14 +345,14 @@ export function EditCategoryDialog({
 
   // Show impact preview only when allocation has changed from the original
   const allocationChanged =
-    Math.abs(watchAllocation - category.allocation_percent) > 0.001;
-  const showImpact = allocationChanged && subcategories.length > 0;
+    Math.abs(watchAllocation - section.allocation_percent) > 0.001;
+  const showImpact = allocationChanged && categories.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("editCategory")}</DialogTitle>
+          <DialogTitle>{t("editSection")}</DialogTitle>
           <DialogDescription>{t("editDescription")}</DialogDescription>
         </DialogHeader>
 
@@ -371,10 +371,10 @@ export function EditCategoryDialog({
 
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-cat-name">{t("categoryName")}</Label>
+            <Label htmlFor="edit-cat-name">{t("sectionName")}</Label>
             <Input
               id="edit-cat-name"
-              placeholder={t("categoryNamePlaceholder")}
+              placeholder={t("sectionNamePlaceholder")}
               autoFocus
               aria-invalid={!!errors.name}
               {...register("name")}
@@ -423,9 +423,9 @@ export function EditCategoryDialog({
 
           {/* Impact preview */}
           {showImpact && (
-            <CategoryImpactPreview
-              subcategories={subcategories}
-              newCategoryPercent={watchAllocation}
+            <SectionImpactPreview
+              categories={categories}
+              newSectionPercent={watchAllocation}
             />
           )}
 
@@ -443,7 +443,7 @@ export function EditCategoryDialog({
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="size-4 mr-1" />
-                {t("deleteCategory")}
+                {t("deleteSection")}
               </Button>
             ) : (
               <div className="flex items-center gap-2">
@@ -496,7 +496,7 @@ export function EditCategoryDialog({
 
           {showDeleteConfirm && (
             <p className="text-xs text-destructive">
-              {t("confirmDeleteCategory")}
+              {t("confirmDeleteSection")}
             </p>
           )}
         </form>

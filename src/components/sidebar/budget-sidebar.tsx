@@ -21,15 +21,16 @@ import {
   Pencil,
   Settings,
 } from "lucide-react";
-import type { Category, Subcategory } from "@/types/budget";
+import type { Section, Category } from "@/types/budget";
 import { useTranslations } from "@/i18n/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useAuthStore } from "@/store/auth-store";
 import { LocalModeBanner } from "@/components/auth/local-mode-banner";
 import Link from "next/link";
+import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
-import { EditSubcategoryDialog } from "@/components/budget/edit-subcategory-dialog";
+import { AddSectionDialog } from "@/components/budget/add-section-dialog";
 
 interface BudgetSidebarProps {
   onAddExpense: () => void;
@@ -54,14 +55,15 @@ export function BudgetSidebar({
   const [expandedBudgets, setExpandedBudgets] = useState<
     Record<string, boolean>
   >({});
-  const [expandedCategories, setExpandedCategories] = useState<
+  const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({});
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [editingSubcategory, setEditingSubcategory] = useState<{
-    categoryId: string;
-    subcategory: Subcategory;
+  const [editingSection, setEditingSection] = useState<Section | null>(null);
+  const [editingCategory, setEditingCategory] = useState<{
+    sectionId: string;
+    category: Category;
   } | null>(null);
+  const [addSectionForBudget, setAddSectionForBudget] = useState<string | null>(null);
 
   const toggleBudget = (budgetId: string) => {
     setExpandedBudgets((prev) => ({
@@ -70,10 +72,10 @@ export function BudgetSidebar({
     }));
   };
 
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) => ({
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({
       ...prev,
-      [categoryId]: !prev[categoryId],
+      [sectionId]: !prev[sectionId],
     }));
   };
 
@@ -86,7 +88,7 @@ export function BudgetSidebar({
     router.push(budgetBasePath(budgetId));
   };
 
-  const categories: Category[] = summary?.categories.map((c) => c.category) ?? [];
+  const sections: Section[] = summary?.categories.map((c) => c.category) ?? [];
 
   return (
     <div className="flex h-full flex-col">
@@ -147,7 +149,7 @@ export function BudgetSidebar({
             budgets.map((budget) => {
               const isActive = budget.id === activeBudgetId;
               const isExpanded = expandedBudgets[budget.id] ?? false;
-              const budgetCategories = isActive ? categories : [];
+              const budgetSections = isActive ? sections : [];
 
               return (
                 <Collapsible
@@ -179,6 +181,17 @@ export function BudgetSidebar({
                       )}
                       <span className="truncate">{budget.name}</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAddSectionForBudget(budget.id);
+                      }}
+                      className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                      aria-label="Add section"
+                    >
+                      <Plus className="size-3" />
+                    </button>
                     <Link
                       href={`${budgetBasePath(budget.id)}/settings`}
                       className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
@@ -190,43 +203,43 @@ export function BudgetSidebar({
 
                   <CollapsibleContent>
                     <div className="ml-4 border-l border-border pl-2">
-                      {budgetCategories.length === 0 && isActive && (
+                      {budgetSections.length === 0 && isActive && (
                         <div className="px-2 py-2 text-xs text-muted-foreground">
                           {t("loading")}
                         </div>
                       )}
-                      {budgetCategories.map((category) => {
-                        const catExpanded =
-                          expandedCategories[category.id] ?? false;
-                        const catSummary = summary?.categories.find(
-                          (c) => c.category.id === category.id
+                      {budgetSections.map((section) => {
+                        const secExpanded =
+                          expandedSections[section.id] ?? false;
+                        const secSummary = summary?.categories.find(
+                          (c) => c.category.id === section.id
                         );
-                        const subcategories: Subcategory[] =
-                          catSummary?.subcategories.map((s) => s.subcategory) ??
+                        const subcategories: Category[] =
+                          secSummary?.categories.map((s) => s.category) ??
                           [];
                         const totalBudget = summary?.total_budget ?? 0;
-                        const catSpentPercent =
-                          totalBudget > 0 && catSummary
+                        const secSpentPercent =
+                          totalBudget > 0 && secSummary
                             ? Math.round(
-                                (catSummary.total_spent / totalBudget) * 100
+                                (secSummary.total_spent / totalBudget) * 100
                               )
                             : 0;
-                        const catAllocatedPercent = category.allocation_percent;
-                        const catExceeded = catSummary
-                          ? catSummary.total_spent > catSummary.allocated_amount
+                        const secAllocatedPercent = section.allocation_percent;
+                        const secExceeded = secSummary
+                          ? secSummary.total_spent > secSummary.allocated_amount
                           : false;
 
                         return (
                           <Collapsible
-                            key={category.id}
-                            open={catExpanded}
-                            onOpenChange={() => toggleCategory(category.id)}
+                            key={section.id}
+                            open={secExpanded}
+                            onOpenChange={() => toggleSection(section.id)}
                           >
                             <div className="group/cat flex items-center">
                               <CollapsibleTrigger className="flex size-5 shrink-0 items-center justify-center rounded-md transition-colors duration-200 hover:bg-accent">
                                 <ChevronRight
                                   className={`size-3 text-muted-foreground transition-transform duration-200 ${
-                                    catExpanded ? "rotate-90" : ""
+                                    secExpanded ? "rotate-90" : ""
                                   }`}
                                 />
                               </CollapsibleTrigger>
@@ -234,30 +247,30 @@ export function BudgetSidebar({
                                 type="button"
                                 onClick={() =>
                                   router.push(
-                                    `${budgetBasePath(budget.id)}/category/${category.id}`
+                                    `${budgetBasePath(budget.id)}/section/${section.id}`
                                   )
                                 }
                                 className="flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent text-left min-h-[44px]"
                               >
                                 <span className="shrink-0 text-sm leading-none w-4 text-center">
-                                  {category.icon || ""}
+                                  {section.icon || ""}
                                 </span>
                                 <span className="truncate font-medium text-foreground/80">
-                                  {category.name}
+                                  {section.name}
                                 </span>
                                 <span className="ml-auto shrink-0 text-xs tabular-nums">
                                   <span
                                     className={
-                                      catExceeded
+                                      secExceeded
                                         ? "text-red-500"
                                         : "text-emerald-600"
                                     }
                                   >
-                                    {catSpentPercent}%
+                                    {secSpentPercent}%
                                   </span>
                                   <span className="text-muted-foreground">
                                     {" / "}
-                                    {catAllocatedPercent}%
+                                    {secAllocatedPercent}%
                                   </span>
                                 </span>
                               </button>
@@ -265,10 +278,21 @@ export function BudgetSidebar({
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setEditingCategory(category);
+                                  onAddExpense();
                                 }}
                                 className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/cat:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
-                                aria-label={`Edit ${category.name}`}
+                                aria-label="Add expense"
+                              >
+                                <Plus className="size-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingSection(section);
+                                }}
+                                className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/cat:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                                aria-label={`Edit ${section.name}`}
                               >
                                 <Pencil className="size-2.5" />
                               </button>
@@ -278,8 +302,8 @@ export function BudgetSidebar({
                               <div className="ml-3 border-l border-border pl-2">
                                 {subcategories.map((sub) => {
                                   const subSummary =
-                                    catSummary?.subcategories.find(
-                                      (s) => s.subcategory.id === sub.id
+                                    secSummary?.categories.find(
+                                      (s) => s.category.id === sub.id
                                     );
                                   const subSpentPercent =
                                     totalBudget > 0 && subSummary
@@ -304,7 +328,7 @@ export function BudgetSidebar({
                                         onClick={() => {
                                           onSelectSubcategory?.(budget.id, sub.id);
                                           router.push(
-                                            `${budgetBasePath(budget.id)}/category/${category.id}/subcategory/${sub.id}`
+                                            `${budgetBasePath(budget.id)}/section/${section.id}/category/${sub.id}`
                                           );
                                         }}
                                         className="flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent min-h-[44px]"
@@ -327,7 +351,7 @@ export function BudgetSidebar({
                                           </span>
                                           <span className="text-muted-foreground">
                                             {" of "}
-                                            {catAllocatedPercent}%
+                                            {secAllocatedPercent}%
                                           </span>
                                         </span>
                                       </button>
@@ -335,9 +359,9 @@ export function BudgetSidebar({
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setEditingSubcategory({
-                                            categoryId: category.id,
-                                            subcategory: sub,
+                                          setEditingCategory({
+                                            sectionId: section.id,
+                                            category: sub,
                                           });
                                         }}
                                         className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
@@ -386,29 +410,40 @@ export function BudgetSidebar({
         <LanguageSwitcher />
       </div>
 
+      {/* Add section dialog */}
+      {addSectionForBudget && (
+        <AddSectionDialog
+          budgetId={addSectionForBudget}
+          open={!!addSectionForBudget}
+          onOpenChange={(open) => {
+            if (!open) setAddSectionForBudget(null);
+          }}
+        />
+      )}
+
       {/* Edit dialogs */}
-      {editingCategory && (() => {
-        const editingCatSubcategories =
+      {editingSection && (() => {
+        const editingSecSubcategories =
           summary?.categories
-            .find((c) => c.category.id === editingCategory.id)
-            ?.subcategories.map((s) => s.subcategory) ?? [];
+            .find((c) => c.category.id === editingSection.id)
+            ?.categories.map((s) => s.category) ?? [];
         return (
-          <EditCategoryDialog
-            category={editingCategory}
-            subcategories={editingCatSubcategories}
-            open={!!editingCategory}
+          <EditSectionDialog
+            section={editingSection}
+            categories={editingSecSubcategories}
+            open={!!editingSection}
             onOpenChange={(open) => {
-              if (!open) setEditingCategory(null);
+              if (!open) setEditingSection(null);
             }}
           />
         );
       })()}
-      {editingSubcategory && (() => {
-        const parentCategorySummary = summary?.categories.find(
-          (c) => c.category.id === editingSubcategory.categoryId
+      {editingCategory && (() => {
+        const parentSectionSummary = summary?.categories.find(
+          (c) => c.category.id === editingCategory.sectionId
         );
-        const parentCategory: Category = parentCategorySummary?.category ?? {
-          id: editingSubcategory.categoryId,
+        const parentSection: Section = parentSectionSummary?.category ?? {
+          id: editingCategory.sectionId,
           budget_id: "",
           name: "",
           allocation_percent: 0,
@@ -416,17 +451,17 @@ export function BudgetSidebar({
           sort_order: 0,
           created_at: "",
         };
-        const allSiblings: Subcategory[] =
-          parentCategorySummary?.subcategories.map((s) => s.subcategory) ?? [];
+        const allSiblings: Category[] =
+          parentSectionSummary?.categories.map((s) => s.category) ?? [];
         return (
-          <EditSubcategoryDialog
-            categoryId={editingSubcategory.categoryId}
-            subcategory={editingSubcategory.subcategory}
-            parentCategory={parentCategory}
-            siblingSubcategories={allSiblings}
-            open={!!editingSubcategory}
+          <EditCategoryDialog
+            sectionId={editingCategory.sectionId}
+            category={editingCategory.category}
+            parentSection={parentSection}
+            siblingCategories={allSiblings}
+            open={!!editingCategory}
             onOpenChange={(open) => {
-              if (!open) setEditingSubcategory(null);
+              if (!open) setEditingCategory(null);
             }}
           />
         );
