@@ -13,14 +13,14 @@ export default function CategoryPage() {
 
   const result = (() => {
     if (!summary) return null;
-    for (const sec of summary.categories) {
-      if (sec.category.id === params.sectionId) {
+    for (const sec of summary.sections) {
+      if (sec.section.id === params.sectionId) {
         const catSummary = sec.categories.find(
           (c) => c.category.id === params.categoryId
         );
         if (catSummary) {
-          const allSections = summary.categories.map((s) => ({
-            ...s.category,
+          const allSections = summary.sections.map((s) => ({
+            ...s.section,
             categories: s.categories.map((c) => c.category),
           }));
           return { catSummary, allSections };

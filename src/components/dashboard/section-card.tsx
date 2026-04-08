@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { CategoryIcon } from "@/lib/icon-picker";
 
 interface SectionCardProps {
   sectionSummary: SectionSummary;
@@ -31,7 +32,7 @@ export function SectionCard({
   const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
   const t = useTranslations("dashboard");
 
-  const { category, categories: subcategories, allocated_amount, total_spent } =
+  const { section, categories: subcategories, allocated_amount, total_spent } =
     sectionSummary;
 
   const remaining = allocated_amount - total_spent;
@@ -44,7 +45,7 @@ export function SectionCard({
   };
 
   return (
-    <div className="border-2 border-foreground bg-card">
+    <div className="group border-2 border-foreground bg-card">
       <div className="p-5 sm:p-7">
         {/* Section header */}
         <div className="flex w-full items-center justify-between min-h-[44px]">
@@ -54,15 +55,15 @@ export function SectionCard({
             className="flex flex-1 items-center justify-between text-left"
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl" role="img" aria-label={category.name}>
-                {category.icon || "\ud83d\udcc1"}
+              <span className="text-2xl" role="img" aria-label={section.name}>
+                <CategoryIcon iconKey={section.icon} className="size-6" />
               </span>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
-                  {category.name}
+                  {section.name}
                 </h3>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  {subcategories.length} {subcategories.length === 1 ? "category" : "categories"} &middot; {category.allocation_percent}% {t("ofIncome")}
+                  {subcategories.length} {subcategories.length === 1 ? "category" : "categories"} &middot; {section.allocation_percent}% {t("ofIncome")}
                 </p>
               </div>
             </div>
@@ -90,7 +91,7 @@ export function SectionCard({
               setEditSectionOpen(true);
             }}
             className="ml-2 flex size-8 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
-            aria-label={`Edit ${category.name}`}
+            aria-label={`Edit ${section.name}`}
           >
             <Pencil className="size-3.5" />
           </button>
@@ -167,7 +168,7 @@ export function SectionCard({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-base" role="img" aria-label={sub.category.name}>
-                            {sub.category.icon || "\ud83d\udccc"}
+                            <CategoryIcon iconKey={sub.category.icon} className="size-4" />
                           </span>
                           <span className="text-base font-bold text-foreground">
                             {sub.category.name}
@@ -238,16 +239,16 @@ export function SectionCard({
 
       {/* Edit dialogs */}
       <EditSectionDialog
-        section={category}
+        section={section}
         categories={subcategories.map((s) => s.category)}
         open={editSectionOpen}
         onOpenChange={setEditSectionOpen}
       />
       {editingSubcategory && (
         <EditCategoryDialog
-          sectionId={category.id}
+          sectionId={section.id}
           category={editingSubcategory}
-          parentSection={category}
+          parentSection={section}
           siblingCategories={subcategories.map((s) => s.category)}
           open={!!editingSubcategory}
           onOpenChange={(open) => {

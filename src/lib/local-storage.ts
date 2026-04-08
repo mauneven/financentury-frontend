@@ -60,6 +60,7 @@ export const localBudgetStorage = {
       monthly_income: data.monthly_income,
       currency: data.currency,
       billing_period_months: data.billing_period_months,
+      billing_cutoff_day: data.billing_cutoff_day ?? 1,
       mode: data.mode,
       created_at: now,
       updated_at: now,
@@ -356,7 +357,7 @@ export const localBudgetStorage = {
       totalSpent += sectionSpent;
 
       return {
-        category: section,
+        section: section,
         categories: categorySummaries,
         allocated_amount: allocatedAmount,
         total_spent: sectionSpent,
@@ -365,7 +366,7 @@ export const localBudgetStorage = {
 
     return {
       budget,
-      categories: sectionSummaries,
+      sections: sectionSummaries,
       total_budget: totalBudget,
       total_spent: totalSpent,
     } satisfies BudgetSummary;

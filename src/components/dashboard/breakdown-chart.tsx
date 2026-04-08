@@ -6,18 +6,18 @@ import { formatCompact, getPercentage } from "@/lib/format";
 import { useTranslations } from "@/i18n/client";
 
 const CATEGORY_COLORS = [
-  "hsl(var(--foreground))",
-  "hsl(var(--accent))",
-  "#f43f5e",
-  "#f97316",
-  "#6366f1",
-  "#14b8a6",
-  "#eab308",
-  "#ec4899",
-  "#3b82f6",
-  "#22c55e",
-  "#a855f7",
-  "#e11d48",
+  "#6366f1", // indigo
+  "#f43f5e", // rose
+  "#f97316", // orange
+  "#14b8a6", // teal
+  "#eab308", // yellow
+  "#ec4899", // pink
+  "#3b82f6", // blue
+  "#22c55e", // green
+  "#a855f7", // purple
+  "#e11d48", // crimson
+  "#06b6d4", // cyan
+  "#84cc16", // lime
 ];
 
 interface BreakdownChartProps {
@@ -25,7 +25,7 @@ interface BreakdownChartProps {
 }
 
 export function BreakdownChart({ summary }: BreakdownChartProps) {
-  const { budget, categories: sections, total_budget, total_spent } = summary;
+  const { budget, sections, total_budget, total_spent } = summary;
   const spentPercentage = getPercentage(total_spent, total_budget);
   const t = useTranslations("dashboard");
 
@@ -128,7 +128,9 @@ export function BreakdownChart({ summary }: BreakdownChartProps) {
                   fontSize: "0.75rem",
                   fontFamily: "monospace",
                   boxShadow: "4px 4px 0px hsl(var(--foreground))",
+                  color: "hsl(var(--foreground))",
                 }}
+                itemStyle={{ color: "hsl(var(--foreground))" }}
                 formatter={(value, name) => [
                   formatCompact(Number(value), budget.currency),
                   String(name),

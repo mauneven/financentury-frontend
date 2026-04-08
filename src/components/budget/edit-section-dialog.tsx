@@ -8,6 +8,7 @@ import { Loader2, Check, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
+import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
 
 import {
   Dialog,
@@ -77,43 +78,8 @@ function maskAmountInput(raw: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Emoji picker (simple grid)
+// (Icon picker imported from @/lib/icon-picker)
 // ---------------------------------------------------------------------------
-
-const EMOJI_OPTIONS = [
-  "🏠", "🍽️", "🚗", "💡", "🎉", "🎬", "👕", "✈️",
-  "🏦", "📈", "💰", "📚", "🏥", "🐾", "🎮", "🎵",
-  "☕", "🛒", "💻", "📱", "🏋️", "🎨", "🔧", "🌱",
-];
-
-function EmojiPicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (emoji: string) => void;
-}) {
-  return (
-    <div className="grid grid-cols-8 gap-1.5">
-      {EMOJI_OPTIONS.map((emoji) => (
-        <button
-          key={emoji}
-          type="button"
-          onClick={() => onChange(emoji)}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-none border-2 text-lg transition-all duration-150",
-            "hover:bg-muted",
-            value === emoji
-              ? "border-emerald-500 bg-emerald-500/10"
-              : "border-transparent bg-transparent"
-          )}
-        >
-          {emoji}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Impact preview — shown when category allocation changes
@@ -194,7 +160,7 @@ function SectionImpactPreview({
                 >
                   <span className="flex items-center gap-1">
                     {sub.icon && (
-                      <span className="text-[11px]">{sub.icon}</span>
+                      <CategoryIcon iconKey={sub.icon} className="size-3" />
                     )}
                     {sub.name}
                   </span>
@@ -266,7 +232,7 @@ export function EditSectionDialog({
     defaultValues: {
       name: section.name,
       allocation_percent: section.allocation_percent,
-      icon: section.icon || "🏠",
+      icon: section.icon || "home",
     },
   });
 
@@ -284,7 +250,7 @@ export function EditSectionDialog({
       reset({
         name: section.name,
         allocation_percent: section.allocation_percent,
-        icon: section.icon || "🏠",
+        icon: section.icon || "home",
       });
 
       // Convert stored percent to dollar amount
@@ -360,9 +326,9 @@ export function EditSectionDialog({
           {/* Icon picker */}
           <div className="space-y-1.5">
             <Label>{t("icon")}</Label>
-            <EmojiPicker
+            <IconPicker
               value={watchIcon}
-              onChange={(emoji) => setValue("icon", emoji)}
+              onChange={(iconKey) => setValue("icon", iconKey)}
             />
             {errors.icon && (
               <p className="text-xs text-destructive">{errors.icon.message}</p>

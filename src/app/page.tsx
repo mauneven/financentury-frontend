@@ -36,7 +36,7 @@ export default function HomePage() {
         }}
         onAddBudget={() => setShowCreateBudget(true)}
       >
-        <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-1 flex-col items-center justify-center min-h-[calc(100vh-200px)] p-4 sm:p-6 lg:p-8">
           {loading ? (
             <div className="flex flex-col items-center gap-4">
               <div className="size-10 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />

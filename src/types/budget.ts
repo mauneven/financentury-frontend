@@ -5,6 +5,7 @@ export interface Budget {
   monthly_income: number;
   currency: string;
   billing_period_months: number;
+  billing_cutoff_day: number;
   mode: "guided" | "manual";
   created_at: string;
   updated_at: string;
@@ -57,13 +58,13 @@ export interface Collaborator {
 
 export interface BudgetSummary {
   budget: Budget;
-  categories: SectionSummary[];
+  sections: SectionSummary[];
   total_budget: number;
   total_spent: number;
 }
 
 export interface SectionSummary {
-  category: Section;
+  section: Section;
   categories: CategorySummary[];
   allocated_amount: number;
   total_spent: number;
@@ -97,6 +98,7 @@ export interface CreateBudgetInput {
   monthly_income: number;
   currency: string;
   billing_period_months: number;
+  billing_cutoff_day?: number;
   mode: "guided" | "manual";
 }
 
@@ -144,32 +146,32 @@ export const GUIDED_SECTIONS = [
   {
     name: "Necesidades",
     allocation_percent: 50,
-    icon: "\ud83c\udfe0",
+    icon: "home",
     subcategories: [
-      { name: "Vivienda", allocation_percent: 28, icon: "\ud83c\udfe0" },
-      { name: "Comida", allocation_percent: 12, icon: "\ud83c\udf7d\ufe0f" },
-      { name: "Transporte", allocation_percent: 6, icon: "\ud83d\ude97" },
-      { name: "Servicios", allocation_percent: 4, icon: "\ud83d\udca1" },
+      { name: "Vivienda", allocation_percent: 28, icon: "home" },
+      { name: "Comida", allocation_percent: 12, icon: "utensils" },
+      { name: "Transporte", allocation_percent: 6, icon: "car" },
+      { name: "Servicios", allocation_percent: 4, icon: "lightbulb" },
     ],
   },
   {
     name: "Deseos",
     allocation_percent: 30,
-    icon: "\u2728",
+    icon: "party",
     subcategories: [
-      { name: "Salidas", allocation_percent: 10, icon: "\ud83c\udf89" },
-      { name: "Entretenimiento", allocation_percent: 5, icon: "\ud83c\udfac" },
-      { name: "Ropa", allocation_percent: 7, icon: "\ud83d\udc55" },
-      { name: "Viajes", allocation_percent: 8, icon: "\u2708\ufe0f" },
+      { name: "Salidas", allocation_percent: 10, icon: "party" },
+      { name: "Entretenimiento", allocation_percent: 5, icon: "clapperboard" },
+      { name: "Ropa", allocation_percent: 7, icon: "shirt" },
+      { name: "Viajes", allocation_percent: 8, icon: "plane" },
     ],
   },
   {
     name: "Ahorro",
     allocation_percent: 20,
-    icon: "\ud83d\udcb0",
+    icon: "coins",
     subcategories: [
-      { name: "Fondo de emergencia", allocation_percent: 8, icon: "\ud83c\udfe6" },
-      { name: "Inversi\u00f3n", allocation_percent: 12, icon: "\ud83d\udcc8" },
+      { name: "Fondo de emergencia", allocation_percent: 8, icon: "landmark" },
+      { name: "Inversi\u00f3n", allocation_percent: 12, icon: "trending" },
     ],
   },
 ] as const;

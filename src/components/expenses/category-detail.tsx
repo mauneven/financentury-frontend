@@ -13,6 +13,7 @@ import {
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { CategoryIcon } from "@/lib/icon-picker";
 
 import { Button } from "@/components/ui/button";
 import { ExpenseList } from "./expense-list";
@@ -74,7 +75,7 @@ export function CategoryDetail({
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="flex size-12 items-center justify-center border-2 border-foreground bg-muted text-xl">
-          {detailCategory.icon || "\ud83d\udcc2"}
+          <CategoryIcon iconKey={detailCategory.icon} className="size-6" />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{detailCategory.name}</h2>

@@ -14,13 +14,13 @@ export default function LocalBudgetDashboardPage() {
 
   if (subcategoryId && summary) {
     // Find the subcategory in summary
-    for (const cat of summary.categories) {
+    for (const cat of summary.sections) {
       const subSummary = cat.categories.find(
         (s) => s.category.id === subcategoryId
       );
       if (subSummary) {
-        const allCategories = summary.categories.map((c) => ({
-          ...c.category,
+        const allCategories = summary.sections.map((c) => ({
+          ...c.section,
           subcategories: c.categories.map((s) => s.category),
         }));
 

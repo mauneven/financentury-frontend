@@ -92,11 +92,12 @@ class BudgetWebSocket {
     if (!this.token || typeof window === "undefined") return;
 
     try {
-      const url = `${WS_BASE}?token=${encodeURIComponent(this.token)}`;
-      this.ws = new WebSocket(url);
+      this.ws = new WebSocket(WS_BASE);
 
       this.ws.onopen = () => {
-        // Reset backoff on successful connection.
+        // Send auth token as the first message instead of query param
+        // to avoid token leakage in server logs and browser history.
+        this.ws?.send(JSON.stringify({ type: "auth", token: this.token }));
         this.reconnectAttempts = 0;
       };
 

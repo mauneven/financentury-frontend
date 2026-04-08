@@ -8,6 +8,7 @@ import { Loader2, Check, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
+import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
 
 import {
   Dialog,
@@ -74,43 +75,8 @@ function maskAmountInput(raw: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Emoji picker (simple grid)
+// (Icon picker imported from @/lib/icon-picker)
 // ---------------------------------------------------------------------------
-
-const EMOJI_OPTIONS = [
-  "🏠", "🍽️", "🚗", "💡", "🎉", "🎬", "👕", "✈️",
-  "🏦", "📈", "💰", "📚", "🏥", "🐾", "🎮", "🎵",
-  "☕", "🛒", "💻", "📱", "🏋️", "🎨", "🔧", "🌱",
-];
-
-function EmojiPicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (emoji: string) => void;
-}) {
-  return (
-    <div className="grid grid-cols-8 gap-1.5">
-      {EMOJI_OPTIONS.map((emoji) => (
-        <button
-          key={emoji}
-          type="button"
-          onClick={() => onChange(emoji)}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-none border-2 text-lg transition-all duration-150",
-            "hover:bg-muted",
-            value === emoji
-              ? "border-emerald-500 bg-emerald-500/10"
-              : "border-transparent bg-transparent"
-          )}
-        >
-          {emoji}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Parent impact preview — shown when category allocation changes
@@ -180,7 +146,7 @@ function CategoryImpactPreview({
               isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
             )}
           >
-            {`Parent category "${parentSection.icon ? parentSection.icon + " " : ""}${parentSection.name}" total would ${direction}: `}
+            {`Parent category "${parentSection.name}" total would ${direction}: `}
             <span className="tabular-nums">
               {originalAllocationPercent !== newAllocationPercent
                 ? `${(siblingsTotal + originalAllocationPercent).toFixed(1)}% → ${newTotal.toFixed(1)}%`
@@ -250,7 +216,7 @@ export function EditCategoryDialog({
     defaultValues: {
       name: category.name,
       allocation_percent: category.allocation_percent,
-      icon: category.icon || "📌",
+      icon: category.icon || "tag",
     },
   });
 
@@ -268,7 +234,7 @@ export function EditCategoryDialog({
       reset({
         name: category.name,
         allocation_percent: category.allocation_percent,
-        icon: category.icon || "📌",
+        icon: category.icon || "tag",
       });
 
       // Convert stored percent to dollar amount
@@ -348,9 +314,9 @@ export function EditCategoryDialog({
           {/* Icon picker */}
           <div className="space-y-1.5">
             <Label>{t("icon")}</Label>
-            <EmojiPicker
+            <IconPicker
               value={watchIcon}
-              onChange={(emoji) => setValue("icon", emoji)}
+              onChange={(iconKey) => setValue("icon", iconKey)}
             />
             {errors.icon && (
               <p className="text-xs text-destructive">{errors.icon.message}</p>

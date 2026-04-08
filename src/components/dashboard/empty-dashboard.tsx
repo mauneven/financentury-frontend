@@ -7,8 +7,8 @@ import { useTranslations } from "@/i18n/client";
 export function EmptyDashboard() {
   const t = useTranslations("dashboard");
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center px-4 py-16 sm:py-20 text-center">
+    <Card className="min-h-[400px] flex items-center">
+      <CardContent className="flex flex-col items-center justify-center px-4 py-16 sm:py-20 text-center w-full">
         <div className="mb-6 flex h-20 w-20 items-center justify-center border-2 border-foreground bg-emerald-50 dark:bg-emerald-950/30">
           <Wallet className="h-10 w-10 text-emerald-500" />
         </div>

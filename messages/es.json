@@ -62,6 +62,9 @@
     "budgetNamePlaceholder": "ej. Mi Plan 2025",
     "monthlyIncome": "Ingreso",
     "billingPeriod": "Período de Facturación",
+    "billingCutoffDay": "Día de Corte",
+    "billingCutoffDayDescription": "El día del mes en que se reinicia tu período de facturación.",
+    "dayOfMonth": "Día {day}",
     "selectCurrency": "Seleccionar moneda",
     "selectPeriod": "Seleccionar período",
     "customMonths": "Personalizado (meses)",
@@ -235,7 +238,9 @@
     "warning": "Modo local",
     "warningDescription": "Tus datos están guardados localmente y se pueden perder si borras los datos del navegador.",
     "signIn": "Iniciar sesión",
-    "continueWithout": "Continuar sin iniciar sesión"
+    "continueWithout": "Continuar sin iniciar sesión",
+    "title": "MODO LOCAL",
+    "description": "Tus datos son locales y solo puedes acceder a ellos mediante este dispositivo y navegador. Inicia sesión, guárdalos y accede a tus finanzas de forma segura en todos tus dispositivos."
   },
   "migration": {
     "title": "Datos locales encontrados",

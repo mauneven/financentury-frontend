@@ -1,10 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { RefreshCw, Settings } from "lucide-react";
+import { RefreshCw, Settings, ArrowLeft } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
+import { useRouter } from "next/navigation";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
 import { EmptyDashboard } from "./empty-dashboard";
@@ -109,8 +110,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const mode = useAuthStore((s) => s.mode);
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
+  const router = useRouter();
 
-  if (loading && !summary) {
+  // Show loading skeleton only on initial load (no summary and loading)
+  // Once summary exists, show content even if still loading (e.g., refreshing data)
+  if (!summary && loading) {
     return <DashboardSkeleton />;
   }
 
@@ -144,7 +148,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     return <EmptyDashboard />;
   }
 
-  const { budget, categories, total_spent } = summary;
+  const { budget, sections, total_spent } = summary;
   const billingLabel =
     BILLING_PERIODS.find((p) => p.value === budget.billing_period_months)
       ?.label ?? `${budget.billing_period_months} months`;
@@ -157,6 +161,14 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="shrink-0 flex items-center justify-center size-8 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Back to home"
+            >
+              <ArrowLeft className="size-5" />
+            </button>
             <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
             <Link
               href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
@@ -190,15 +202,15 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       )}
 
       {/* Category breakdown */}
-      {categories.length > 0 && (
+      {sections.length > 0 && (
         <div className="space-y-5">
           <h2 className="font-semibold text-foreground border-b border-border pb-2" style={{ fontSize: 'var(--text-fluid-lg)' }}>
             {t("categoryBreakdown")}
           </h2>
           <div className="space-y-4 sm:space-y-5">
-            {categories.map((cat) => (
+            {sections.map((cat) => (
               <SectionCard
-                key={cat.category.id}
+                key={cat.section.id}
                 sectionSummary={cat}
                 currency={budget.currency}
               />
@@ -207,7 +219,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         </div>
       )}
 
-      {!hasAnySpending && categories.length === 0 && <EmptyDashboard />}
+      {!hasAnySpending && sections.length === 0 && <EmptyDashboard />}
     </div>
   );
 }

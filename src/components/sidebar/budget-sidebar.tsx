@@ -25,6 +25,7 @@ import {
 import type { Section, Category } from "@/types/budget";
 import { formatCompact } from "@/lib/format";
 import { useTranslations } from "@/i18n/client";
+import { CategoryIcon } from "@/lib/icon-picker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useTheme } from "next-themes";
@@ -112,7 +113,8 @@ export function BudgetSidebar({
     router.push(`${budgetBasePath(budgetId)}/section/${sectionId}`);
   };
 
-  const sections: Section[] = summary?.categories.map((c) => c.category) ?? [];
+  const loading = useBudgetStore((s) => s.loading);
+  const sections: Section[] = summary?.sections.map((c) => c.section) ?? [];
   const currency = summary?.budget.currency ?? "USD";
 
   return (
@@ -151,17 +153,21 @@ export function BudgetSidebar({
               return (
                 <Collapsible
                   key={budget.id}
-                  open={isExpanded}
-                  onOpenChange={() => toggleBudget(budget.id)}
+                  open={isActive && isExpanded}
+                  onOpenChange={() => isActive && toggleBudget(budget.id)}
                 >
                   <div className="group/budget flex items-center px-1 border-b-2 border-foreground/20">
-                    <CollapsibleTrigger className="flex size-6 shrink-0 items-center justify-center transition-colors duration-200 hover:bg-muted">
-                      <ChevronRight
-                        className={`size-3.5 text-muted-foreground transition-transform duration-200 ${
-                          isExpanded ? "rotate-90" : ""
-                        }`}
-                      />
-                    </CollapsibleTrigger>
+                    {isActive ? (
+                      <CollapsibleTrigger className="flex size-6 shrink-0 items-center justify-center transition-colors duration-200 hover:bg-muted">
+                        <ChevronRight
+                          className={`size-3.5 text-muted-foreground transition-transform duration-200 ${
+                            isExpanded ? "rotate-90" : ""
+                          }`}
+                        />
+                      </CollapsibleTrigger>
+                    ) : (
+                      <div className="flex size-6 shrink-0 items-center justify-center" />
+                    )}
                     <button
                       type="button"
                       onClick={() => handleBudgetClick(budget.id)}
@@ -171,29 +177,31 @@ export function BudgetSidebar({
                           : "text-foreground/70"
                       }`}
                     >
-                      {isExpanded ? (
+                      {isActive && isExpanded ? (
                         <FolderOpen className="size-4 shrink-0 text-muted-foreground" />
                       ) : (
                         <Folder className="size-4 shrink-0 text-muted-foreground" />
                       )}
                       <span className="truncate font-bold">{budget.name}</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAddSectionForBudget(budget.id);
-                      }}
-                      className="flex size-6 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100 mr-1"
-                      aria-label="Add section"
-                    >
-                      <Plus className="size-3" />
-                    </button>
+                    {isActive && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAddSectionForBudget(budget.id);
+                        }}
+                        className="flex size-6 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100 mr-1"
+                        aria-label="Add section"
+                      >
+                        <Plus className="size-3" />
+                      </button>
+                    )}
                   </div>
 
                   <CollapsibleContent>
                     <div className="ml-4 border-l-2 border-foreground/30 pl-2">
-                      {budgetSections.length === 0 && isActive && (
+                      {budgetSections.length === 0 && isActive && loading && (
                         <div className="px-2 py-2 text-xs text-muted-foreground uppercase tracking-wider">
                           {t("loading")}
                         </div>
@@ -201,8 +209,8 @@ export function BudgetSidebar({
                       {budgetSections.map((section) => {
                         const secExpanded =
                           expandedSections[section.id] ?? false;
-                        const secSummary = summary?.categories.find(
-                          (c) => c.category.id === section.id
+                        const secSummary = summary?.sections.find(
+                          (c) => c.section.id === section.id
                         );
                         const subcategories: Category[] =
                           secSummary?.categories.map((s) => s.category) ??
@@ -238,7 +246,7 @@ export function BudgetSidebar({
                                 }`}
                               >
                                 <span className="shrink-0 text-sm leading-none w-4 text-center">
-                                  {section.icon || ""}
+                                  <CategoryIcon iconKey={section.icon} className="size-4" />
                                 </span>
                                 <span className="truncate font-medium text-foreground/80">
                                   {section.name}
@@ -304,7 +312,7 @@ export function BudgetSidebar({
                                         }`}
                                       >
                                         <span className="shrink-0 text-sm leading-none w-4 text-center">
-                                          {sub.icon || "·"}
+                                          <CategoryIcon iconKey={sub.icon} className="size-3.5" />
                                         </span>
                                         <span className="truncate text-foreground/70">
                                           {sub.name}
@@ -394,8 +402,8 @@ export function BudgetSidebar({
       {/* Edit dialogs */}
       {editingSection && (() => {
         const editingSecSubcategories =
-          summary?.categories
-            .find((c) => c.category.id === editingSection.id)
+          summary?.sections
+            .find((c) => c.section.id === editingSection.id)
             ?.categories.map((s) => s.category) ?? [];
         return (
           <EditSectionDialog
@@ -409,10 +417,10 @@ export function BudgetSidebar({
         );
       })()}
       {editingCategory && (() => {
-        const parentSectionSummary = summary?.categories.find(
-          (c) => c.category.id === editingCategory.sectionId
+        const parentSectionSummary = summary?.sections.find(
+          (c) => c.section.id === editingCategory.sectionId
         );
-        const parentSection: Section = parentSectionSummary?.category ?? {
+        const parentSection: Section = parentSectionSummary?.section ?? {
           id: editingCategory.sectionId,
           budget_id: "",
           name: "",

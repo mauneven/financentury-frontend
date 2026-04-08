@@ -12,6 +12,7 @@ import {
   getProgressTextColor,
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { CategoryIcon } from "@/lib/icon-picker";
 import { useState, useEffect } from "react";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
@@ -29,8 +30,8 @@ export default function SectionPage() {
   const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
 
-  const sectionSummary = summary?.categories.find(
-    (c) => c.category.id === params.sectionId
+  const sectionSummary = summary?.sections.find(
+    (c) => c.section.id === params.sectionId
   );
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function SectionPage() {
     );
   }
 
-  const { category: section, categories: subcategories, allocated_amount, total_spent } = sectionSummary;
+  const { section, categories: subcategories, allocated_amount, total_spent } = sectionSummary;
   const remaining = allocated_amount - total_spent;
   const percentage = getPercentage(total_spent, allocated_amount);
   const progressColor = getProgressColor(percentage);
@@ -65,7 +66,7 @@ export default function SectionPage() {
           <ArrowLeft className="size-5" />
         </button>
         <div className="flex flex-1 items-center gap-3">
-          <span className="text-3xl">{section.icon || "\ud83d\udcc1"}</span>
+          <span className="text-3xl"><CategoryIcon iconKey={section.icon} className="size-8" /></span>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{section.name}</h1>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -166,7 +167,7 @@ export default function SectionPage() {
                       className="flex flex-1 items-start gap-3 text-left"
                     >
                       <span className="text-xl shrink-0 mt-0.5">
-                        {sub.category.icon || "\ud83d\udccc"}
+                        <CategoryIcon iconKey={sub.category.icon} className="size-5" />
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
@@ -207,7 +208,7 @@ export default function SectionPage() {
                         e.stopPropagation();
                         setEditingSubcategory(sub.category);
                       }}
-                      className="shrink-0 flex size-8 items-center justify-center text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground"
+                      className="shrink-0 flex size-8 items-center justify-center border-2 border-foreground text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                       aria-label={`Edit ${sub.category.name}`}
                     >
                       <Pencil className="size-3.5" />
@@ -225,8 +226,8 @@ export default function SectionPage() {
         open={addExpenseOpen}
         onOpenChange={setAddExpenseOpen}
         budgetId={params.id}
-        categories={summary.categories.map((s) => ({
-          ...s.category,
+        categories={summary.sections.map((s) => ({
+          ...s.section,
           categories: s.categories.map((c) => c.category),
         }))}
         currency={summary.budget.currency}

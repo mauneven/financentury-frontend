@@ -123,7 +123,7 @@ export function AddExpenseDialog({
 
   const subcategorySummary = ((): CategorySummary | null => {
     if (!summary || !watchedSubcategoryId) return null;
-    for (const cat of summary.categories) {
+    for (const cat of summary.sections) {
       for (const sub of cat.categories) {
         if (sub.category.id === watchedSubcategoryId) {
           return sub;

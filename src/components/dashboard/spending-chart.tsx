@@ -48,11 +48,11 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
       // Compute trends from local expenses grouped by day and section
       if (summary && expenses.length > 0) {
         const categoryMap = new Map<string, { id: string; name: string }>();
-        for (const cat of summary.categories) {
+        for (const cat of summary.sections) {
           for (const sub of cat.categories) {
             categoryMap.set(sub.category.id, {
-              id: cat.category.id,
-              name: cat.category.name,
+              id: cat.section.id,
+              name: cat.section.name,
             });
           }
         }
@@ -214,16 +214,18 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
                 fontSize: "0.75rem",
                 fontFamily: "monospace",
                 boxShadow: "4px 4px 0px hsl(var(--foreground))",
+                color: "hsl(var(--foreground))",
               }}
               labelFormatter={(label) => formatDayLabel(String(label))}
-              labelStyle={{ fontWeight: 700, marginBottom: 4, textTransform: "uppercase" }}
+              labelStyle={{ fontWeight: 700, marginBottom: 4, textTransform: "uppercase", color: "hsl(var(--foreground))" }}
+              itemStyle={{ color: "hsl(var(--foreground))" }}
               formatter={(value) => [
                 formatCompact(Number(value), currency),
                 "Total",
               ]}
             />
             <Area
-              type="monotone"
+              type="natural"
               dataKey="total"
               stroke="hsl(var(--foreground))"
               fill="url(#gradient-total)"

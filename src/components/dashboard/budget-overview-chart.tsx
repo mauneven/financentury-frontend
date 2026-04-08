@@ -13,12 +13,12 @@ interface BudgetOverviewChartProps {
 }
 
 export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
-  const { budget, categories, total_budget, total_spent } = summary;
+  const { budget, sections, total_budget, total_spent } = summary;
   const spentPercentage = getPercentage(total_spent, total_budget);
   const t = useTranslations("dashboard");
 
-  const chartData = categories.map((cat, i) => ({
-    name: cat.category.name,
+  const chartData = sections.map((cat, i) => ({
+    name: cat.section.name,
     value: cat.total_spent,
     allocated: cat.allocated_amount,
     colorIndex: i,
@@ -28,8 +28,8 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
   const hasSpending = total_spent > 0;
   const displayData = hasSpending
     ? chartData.filter((item) => item.value > 0)
-    : categories.map((cat, i) => ({
-        name: cat.category.name,
+    : sections.map((cat, i) => ({
+        name: cat.section.name,
         value: cat.allocated_amount,
         allocated: cat.allocated_amount,
         colorIndex: i,
@@ -37,8 +37,8 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
 
   // If all categories have zero spending, fall back to allocation view
   const finalDisplayData = hasSpending && displayData.length === 0
-    ? categories.map((cat, i) => ({
-        name: cat.category.name,
+    ? sections.map((cat, i) => ({
+        name: cat.section.name,
         value: cat.allocated_amount,
         allocated: cat.allocated_amount,
         colorIndex: i,
@@ -105,9 +105,9 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
         {/* Legend */}
         <div className="mt-4 grid grid-cols-2 gap-2.5">
           {finalDisplayData.map((entry) => {
-            const cat = categories[entry.colorIndex];
+            const cat = sections[entry.colorIndex];
             return (
-              <div key={cat.category.id} className="flex items-center gap-2 min-h-[28px]">
+              <div key={cat.section.id} className="flex items-center gap-2 min-h-[28px]">
                 <div
                   className="h-3 w-3 shrink-0 rounded-full"
                   style={{
@@ -115,7 +115,7 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
                   }}
                 />
                 <span className="truncate text-sm text-muted-foreground">
-                  {cat.category.name}
+                  {cat.section.name}
                 </span>
                 <span className="ml-auto text-sm font-medium tabular-nums text-foreground">
                   {formatCompact(cat.total_spent, budget.currency)}

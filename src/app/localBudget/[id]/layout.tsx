@@ -35,8 +35,8 @@ export default function LocalBudgetLayout({
     }
   }, [params.id, setActiveBudget]);
 
-  const categories = summary?.categories.map((c) => ({
-    ...c.category,
+  const categories = summary?.sections.map((c) => ({
+    ...c.section,
     categories: c.categories.map((s) => s.category),
   })) ?? [];
 

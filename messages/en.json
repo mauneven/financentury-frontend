@@ -62,6 +62,9 @@
     "budgetNamePlaceholder": "e.g. My 2025 Plan",
     "monthlyIncome": "Income",
     "billingPeriod": "Billing Period",
+    "billingCutoffDay": "Billing Cutoff Day",
+    "billingCutoffDayDescription": "The day of the month when your billing period resets.",
+    "dayOfMonth": "Day {day}",
     "selectCurrency": "Select currency",
     "selectPeriod": "Select period",
     "customMonths": "Custom (months)",
@@ -235,7 +238,9 @@
     "warning": "Local mode",
     "warningDescription": "Your data is stored locally and may be lost if you clear browser data.",
     "signIn": "Sign in",
-    "continueWithout": "Continue without signing in"
+    "continueWithout": "Continue without signing in",
+    "title": "LOCAL MODE",
+    "description": "Your data is local and can only be accessed from this device and browser. Sign in, save it, and access your finances securely across your devices."
   },
   "migration": {
     "title": "Local data found",

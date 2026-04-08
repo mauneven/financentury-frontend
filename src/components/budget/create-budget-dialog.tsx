@@ -61,6 +61,7 @@ const budgetFormSchema = z.object({
     .positive("Income must be greater than 0"),
   currency: z.string().min(1, "Currency is required"),
   billing_period_months: z.number().int().min(1).max(12),
+  billing_cutoff_day: z.number().int().min(1).max(31),
 });
 
 type BudgetFormValues = z.infer<typeof budgetFormSchema>;
@@ -372,6 +373,7 @@ export function CreateBudgetDialog({
       monthly_income: undefined as unknown as number,
       currency: detectedCurrency,
       billing_period_months: 1,
+      billing_cutoff_day: 1,
     },
   });
 
@@ -412,6 +414,7 @@ export function CreateBudgetDialog({
           monthly_income: undefined as unknown as number,
           currency: detectedCurrency,
           billing_period_months: 1,
+          billing_cutoff_day: 1,
         });
       }, 200);
       return () => clearTimeout(timeout);
@@ -700,6 +703,35 @@ export function CreateBudgetDialog({
               </>
             );
           }}
+        />
+      </div>
+
+      {/* Billing cutoff day */}
+      <div className="space-y-1.5">
+        <Label>{t("billingCutoffDay")}</Label>
+        <p className="text-xs text-muted-foreground">{t("billingCutoffDayDescription")}</p>
+        <Controller
+          name="billing_cutoff_day"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={String(field.value)}
+              onValueChange={(val) => field.onChange(Number(val))}
+            >
+              <SelectTrigger className="w-full">
+                <span className="flex flex-1 text-left">
+                  {t("dayOfMonth", { day: String(field.value) })}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                  <SelectItem key={day} value={String(day)}>
+                    {t("dayOfMonth", { day: String(day) })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         />
       </div>
     </div>
