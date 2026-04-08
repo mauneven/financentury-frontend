@@ -1,17 +1,47 @@
 "use client";
 
-import { RefreshCw, Loader2, Settings } from "lucide-react";
+import dynamic from "next/dynamic";
+import { RefreshCw, Settings } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
-import { SpendingChart } from "./spending-chart";
-import { BudgetOverviewChart } from "./budget-overview-chart";
 import { EmptyDashboard } from "./empty-dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { BILLING_PERIODS } from "@/types/budget";
 import Link from "next/link";
+
+// Lazy-load chart components (they import recharts which is heavy)
+const SpendingChart = dynamic(
+  () => import("./spending-chart").then((mod) => ({ default: mod.SpendingChart })),
+  {
+    loading: () => (
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          <div className="mt-4 h-64 animate-pulse rounded-lg bg-muted" />
+        </CardContent>
+      </Card>
+    ),
+    ssr: false,
+  }
+);
+
+const BreakdownChart = dynamic(
+  () => import("./breakdown-chart").then((mod) => ({ default: mod.BreakdownChart })),
+  {
+    loading: () => (
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+          <div className="mt-4 h-64 animate-pulse rounded-full bg-muted" />
+        </CardContent>
+      </Card>
+    ),
+    ssr: false,
+  }
+);
 
 interface BudgetDashboardProps {
   budgetId: string;
@@ -86,9 +116,11 @@ function DashboardSkeleton() {
 }
 
 export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
-  const { summary, loading, error, setActiveBudget, refreshSummary } =
-    useBudgetStore();
-  const { mode } = useAuthStore();
+  const summary = useBudgetStore((s) => s.summary);
+  const loading = useBudgetStore((s) => s.loading);
+  const error = useBudgetStore((s) => s.error);
+  const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
+  const mode = useAuthStore((s) => s.mode);
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
 
@@ -152,19 +184,6 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             {budget.currency} &middot; {billingLabel}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={refreshSummary}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground disabled:opacity-50 min-h-[44px] min-w-[44px] justify-center"
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span className="hidden sm:inline">{t("refresh")}</span>
-        </button>
       </div>
 
       {/* Overview cards */}
@@ -177,7 +196,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             <SpendingChart budgetId={budgetId} currency={budget.currency} />
           </div>
           <div>
-            <BudgetOverviewChart summary={summary} />
+            <BreakdownChart summary={summary} />
           </div>
         </div>
       ) : (

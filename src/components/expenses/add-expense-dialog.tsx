@@ -42,7 +42,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const expenseSchema = z.object({
-  category_id: z.string().uuid("Please select a subcategory"),
+  category_id: z.string().uuid("Please select a category"),
   amount: z.number().positive("Amount must be greater than 0"),
   description: z.string().max(500, "Description must be 500 characters or fewer").optional(),
   expense_date: z.string().min(1, "Date is required"),

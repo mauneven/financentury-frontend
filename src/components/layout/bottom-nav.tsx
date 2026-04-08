@@ -31,8 +31,9 @@ export function BottomNav({
   const t = useTranslations("bottomNav");
   const tAuth = useTranslations("auth");
   const { locale, setLocale } = useLocaleStore();
-  const { activeBudgetId } = useBudgetStore();
-  const { mode, signInWithGoogle } = useAuthStore();
+  const activeBudgetId = useBudgetStore((s) => s.activeBudgetId);
+  const mode = useAuthStore((s) => s.mode);
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
 
   const isHome = pathname === "/";
 

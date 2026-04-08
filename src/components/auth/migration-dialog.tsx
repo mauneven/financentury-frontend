@@ -15,7 +15,7 @@ interface MigrationDialogProps {
 export function MigrationDialog({ open, onOpenChange }: MigrationDialogProps) {
   const t = useTranslations("migration");
   const [migrating, setMigrating] = useState(false);
-  const { fetchBudgets } = useBudgetStore();
+  const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
   const budgetCount = localBudgetStorage.getBudgets().length;
 
   const handleSave = async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { budgetWS } from "@/lib/websocket";
 
 export type AppMode = "local" | "online";
 
@@ -169,6 +170,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: () => {
+    budgetWS.disconnect();
     if (typeof window !== "undefined") {
       localStorage.removeItem("financentury_token");
       sessionStorage.removeItem("oauth_state");

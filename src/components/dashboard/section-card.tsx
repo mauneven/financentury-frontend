@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo, useMemo } from "react";
 import { ChevronDown, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SectionSummary, Section, Category } from "@/types/budget";
@@ -22,7 +22,7 @@ interface SectionCardProps {
   onSubcategoryClick?: (subcategoryId: string) => void;
 }
 
-export function SectionCard({
+export const SectionCard = memo(function SectionCard({
   sectionSummary,
   currency,
   onSubcategoryClick,
@@ -34,10 +34,17 @@ export function SectionCard({
 
   const { category, categories: subcategories, allocated_amount, total_spent } =
     sectionSummary;
-  const remaining = allocated_amount - total_spent;
-  const percentage = getPercentage(total_spent, allocated_amount);
-  const progressColor = getProgressColor(percentage);
-  const textColor = getProgressTextColor(percentage);
+
+  const { remaining, percentage, progressColor, textColor } = useMemo(() => {
+    const rem = allocated_amount - total_spent;
+    const pct = getPercentage(total_spent, allocated_amount);
+    return {
+      remaining: rem,
+      percentage: pct,
+      progressColor: getProgressColor(pct),
+      textColor: getProgressTextColor(pct),
+    };
+  }, [allocated_amount, total_spent]);
 
   const toggleExpanded = useCallback(() => {
     setIsExpanded((prev) => !prev);
@@ -46,7 +53,7 @@ export function SectionCard({
   return (
     <Card className="group shadow-sm transition-shadow duration-200 hover:shadow-md">
       <CardContent className="p-5 sm:p-7">
-        {/* Category header */}
+        {/* Section header */}
         <div className="flex w-full items-center justify-between min-h-[44px]">
           <button
             type="button"
@@ -61,15 +68,20 @@ export function SectionCard({
                 <h3 className="text-lg font-semibold text-foreground">
                   {category.name}
                 </h3>
-                <p className="text-base text-muted-foreground">
-                  {category.allocation_percent}% {t("ofIncome")}
+                <p className="text-sm text-muted-foreground">
+                  {subcategories.length} {subcategories.length === 1 ? "category" : "categories"} &middot; {category.allocation_percent}% {t("ofIncome")}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className={cn("text-base font-semibold tabular-nums", textColor)}>
-                {percentage}%
-              </span>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-2xl font-bold tabular-nums text-foreground">
+                  {formatCompact(allocated_amount, currency)}
+                </p>
+                <p className={cn("text-sm font-medium tabular-nums", textColor)}>
+                  {percentage}% {t("used")}
+                </p>
+              </div>
               <ChevronDown
                 className={cn(
                   "h-5 w-5 text-muted-foreground transition-transform duration-200",
@@ -94,12 +106,6 @@ export function SectionCard({
         {/* Budget / Spent / Left summary */}
         <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
           <span>
-            {t("budgetLabel")}:{" "}
-            <span className="font-medium text-foreground">
-              {formatCompact(allocated_amount, currency)}
-            </span>
-          </span>
-          <span>
             {t("spentLabel")}:{" "}
             <span className="font-medium text-foreground">
               {formatCompact(total_spent, currency)}
@@ -121,9 +127,9 @@ export function SectionCard({
           </span>
         </div>
 
-        {/* Overall progress bar */}
+        {/* Overall progress bar - thicker */}
         <div className="mt-3">
-          <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-4 w-full overflow-hidden rounded-full bg-muted">
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-300",
@@ -134,7 +140,7 @@ export function SectionCard({
           </div>
         </div>
 
-        {/* Expandable subcategory list */}
+        {/* Expandable category list */}
         <div
           className={cn(
             "grid transition-[grid-template-rows] duration-200 ease-in-out",
@@ -150,6 +156,7 @@ export function SectionCard({
                 );
                 const subProgressColor = getProgressColor(subPercentage);
                 const subTextColor = getProgressTextColor(subPercentage);
+                const subRemaining = sub.allocated_amount - sub.total_spent;
 
                 return (
                   <div
@@ -170,14 +177,13 @@ export function SectionCard({
                             {sub.category.name}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-base">
-                          <span className="tabular-nums text-muted-foreground">
-                            {formatCompact(sub.total_spent, currency)} /{" "}
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-semibold tabular-nums text-foreground">
                             {formatCompact(sub.allocated_amount, currency)}
                           </span>
                           <span
                             className={cn(
-                              "min-w-[2.5rem] text-right font-semibold tabular-nums",
+                              "min-w-[2.5rem] text-right text-sm font-semibold tabular-nums",
                               subTextColor
                             )}
                           >
@@ -196,6 +202,17 @@ export function SectionCard({
                             width: `${Math.min(subPercentage, 100)}%`,
                           }}
                         />
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>
+                          {formatCompact(sub.total_spent, currency)} spent
+                        </span>
+                        <span className={cn(
+                          subRemaining < 0 ? "text-red-600 dark:text-red-400" : ""
+                        )}>
+                          {subRemaining < 0 ? "-" : ""}
+                          {formatCompact(Math.abs(subRemaining), currency)} left
+                        </span>
                       </div>
                     </button>
                     <button
@@ -243,4 +260,4 @@ export function SectionCard({
       )}
     </Card>
   );
-}
+});

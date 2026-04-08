@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { formatCurrency } from "@/lib/format";
 import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
@@ -20,19 +21,22 @@ interface BudgetCardProps {
   onClick?: () => void;
 }
 
-export function BudgetCard({ budget, onClick }: BudgetCardProps) {
+export const BudgetCard = memo(function BudgetCard({ budget, onClick }: BudgetCardProps) {
   const t = useTranslations("budgetCard");
   const tb = useTranslations("budget");
-  const currency = CURRENCIES.find((c) => c.code === budget.currency);
-  const period = BILLING_PERIODS.find(
-    (p) => p.value === budget.billing_period_months
-  );
 
-  const formattedDate = new Intl.DateTimeFormat(currency?.locale || "en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(budget.created_at));
+  const { currency, period, formattedDate } = useMemo(() => {
+    const curr = CURRENCIES.find((c) => c.code === budget.currency);
+    return {
+      currency: curr,
+      period: BILLING_PERIODS.find((p) => p.value === budget.billing_period_months),
+      formattedDate: new Intl.DateTimeFormat(curr?.locale || "en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(new Date(budget.created_at)),
+    };
+  }, [budget.currency, budget.billing_period_months, budget.created_at]);
 
   return (
     <Card
@@ -90,4 +94,4 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
       </CardContent>
     </Card>
   );
-}
+});

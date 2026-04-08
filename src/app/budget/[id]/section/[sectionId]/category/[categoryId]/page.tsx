@@ -1,16 +1,42 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { CategoryDetail } from "@/components/expenses/category-detail";
-import { useRouter } from "next/navigation";
 
 export default function CategoryPage() {
   const params = useParams<{ id: string; sectionId: string; categoryId: string }>();
   const router = useRouter();
-  const { summary, expenses } = useBudgetStore();
+  const summary = useBudgetStore((s) => s.summary);
+  const expenses = useBudgetStore((s) => s.expenses);
 
-  if (!summary) {
+  const result = useMemo(() => {
+    if (!summary) return null;
+    for (const sec of summary.categories) {
+      if (sec.category.id === params.sectionId) {
+        const catSummary = sec.categories.find(
+          (c) => c.category.id === params.categoryId
+        );
+        if (catSummary) {
+          const allSections = summary.categories.map((s) => ({
+            ...s.category,
+            categories: s.categories.map((c) => c.category),
+          }));
+          return { catSummary, allSections };
+        }
+      }
+    }
+    return undefined; // not found (distinct from null = no summary yet)
+  }, [summary, params.sectionId, params.categoryId]);
+
+  useEffect(() => {
+    if (result === undefined) {
+      router.back();
+    }
+  }, [result, router]);
+
+  if (!result) {
     return (
       <div className="flex items-center justify-center min-h-[200px] text-muted-foreground text-sm">
         Loading...
@@ -18,32 +44,13 @@ export default function CategoryPage() {
     );
   }
 
-  // Find the category summary
-  for (const sec of summary.categories) {
-    if (sec.category.id === params.sectionId) {
-      const catSummary = sec.categories.find(
-        (c) => c.category.id === params.categoryId
-      );
-      if (catSummary) {
-        const allSections = summary.categories.map((s) => ({
-          ...s.category,
-          categories: s.categories.map((c) => c.category),
-        }));
-
-        return (
-          <CategoryDetail
-            subcategorySummary={catSummary}
-            expenses={expenses}
-            currency={summary.budget.currency}
-            budgetId={params.id}
-            categories={allSections}
-          />
-        );
-      }
-    }
-  }
-
-  // Category not found -- go back
-  router.back();
-  return null;
+  return (
+    <CategoryDetail
+      subcategorySummary={result.catSummary}
+      expenses={expenses}
+      currency={summary!.budget.currency}
+      budgetId={params.id}
+      categories={result.allSections}
+    />
+  );
 }

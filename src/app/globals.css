@@ -49,10 +49,10 @@
 }
 
 :root {
-  --text-fluid-sm: clamp(0.8125rem, 0.75rem + 0.25vw, 0.9375rem);
-  --text-fluid-base: clamp(0.875rem, 0.8rem + 0.3vw, 1.0625rem);
-  --text-fluid-lg: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
-  --text-fluid-xl: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+  --text-fluid-sm: clamp(0.875rem, 0.8rem + 0.3vw, 1rem);
+  --text-fluid-base: clamp(0.9375rem, 0.85rem + 0.35vw, 1.125rem);
+  --text-fluid-lg: clamp(1.1875rem, 1.05rem + 0.55vw, 1.4375rem);
+  --text-fluid-xl: clamp(1.5625rem, 1.3rem + 1.05vw, 2.0625rem);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -130,7 +130,7 @@
   }
   html {
     @apply font-sans;
-    font-size: 16px;
+    font-size: clamp(15px, 0.9rem + 0.2vw, 17px);
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }

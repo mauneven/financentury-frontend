@@ -15,8 +15,10 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("home");
-  const { budgets, fetchBudgets, loading } = useBudgetStore();
-  const { mode } = useAuthStore();
+  const budgets = useBudgetStore((s) => s.budgets);
+  const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
+  const loading = useBudgetStore((s) => s.loading);
+  const mode = useAuthStore((s) => s.mode);
   const [showCreateBudget, setShowCreateBudget] = useState(false);
 
   useEffect(() => {

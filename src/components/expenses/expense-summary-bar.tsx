@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { DollarSign } from "lucide-react";
 
 import {
@@ -17,15 +18,21 @@ interface ExpenseSummaryBarProps {
   currency: string;
 }
 
-export function ExpenseSummaryBar({
+export const ExpenseSummaryBar = memo(function ExpenseSummaryBar({
   totalBudget,
   totalSpent,
   currency,
 }: ExpenseSummaryBarProps) {
   const t = useTranslations("expense");
-  const percentage = getPercentage(totalSpent, totalBudget);
-  const remaining = totalBudget - totalSpent;
-  const isOverBudget = remaining < 0;
+
+  const { percentage, remaining, isOverBudget } = useMemo(() => {
+    const rem = totalBudget - totalSpent;
+    return {
+      percentage: getPercentage(totalSpent, totalBudget),
+      remaining: rem,
+      isOverBudget: rem < 0,
+    };
+  }, [totalBudget, totalSpent]);
 
   return (
     <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-2.5">
@@ -77,4 +84,4 @@ export function ExpenseSummaryBar({
       </div>
     </div>
   );
-}
+});

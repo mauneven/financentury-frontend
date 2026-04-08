@@ -6,7 +6,7 @@ import { BudgetSettings } from "@/components/budget/budget-settings";
 
 export default function LocalBudgetSettingsPage() {
   const params = useParams<{ id: string }>();
-  const { summary } = useBudgetStore();
+  const summary = useBudgetStore((s) => s.summary);
 
   if (!summary) {
     return (

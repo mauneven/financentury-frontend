@@ -9,7 +9,8 @@ export default function LocalBudgetDashboardPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const subcategoryId = searchParams.get("sub");
-  const { summary, expenses } = useBudgetStore();
+  const summary = useBudgetStore((s) => s.summary);
+  const expenses = useBudgetStore((s) => s.expenses);
 
   if (subcategoryId && summary) {
     // Find the subcategory in summary

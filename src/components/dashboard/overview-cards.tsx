@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { BudgetSummary } from "@/types/budget";
@@ -11,15 +12,21 @@ interface OverviewCardsProps {
   summary: BudgetSummary;
 }
 
-export function OverviewCards({ summary }: OverviewCardsProps) {
+export const OverviewCards = memo(function OverviewCards({ summary }: OverviewCardsProps) {
   const { budget, total_budget, total_spent } = summary;
-  const remaining = total_budget - total_spent;
-  const spentPercentage = getPercentage(total_spent, total_budget);
-  const isOverBudget = remaining < 0;
-  const overBudgetPercent = total_budget > 0 ? Math.round(((total_spent - total_budget) / total_budget) * 100) : 0;
-  const remainingPercent = total_budget > 0 ? Math.round(((total_budget - total_spent) / total_budget) * 100) : 0;
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
+
+  const { remaining, spentPercentage, isOverBudget, overBudgetPercent, remainingPercent } = useMemo(() => {
+    const rem = total_budget - total_spent;
+    return {
+      remaining: rem,
+      spentPercentage: getPercentage(total_spent, total_budget),
+      isOverBudget: rem < 0,
+      overBudgetPercent: total_budget > 0 ? Math.round(((total_spent - total_budget) / total_budget) * 100) : 0,
+      remainingPercent: total_budget > 0 ? Math.round(((total_budget - total_spent) / total_budget) * 100) : 0,
+    };
+  }, [total_budget, total_spent]);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -128,4 +135,4 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
       </Card>
     </div>
   );
-}
+});

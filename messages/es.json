@@ -84,7 +84,7 @@
     "reviewAllocations": "Revisa tus asignaciones de categorías",
     "customCategories": "Tus categorías personalizadas",
     "saveChanges": "Guardar Cambios",
-    "deleteDescription": "Eliminar un presupuesto elimina todas las categorías, subcategorías y gastos asociados. Esta acción no se puede deshacer.",
+    "deleteDescription": "Eliminar un presupuesto elimina todas las secciones, categorías y gastos asociados. Esta acción no se puede deshacer.",
     "months": "meses"
   },
   "budgetCard": {
@@ -234,7 +234,7 @@
   "localMode": {
     "warning": "Modo local",
     "warningDescription": "Tus datos están guardados localmente y se pueden perder si borras los datos del navegador.",
-    "signIn": "Inicia sesión para guardar tus datos",
+    "signIn": "Iniciar sesión",
     "continueWithout": "Continuar sin iniciar sesión"
   },
   "migration": {

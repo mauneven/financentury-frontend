@@ -176,11 +176,11 @@ function SectionImpactPreview({
             )}
           >
             {isOverflow
-              ? `Subcategories total ${childTotal.toFixed(1)}% but category is only ${newSectionPercent.toFixed(1)}%`
-              : `Subcategories total ${childTotal.toFixed(1)}% of ${newSectionPercent.toFixed(1)}% allocated`}
+              ? `Categories total ${childTotal.toFixed(1)}% but section is only ${newSectionPercent.toFixed(1)}%`
+              : `Categories total ${childTotal.toFixed(1)}% of ${newSectionPercent.toFixed(1)}% allocated`}
           </p>
 
-          {/* Per-subcategory rows */}
+          {/* Per-category rows */}
           <ul className="space-y-0.5 pl-1">
             {categories.map((sub) => {
               const overflow = sub.allocation_percent > newSectionPercent;

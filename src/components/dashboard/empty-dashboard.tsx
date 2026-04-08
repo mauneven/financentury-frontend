@@ -1,10 +1,11 @@
 "use client";
 
+import { memo } from "react";
 import { Wallet, ArrowUpRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslations } from "@/i18n/client";
 
-export function EmptyDashboard() {
+export const EmptyDashboard = memo(function EmptyDashboard() {
   const t = useTranslations("dashboard");
   return (
     <Card className="shadow-sm">
@@ -25,4 +26,4 @@ export function EmptyDashboard() {
       </CardContent>
     </Card>
   );
-}
+});

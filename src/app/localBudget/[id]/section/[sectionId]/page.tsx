@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,36 +14,39 @@ import {
   getProgressTextColor,
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
 import type { Category } from "@/types/budget";
 
 export default function SectionPage() {
   const params = useParams<{ id: string; sectionId: string }>();
   const router = useRouter();
-  const { summary } = useBudgetStore();
-  const { mode } = useAuthStore();
+  const summary = useBudgetStore((s) => s.summary);
+  const mode = useAuthStore((s) => s.mode);
   const budgetBase = mode === "local" ? "localBudget" : "budget";
 
   const [editSectionOpen, setEditSectionOpen] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
+  const [addExpenseOpen, setAddExpenseOpen] = useState(false);
 
-  if (!summary) {
+  const sectionSummary = summary?.categories.find(
+    (c) => c.category.id === params.sectionId
+  );
+
+  useEffect(() => {
+    if (summary && !sectionSummary) {
+      router.push(`/${budgetBase}/${params.id}`);
+    }
+  }, [summary, sectionSummary, router, budgetBase, params.id]);
+
+  if (!summary || !sectionSummary) {
     return (
       <div className="flex items-center justify-center min-h-[200px] text-muted-foreground text-sm">
         Loading...
       </div>
     );
-  }
-
-  const sectionSummary = summary.categories.find(
-    (c) => c.category.id === params.sectionId
-  );
-
-  if (!sectionSummary) {
-    router.push(`/${budgetBase}/${params.id}`);
-    return null;
   }
 
   const { category: section, categories: subcategories, allocated_amount, total_spent } = sectionSummary;
@@ -73,6 +76,15 @@ export default function SectionPage() {
             </p>
           </div>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => setAddExpenseOpen(true)}
+          className="shrink-0 min-h-[44px]"
+        >
+          <Plus className="size-4 mr-1.5" />
+          <span className="hidden sm:inline">Add Expense</span>
+          <span className="sm:hidden">Add</span>
+        </Button>
         <Button
           variant="ghost"
           size="icon"
@@ -133,12 +145,12 @@ export default function SectionPage() {
         </div>
       </div>
 
-      {/* Subcategories */}
+      {/* Categories */}
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Subcategories</h2>
+        <h2 className="text-lg font-semibold">Categories</h2>
         {subcategories.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            No subcategories yet.
+            No categories yet.
           </p>
         ) : (
           subcategories.map((sub) => {
@@ -217,6 +229,19 @@ export default function SectionPage() {
           })
         )}
       </div>
+
+      {/* Add Expense Dialog */}
+      <AddExpenseDialog
+        open={addExpenseOpen}
+        onOpenChange={setAddExpenseOpen}
+        budgetId={params.id}
+        categories={summary.categories.map((s) => ({
+          ...s.category,
+          categories: s.categories.map((c) => c.category),
+        }))}
+        currency={summary.budget.currency}
+        preselectedSubcategoryId={subcategories.length > 0 ? subcategories[0].category.id : undefined}
+      />
 
       {/* Edit dialogs */}
       <EditSectionDialog

@@ -84,7 +84,7 @@
     "reviewAllocations": "Review your category allocations",
     "customCategories": "Your custom categories",
     "saveChanges": "Save Changes",
-    "deleteDescription": "Deleting a budget removes all associated categories, subcategories, and expenses. This action cannot be undone.",
+    "deleteDescription": "Deleting a budget removes all associated sections, categories, and expenses. This action cannot be undone.",
     "months": "months"
   },
   "budgetCard": {
@@ -234,7 +234,7 @@
   "localMode": {
     "warning": "Local mode",
     "warningDescription": "Your data is stored locally and may be lost if you clear browser data.",
-    "signIn": "Sign in to save your data",
+    "signIn": "Sign in",
     "continueWithout": "Continue without signing in"
   },
   "migration": {

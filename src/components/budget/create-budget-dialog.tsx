@@ -136,10 +136,23 @@ function GuidedCategoryReview({
     (acc, c) => acc + c.allocation_percent,
     0
   );
+  const totalAmount = (income * totalPercent) / 100;
 
-  const handleCategoryPercentChange = (index: number, value: number) => {
+  const handleSectionAmountChange = (index: number, amountStr: string) => {
+    const amount = parseFloat(amountStr.replace(/[^\d.]/g, "")) || 0;
+    const percent = income > 0 ? Math.round((amount / income) * 100) : 0;
     const updated = [...categories];
-    updated[index] = { ...updated[index], allocation_percent: value };
+    updated[index] = { ...updated[index], allocation_percent: percent };
+    onChange(updated);
+  };
+
+  const handleSubcategoryAmountChange = (catIdx: number, subIdx: number, amountStr: string) => {
+    const amount = parseFloat(amountStr.replace(/[^\d.]/g, "")) || 0;
+    const percent = income > 0 ? Math.round((amount / income) * 100) : 0;
+    const updated = [...categories];
+    const updatedSubs = [...updated[catIdx].subcategories];
+    updatedSubs[subIdx] = { ...updatedSubs[subIdx], allocation_percent: percent };
+    updated[catIdx] = { ...updated[catIdx], subcategories: updatedSubs };
     onChange(updated);
   };
 
@@ -150,79 +163,109 @@ function GuidedCategoryReview({
       </p>
 
       <div className="space-y-3">
-        {categories.map((cat, catIdx) => (
-          <div
-            key={cat.name}
-            className="rounded-lg border bg-card/50 p-3 space-y-2"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{cat.icon}</span>
-                <span className="font-medium text-sm">{cat.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <InputGroup className="h-7 w-20">
-                  <InputGroupInput
-                    type="text"
-                    inputMode="numeric"
-                    value={cat.allocation_percent}
-                    onChange={(e) =>
-                      handleCategoryPercentChange(
-                        catIdx,
-                        Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                      )
-                    }
-                    className="text-right text-xs h-7"
-                  />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupText className="text-xs">%</InputGroupText>
-                  </InputGroupAddon>
-                </InputGroup>
-                <span className="text-xs text-muted-foreground w-20 text-right tabular-nums">
-                  {formatCurrency(
-                    (income * cat.allocation_percent) / 100,
-                    currency
-                  )}
-                </span>
-              </div>
-            </div>
-
-            <div className="pl-7 space-y-1">
-              {cat.subcategories.map((sub) => (
-                <div
-                  key={sub.name}
-                  className="flex items-center justify-between text-xs text-muted-foreground"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <span>{sub.icon}</span>
-                    {sub.name}
-                  </span>
-                  <span className="tabular-nums">
-                    {sub.allocation_percent}%
+        {categories.map((cat, catIdx) => {
+          const sectionAmount = (income * cat.allocation_percent) / 100;
+          return (
+            <div
+              key={cat.name}
+              className="rounded-lg border bg-card/50 p-3 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{cat.icon}</span>
+                  <span className="font-medium text-sm">{cat.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <InputGroup className="h-7 w-24">
+                    <InputGroupAddon align="inline-start">
+                      <InputGroupText className="text-xs">$</InputGroupText>
+                    </InputGroupAddon>
+                    <InputGroupInput
+                      type="text"
+                      inputMode="decimal"
+                      value={Math.round(sectionAmount)}
+                      onChange={(e) =>
+                        handleSectionAmountChange(catIdx, e.target.value)
+                      }
+                      className="text-right text-xs h-7"
+                    />
+                  </InputGroup>
+                  <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">
+                    {cat.allocation_percent}%
                   </span>
                 </div>
-              ))}
+              </div>
+
+              <div className="pl-7 space-y-1.5">
+                {cat.subcategories.map((sub, subIdx) => {
+                  const subAmount = (income * sub.allocation_percent) / 100;
+                  return (
+                    <div
+                      key={sub.name}
+                      className="flex items-center justify-between text-xs"
+                    >
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <span>{sub.icon}</span>
+                        {sub.name}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <InputGroup className="h-6 w-20">
+                          <InputGroupAddon align="inline-start">
+                            <InputGroupText className="text-[10px]">$</InputGroupText>
+                          </InputGroupAddon>
+                          <InputGroupInput
+                            type="text"
+                            inputMode="decimal"
+                            value={Math.round(subAmount)}
+                            onChange={(e) =>
+                              handleSubcategoryAmountChange(catIdx, subIdx, e.target.value)
+                            }
+                            className="text-right text-[11px] h-6"
+                          />
+                        </InputGroup>
+                        <span className="text-muted-foreground w-8 text-right tabular-nums">
+                          {sub.allocation_percent}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Separator />
 
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">{t("totalAllocation")}</span>
-        <span
-          className={cn(
-            "font-semibold tabular-nums",
-            totalPercent === 100
-              ? "text-emerald-600"
-              : totalPercent > 100
-                ? "text-red-600"
-                : "text-amber-600"
-          )}
-        >
-          {totalPercent}%
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "font-semibold tabular-nums",
+              totalPercent === 100
+                ? "text-emerald-600"
+                : totalPercent > 100
+                  ? "text-red-600"
+                  : "text-amber-600"
+            )}
+          >
+            {formatCurrency(totalAmount, currency)}
+          </span>
+          <span
+            className={cn(
+              "text-xs tabular-nums",
+              totalPercent === 100
+                ? "text-emerald-600"
+                : totalPercent > 100
+                  ? "text-red-600"
+                  : "text-amber-600"
+            )}
+          >
+            ({totalPercent}%)
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -575,40 +618,40 @@ export function CreateBudgetDialog({
           name="billing_period_months"
           control={control}
           render={({ field }) => {
-            const selectValue = customPeriod ? "custom" : String(field.value);
-            const displayLabel = customPeriod
-              ? tc("custom")
-              : BILLING_PERIODS.find((p) => String(p.value) === selectValue)?.label;
+            const periodOptions = [
+              { value: 1, label: tc("monthly") },
+              { value: 6, label: tc("semiAnnual") },
+              { value: 12, label: tc("annual") },
+              { value: -1, label: tc("custom") },
+            ];
+            const activeValue = customPeriod ? -1 : field.value;
             return (
               <>
-                <Select
-                  value={selectValue}
-                  onValueChange={(val) => {
-                    if (val === "custom") {
-                      setCustomPeriod(true);
-                      field.onChange(1);
-                    } else {
-                      setCustomPeriod(false);
-                      field.onChange(Number(val));
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    {displayLabel ? (
-                      <span className="flex flex-1 text-left">{displayLabel}</span>
-                    ) : (
-                      <SelectValue placeholder={t("selectPeriod")} />
-                    )}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BILLING_PERIODS.map((p) => (
-                      <SelectItem key={p.value} value={String(p.value)}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="custom">{tc("custom")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {periodOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        if (opt.value === -1) {
+                          setCustomPeriod(true);
+                          field.onChange(1);
+                        } else {
+                          setCustomPeriod(false);
+                          field.onChange(opt.value);
+                        }
+                      }}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-sm font-medium transition-all duration-150",
+                        activeValue === opt.value
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
 
                 {customPeriod && (
                   <div className="mt-2 flex items-center gap-2">

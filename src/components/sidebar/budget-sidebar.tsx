@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import {
   Collapsible,
@@ -20,11 +20,15 @@ import {
   LogIn,
   Pencil,
   Settings,
+  Sun,
+  Moon,
 } from "lucide-react";
 import type { Section, Category } from "@/types/budget";
+import { formatCompact } from "@/lib/format";
 import { useTranslations } from "@/i18n/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/auth-store";
 import { LocalModeBanner } from "@/components/auth/local-mode-banner";
 import Link from "next/link";
@@ -46,9 +50,12 @@ export function BudgetSidebar({
   const t = useTranslations("sidebar");
   const tApp = useTranslations("app");
   const router = useRouter();
-  const { budgets, activeBudgetId, summary, setActiveBudget } =
-    useBudgetStore();
-  const { mode } = useAuthStore();
+  const pathname = usePathname();
+  const budgets = useBudgetStore((s) => s.budgets);
+  const activeBudgetId = useBudgetStore((s) => s.activeBudgetId);
+  const summary = useBudgetStore((s) => s.summary);
+  const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
+  const mode = useAuthStore((s) => s.mode);
 
   const budgetBasePath = (budgetId: string) =>
     `/${mode === "local" ? "localBudget" : "budget"}/${budgetId}`;
@@ -64,6 +71,16 @@ export function BudgetSidebar({
     category: Category;
   } | null>(null);
   const [addSectionForBudget, setAddSectionForBudget] = useState<string | null>(null);
+
+  // Auto-expand active budget when summary loads
+  useEffect(() => {
+    if (activeBudgetId && summary) {
+      setExpandedBudgets((prev) => ({
+        ...prev,
+        [activeBudgetId]: true,
+      }));
+    }
+  }, [activeBudgetId, summary]);
 
   const toggleBudget = (budgetId: string) => {
     setExpandedBudgets((prev) => ({
@@ -88,7 +105,16 @@ export function BudgetSidebar({
     router.push(budgetBasePath(budgetId));
   };
 
+  const handleSectionClick = (budgetId: string, sectionId: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: true,
+    }));
+    router.push(`${budgetBasePath(budgetId)}/section/${sectionId}`);
+  };
+
   const sections: Section[] = summary?.categories.map((c) => c.category) ?? [];
+  const currency = summary?.budget.currency ?? "USD";
 
   return (
     <div className="flex h-full flex-col">
@@ -102,38 +128,10 @@ export function BudgetSidebar({
         </span>
       </div>
 
-      <Separator />
-
-      {/* Section header */}
-      <div className="flex items-center justify-between px-4 py-4">
-        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          {t("myBudgets")}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={onAddExpense}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Plus className="size-3.5" />
-          <span className="sr-only">{t("addExpense")}</span>
-        </Button>
-      </div>
+      {/* Local mode banner - placed right below branding */}
+      <LocalModeBanner />
 
       <Separator />
-
-      {/* Add Expense button */}
-      <div className="px-3 pt-3.5 pb-2.5">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full justify-start gap-2 text-sm font-medium shadow-sm"
-          onClick={onAddExpense}
-        >
-          <Plus className="size-3.5" />
-          {t("addExpense")}
-        </Button>
-      </div>
 
       {/* Tree view */}
       <ScrollArea className="flex-1 px-1">
@@ -217,17 +215,10 @@ export function BudgetSidebar({
                         const subcategories: Category[] =
                           secSummary?.categories.map((s) => s.category) ??
                           [];
-                        const totalBudget = summary?.total_budget ?? 0;
-                        const secSpentPercent =
-                          totalBudget > 0 && secSummary
-                            ? Math.round(
-                                (secSummary.total_spent / totalBudget) * 100
-                              )
-                            : 0;
-                        const secAllocatedPercent = section.allocation_percent;
-                        const secExceeded = secSummary
-                          ? secSummary.total_spent > secSummary.allocated_amount
-                          : false;
+                        const secSpent = secSummary?.total_spent ?? 0;
+                        const secAllocated = secSummary?.allocated_amount ?? 0;
+                        const secExceeded = secSpent > secAllocated;
+                        const isSectionActive = pathname.includes(`/section/${section.id}`);
 
                         return (
                           <Collapsible
@@ -246,11 +237,13 @@ export function BudgetSidebar({
                               <button
                                 type="button"
                                 onClick={() =>
-                                  router.push(
-                                    `${budgetBasePath(budget.id)}/section/${section.id}`
-                                  )
+                                  handleSectionClick(budget.id, section.id)
                                 }
-                                className="flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent text-left min-h-[44px]"
+                                className={`flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent text-left min-h-[44px] ${
+                                  isSectionActive
+                                    ? "bg-accent/80 font-semibold text-foreground"
+                                    : ""
+                                }`}
                               >
                                 <span className="shrink-0 text-sm leading-none w-4 text-center">
                                   {section.icon || ""}
@@ -262,28 +255,17 @@ export function BudgetSidebar({
                                   <span
                                     className={
                                       secExceeded
-                                        ? "text-red-500"
-                                        : "text-emerald-600"
+                                        ? "text-red-600 font-semibold"
+                                        : "text-emerald-700 dark:text-emerald-500 font-medium"
                                     }
                                   >
-                                    {secSpentPercent}%
+                                    {formatCompact(secSpent, currency)}
                                   </span>
                                   <span className="text-muted-foreground">
                                     {" / "}
-                                    {secAllocatedPercent}%
+                                    {formatCompact(secAllocated, currency)}
                                   </span>
                                 </span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onAddExpense();
-                                }}
-                                className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/cat:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
-                                aria-label="Add expense"
-                              >
-                                <Plus className="size-2.5" />
                               </button>
                               <button
                                 type="button"
@@ -305,18 +287,10 @@ export function BudgetSidebar({
                                     secSummary?.categories.find(
                                       (s) => s.category.id === sub.id
                                     );
-                                  const subSpentPercent =
-                                    totalBudget > 0 && subSummary
-                                      ? Math.round(
-                                          (subSummary.total_spent /
-                                            totalBudget) *
-                                            100
-                                        )
-                                      : 0;
-                                  const subExceeded = subSummary
-                                    ? subSummary.total_spent >
-                                      subSummary.allocated_amount
-                                    : false;
+                                  const subSpent = subSummary?.total_spent ?? 0;
+                                  const subAllocated = subSummary?.allocated_amount ?? 0;
+                                  const subExceeded = subSpent > subAllocated;
+                                  const isCategoryActive = pathname.includes(`/category/${sub.id}`);
 
                                   return (
                                     <div
@@ -331,7 +305,11 @@ export function BudgetSidebar({
                                             `${budgetBasePath(budget.id)}/section/${section.id}/category/${sub.id}`
                                           );
                                         }}
-                                        className="flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent min-h-[44px]"
+                                        className={`flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent min-h-[44px] ${
+                                          isCategoryActive
+                                            ? "bg-accent/80 font-semibold text-foreground"
+                                            : ""
+                                        }`}
                                       >
                                         <span className="shrink-0 text-sm leading-none w-4 text-center">
                                           {sub.icon || "·"}
@@ -343,15 +321,15 @@ export function BudgetSidebar({
                                           <span
                                             className={
                                               subExceeded
-                                                ? "text-red-500"
-                                                : "text-emerald-600"
+                                                ? "text-red-600 font-semibold"
+                                                : "text-emerald-700 dark:text-emerald-500 font-medium"
                                             }
                                           >
-                                            {subSpentPercent}%
+                                            {formatCompact(subSpent, currency)}
                                           </span>
                                           <span className="text-muted-foreground">
-                                            {" of "}
-                                            {secAllocatedPercent}%
+                                            {" / "}
+                                            {formatCompact(subAllocated, currency)}
                                           </span>
                                         </span>
                                       </button>
@@ -400,14 +378,14 @@ export function BudgetSidebar({
         </Button>
       </div>
 
-      {/* Local mode banner */}
-      <LocalModeBanner />
-
       {/* User footer */}
       <Separator />
       <div className="flex items-center justify-between px-4 py-3.5">
         <UserFooterLink />
-        <LanguageSwitcher />
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
       </div>
 
       {/* Add section dialog */}
@@ -508,5 +486,22 @@ function UserFooterLink() {
         {displayName}
       </span>
     </Link>
+  );
+}
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      className="text-muted-foreground hover:text-foreground"
+    >
+      <Sun className="size-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { localBudgetStorage } from "@/lib/local-storage";
 import { MigrationDialog } from "@/components/auth/migration-dialog";
+import { WebSocketProvider } from "@/components/ws-provider";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initialize = useAuthStore((s) => s.initialize);
@@ -22,9 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [justLoggedIn, mode]);
 
   return (
-    <>
+    <WebSocketProvider>
       {children}
       <MigrationDialog open={showMigration} onOpenChange={setShowMigration} />
-    </>
+    </WebSocketProvider>
   );
 }

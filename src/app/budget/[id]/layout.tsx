@@ -15,7 +15,10 @@ export default function BudgetLayout({
 }) {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { setActiveBudget, fetchBudgets, budgets, summary } = useBudgetStore();
+  const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
+  const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
+  const budgets = useBudgetStore((s) => s.budgets);
+  const summary = useBudgetStore((s) => s.summary);
 
   const [showCreateBudget, setShowCreateBudget] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -34,7 +37,7 @@ export default function BudgetLayout({
 
   const categories = summary?.categories.map((c) => ({
     ...c.category,
-    subcategories: c.categories.map((s) => s.category),
+    categories: c.categories.map((s) => s.category),
   })) ?? [];
 
   return (
