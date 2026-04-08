@@ -64,7 +64,7 @@ export function BottomNav({
         <div className="flex flex-1 items-center justify-center">
           <button
             onClick={onAddExpense}
-            className="flex size-11 items-center justify-center rounded-full bg-foreground text-background shadow-md transition-transform duration-150 active:scale-90"
+            className="flex size-11 items-center justify-center bg-foreground text-background transition-transform duration-150 active:scale-90"
           >
             <Plus className="size-5" strokeWidth={2.5} />
           </button>

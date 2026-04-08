@@ -71,11 +71,11 @@ function EmojiPicker({
           type="button"
           onClick={() => onChange(emoji)}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-md text-lg transition-all duration-150",
+            "flex h-10 w-10 items-center justify-center rounded-none border-2 text-lg transition-all duration-150",
             "hover:bg-muted",
             value === emoji
-              ? "bg-emerald-500/10 ring-2 ring-emerald-500/40"
-              : "bg-transparent"
+              ? "border-emerald-500 bg-emerald-500/10"
+              : "border-transparent bg-transparent"
           )}
         >
           {emoji}
@@ -152,7 +152,7 @@ function SubcategoryEditor({
           {subcategories.map((sub) => (
             <div
               key={sub.id}
-              className="flex items-center gap-2 rounded-md border bg-card/50 p-2"
+              className="flex items-center gap-2 border-2 border-foreground bg-card/50 p-2"
             >
               <span className="text-sm">{sub.icon}</span>
               <Input

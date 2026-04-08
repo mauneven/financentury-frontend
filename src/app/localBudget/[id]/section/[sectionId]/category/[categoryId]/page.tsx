@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { CategoryDetail } from "@/components/expenses/category-detail";
@@ -11,7 +11,7 @@ export default function CategoryPage() {
   const summary = useBudgetStore((s) => s.summary);
   const expenses = useBudgetStore((s) => s.expenses);
 
-  const result = useMemo(() => {
+  const result = (() => {
     if (!summary) return null;
     for (const sec of summary.categories) {
       if (sec.category.id === params.sectionId) {
@@ -28,7 +28,7 @@ export default function CategoryPage() {
       }
     }
     return undefined; // not found (distinct from null = no summary yet)
-  }, [summary, params.sectionId, params.categoryId]);
+  })();
 
   useEffect(() => {
     if (result === undefined) {

@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { formatCurrency } from "@/lib/format";
 import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
@@ -21,28 +20,24 @@ interface BudgetCardProps {
   onClick?: () => void;
 }
 
-export const BudgetCard = memo(function BudgetCard({ budget, onClick }: BudgetCardProps) {
+export function BudgetCard({ budget, onClick }: BudgetCardProps) {
   const t = useTranslations("budgetCard");
   const tb = useTranslations("budget");
 
-  const { currency, period, formattedDate } = useMemo(() => {
-    const curr = CURRENCIES.find((c) => c.code === budget.currency);
-    return {
-      currency: curr,
-      period: BILLING_PERIODS.find((p) => p.value === budget.billing_period_months),
-      formattedDate: new Intl.DateTimeFormat(curr?.locale || "en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(new Date(budget.created_at)),
-    };
-  }, [budget.currency, budget.billing_period_months, budget.created_at]);
+  const curr = CURRENCIES.find((c) => c.code === budget.currency);
+  const currency = curr;
+  const period = BILLING_PERIODS.find((p) => p.value === budget.billing_period_months);
+  const formattedDate = new Intl.DateTimeFormat(curr?.locale || "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(budget.created_at));
 
   return (
     <Card
       className={cn(
         "cursor-pointer transition-all duration-200",
-        "hover:shadow-md hover:scale-[1.01] hover:border-border/80",
+        "hover:border-foreground/80",
         "active:scale-[0.99]"
       )}
       onClick={onClick}
@@ -52,7 +47,7 @@ export const BudgetCard = memo(function BudgetCard({ budget, onClick }: BudgetCa
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg",
+                "flex h-9 w-9 items-center justify-center border-2 border-foreground",
                 budget.mode === "guided"
                   ? "bg-emerald-500/10 text-emerald-600"
                   : "bg-violet-500/10 text-violet-600"
@@ -94,4 +89,4 @@ export const BudgetCard = memo(function BudgetCard({ budget, onClick }: BudgetCa
       </CardContent>
     </Card>
   );
-});
+}

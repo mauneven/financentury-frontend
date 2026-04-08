@@ -46,7 +46,7 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
     : displayData;
 
   return (
-    <Card className="shadow-sm">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <PieChartIcon className="h-5 w-5 text-muted-foreground" />

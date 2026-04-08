@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { DollarSign } from "lucide-react";
 
 import {
@@ -18,24 +17,19 @@ interface ExpenseSummaryBarProps {
   currency: string;
 }
 
-export const ExpenseSummaryBar = memo(function ExpenseSummaryBar({
+export function ExpenseSummaryBar({
   totalBudget,
   totalSpent,
   currency,
 }: ExpenseSummaryBarProps) {
   const t = useTranslations("expense");
 
-  const { percentage, remaining, isOverBudget } = useMemo(() => {
-    const rem = totalBudget - totalSpent;
-    return {
-      percentage: getPercentage(totalSpent, totalBudget),
-      remaining: rem,
-      isOverBudget: rem < 0,
-    };
-  }, [totalBudget, totalSpent]);
+  const remaining = totalBudget - totalSpent;
+  const percentage = getPercentage(totalSpent, totalBudget);
+  const isOverBudget = remaining < 0;
 
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-2.5">
+    <div className="flex items-center gap-4 border-2 border-foreground bg-card px-4 py-2.5">
       {/* Icon */}
       <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
         <DollarSign className="size-4 text-muted-foreground" />
@@ -72,10 +66,10 @@ export const ExpenseSummaryBar = memo(function ExpenseSummaryBar({
         </div>
 
         {/* Progress bar */}
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="mt-1.5 h-1.5 overflow-hidden bg-muted">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-500",
+              "h-full transition-all duration-500",
               getProgressColor(percentage)
             )}
             style={{ width: `${Math.min(percentage, 100)}%` }}
@@ -84,4 +78,4 @@ export const ExpenseSummaryBar = memo(function ExpenseSummaryBar({
       </div>
     </div>
   );
-});
+}

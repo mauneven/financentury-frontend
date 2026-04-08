@@ -92,7 +92,7 @@ function StepIndicator({
         <div
           key={i}
           className={cn(
-            "h-1.5 rounded-full transition-all duration-300",
+            "h-1.5 transition-all duration-300",
             i + 1 === current
               ? "w-6 bg-emerald-500"
               : i + 1 < current
@@ -118,6 +118,54 @@ interface GuidedCategoryState {
     allocation_percent: number;
     icon: string;
   }[];
+}
+
+function AmountInput({
+  amount,
+  onAmountChange,
+  prefix = "$",
+  className = "",
+  inputClassName = "",
+}: {
+  amount: number;
+  onAmountChange: (raw: string) => void;
+  prefix?: string;
+  className?: string;
+  inputClassName?: string;
+}) {
+  const [display, setDisplay] = React.useState(String(Math.round(amount)));
+  const [focused, setFocused] = React.useState(false);
+
+  // Sync from parent only when not focused (avoid overwriting user typing)
+  React.useEffect(() => {
+    if (!focused) {
+      setDisplay(String(Math.round(amount)));
+    }
+  }, [amount, focused]);
+
+  return (
+    <InputGroup className={className}>
+      <InputGroupAddon align="inline-start">
+        <InputGroupText className="text-xs">{prefix}</InputGroupText>
+      </InputGroupAddon>
+      <InputGroupInput
+        type="text"
+        inputMode="decimal"
+        value={display}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          setDisplay(String(Math.round(amount)));
+        }}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setDisplay(raw);
+          onAmountChange(raw);
+        }}
+        className={inputClassName}
+      />
+    </InputGroup>
+  );
 }
 
 function GuidedCategoryReview({
@@ -168,7 +216,7 @@ function GuidedCategoryReview({
           return (
             <div
               key={cat.name}
-              className="rounded-lg border bg-card/50 p-3 space-y-3"
+              className="border-2 border-foreground bg-card/50 p-3 space-y-3"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -176,20 +224,12 @@ function GuidedCategoryReview({
                   <span className="font-medium text-sm">{cat.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <InputGroup className="h-7 w-24">
-                    <InputGroupAddon align="inline-start">
-                      <InputGroupText className="text-xs">$</InputGroupText>
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      type="text"
-                      inputMode="decimal"
-                      value={Math.round(sectionAmount)}
-                      onChange={(e) =>
-                        handleSectionAmountChange(catIdx, e.target.value)
-                      }
-                      className="text-right text-xs h-7"
-                    />
-                  </InputGroup>
+                  <AmountInput
+                    amount={sectionAmount}
+                    onAmountChange={(raw) => handleSectionAmountChange(catIdx, raw)}
+                    className="h-7 w-24"
+                    inputClassName="text-right text-xs h-7"
+                  />
                   <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">
                     {cat.allocation_percent}%
                   </span>
@@ -209,20 +249,12 @@ function GuidedCategoryReview({
                         {sub.name}
                       </span>
                       <div className="flex items-center gap-2">
-                        <InputGroup className="h-6 w-20">
-                          <InputGroupAddon align="inline-start">
-                            <InputGroupText className="text-[10px]">$</InputGroupText>
-                          </InputGroupAddon>
-                          <InputGroupInput
-                            type="text"
-                            inputMode="decimal"
-                            value={Math.round(subAmount)}
-                            onChange={(e) =>
-                              handleSubcategoryAmountChange(catIdx, subIdx, e.target.value)
-                            }
-                            className="text-right text-[11px] h-6"
-                          />
-                        </InputGroup>
+                        <AmountInput
+                          amount={subAmount}
+                          onAmountChange={(raw) => handleSubcategoryAmountChange(catIdx, subIdx, raw)}
+                          className="h-6 w-20"
+                          inputClassName="text-right text-[11px] h-6"
+                        />
                         <span className="text-muted-foreground w-8 text-right tabular-nums">
                           {sub.allocation_percent}%
                         </span>
@@ -311,10 +343,10 @@ export function CreateBudgetDialog({
   );
 
   // Detect currency on mount
-  const detectedCurrency = React.useMemo(() => {
+  const detectedCurrency = (() => {
     if (typeof window === "undefined") return "USD";
     return detectCurrency();
-  }, []);
+  })();
 
   // Currency input formatting
   const formatInputValue = (val: string) => {
@@ -439,14 +471,14 @@ export function CreateBudgetDialog({
           type="button"
           onClick={() => selectMode("guided")}
           className={cn(
-            "group relative flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all duration-200",
-            "hover:border-emerald-500/70 hover:shadow-md",
+            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
+            "hover:border-emerald-500",
             mode === "guided"
-              ? "border-emerald-500 ring-2 ring-emerald-500/20"
-              : "border-border"
+              ? "border-emerald-500 bg-emerald-500/5"
+              : "border-foreground/20"
           )}
         >
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
             <Sparkles className="size-5" />
           </div>
           <h3 className="font-medium text-sm sm:text-base mb-1">{t("guidedMode")}</h3>
@@ -455,9 +487,9 @@ export function CreateBudgetDialog({
           </p>
           <div className="w-full space-y-1.5">
             <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 rounded-full bg-emerald-500/20">
+              <div className="h-2 flex-1 bg-emerald-500/20">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  className="h-full bg-emerald-500 transition-all"
                   style={{ width: "50%" }}
                 />
               </div>
@@ -466,9 +498,9 @@ export function CreateBudgetDialog({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 rounded-full bg-blue-500/20">
+              <div className="h-2 flex-1 bg-blue-500/20">
                 <div
-                  className="h-full rounded-full bg-blue-500 transition-all"
+                  className="h-full bg-blue-500 transition-all"
                   style={{ width: "30%" }}
                 />
               </div>
@@ -477,9 +509,9 @@ export function CreateBudgetDialog({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 rounded-full bg-amber-500/20">
+              <div className="h-2 flex-1 bg-amber-500/20">
                 <div
-                  className="h-full rounded-full bg-amber-500 transition-all"
+                  className="h-full bg-amber-500 transition-all"
                   style={{ width: "20%" }}
                 />
               </div>
@@ -495,21 +527,21 @@ export function CreateBudgetDialog({
           type="button"
           onClick={() => selectMode("manual")}
           className={cn(
-            "group relative flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all duration-200",
-            "hover:border-emerald-500/70 hover:shadow-md",
+            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
+            "hover:border-emerald-500",
             mode === "manual"
-              ? "border-emerald-500 ring-2 ring-emerald-500/20"
-              : "border-border"
+              ? "border-emerald-500 bg-emerald-500/5"
+              : "border-foreground/20"
           )}
         >
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-violet-500/30 bg-violet-500/10 text-violet-600">
             <PenLine className="size-5" />
           </div>
           <h3 className="font-medium text-sm sm:text-base mb-1">{t("manualMode")}</h3>
           <p className="text-sm text-muted-foreground mb-3">
             {t("manualDescription")}
           </p>
-          <div className="flex h-[52px] w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20">
+          <div className="flex h-[52px] w-full items-center justify-center rounded-none border-2 border-dashed border-muted-foreground/20">
             <span className="text-[10px] text-muted-foreground">
               {t("customCategories")}
             </span>
@@ -642,10 +674,10 @@ export function CreateBudgetDialog({
                         }
                       }}
                       className={cn(
-                        "rounded-lg border px-2 py-2 text-sm font-medium transition-all duration-150",
+                        "rounded-none border-2 px-2 py-2 text-sm font-bold uppercase tracking-wide transition-all duration-150",
                         activeValue === opt.value
                           ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                          : "border-foreground/20 text-muted-foreground hover:border-foreground hover:text-foreground"
                       )}
                     >
                       {opt.label}

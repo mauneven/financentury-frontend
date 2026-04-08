@@ -8,7 +8,6 @@ import { useTranslations } from "@/i18n/client";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
 import { EmptyDashboard } from "./empty-dashboard";
-import { Card, CardContent } from "@/components/ui/card";
 import { BILLING_PERIODS } from "@/types/budget";
 import Link from "next/link";
 
@@ -17,12 +16,10 @@ const SpendingChart = dynamic(
   () => import("./spending-chart").then((mod) => ({ default: mod.SpendingChart })),
   {
     loading: () => (
-      <Card className="shadow-sm">
-        <CardContent className="p-6">
-          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-          <div className="mt-4 h-64 animate-pulse rounded-lg bg-muted" />
-        </CardContent>
-      </Card>
+      <div className="border-2 border-foreground bg-card p-6">
+        <div className="h-4 w-32 animate-pulse bg-muted" />
+        <div className="mt-4 h-64 animate-pulse bg-muted" />
+      </div>
     ),
     ssr: false,
   }
@@ -32,12 +29,10 @@ const BreakdownChart = dynamic(
   () => import("./breakdown-chart").then((mod) => ({ default: mod.BreakdownChart })),
   {
     loading: () => (
-      <Card className="shadow-sm">
-        <CardContent className="p-6">
-          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
-          <div className="mt-4 h-64 animate-pulse rounded-full bg-muted" />
-        </CardContent>
-      </Card>
+      <div className="border-2 border-foreground bg-card p-6">
+        <div className="h-4 w-28 animate-pulse bg-muted" />
+        <div className="mt-4 h-64 animate-pulse bg-muted" />
+      </div>
     ),
     ssr: false,
   }
@@ -52,63 +47,54 @@ function DashboardSkeleton() {
     <div className="space-y-6">
       {/* Header skeleton */}
       <div className="space-y-2">
-        <div className="h-7 w-48 animate-pulse rounded-lg bg-muted" />
-        <div className="h-4 w-32 animate-pulse rounded-md bg-muted" />
+        <div className="h-7 w-48 animate-pulse bg-muted" />
+        <div className="h-4 w-32 animate-pulse bg-muted" />
       </div>
 
       {/* Overview cards skeleton */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-                <div className="h-9 w-9 animate-pulse rounded-lg bg-muted" />
-              </div>
-              <div className="mt-3 space-y-2">
-                <div className="h-7 w-28 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-20 animate-pulse rounded bg-muted" />
-              </div>
-            </CardContent>
-          </Card>
+          <div key={i} className="border-2 border-foreground bg-card p-6">
+            <div className="flex items-center justify-between">
+              <div className="h-4 w-20 animate-pulse bg-muted" />
+            </div>
+            <div className="mt-3 space-y-2">
+              <div className="h-7 w-28 animate-pulse bg-muted" />
+              <div className="h-3 w-20 animate-pulse bg-muted" />
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Chart skeleton */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="shadow-sm lg:col-span-2">
-          <CardContent className="p-6">
-            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-            <div className="mt-4 h-64 animate-pulse rounded-lg bg-muted" />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardContent className="p-6">
-            <div className="h-4 w-28 animate-pulse rounded bg-muted" />
-            <div className="mt-4 h-64 animate-pulse rounded-full bg-muted" />
-          </CardContent>
-        </Card>
+        <div className="border-2 border-foreground bg-card p-6 lg:col-span-2">
+          <div className="h-4 w-32 animate-pulse bg-muted" />
+          <div className="mt-4 h-64 animate-pulse bg-muted" />
+        </div>
+        <div className="border-2 border-foreground bg-card p-6">
+          <div className="h-4 w-28 animate-pulse bg-muted" />
+          <div className="mt-4 h-64 animate-pulse bg-muted" />
+        </div>
       </div>
 
       {/* Category cards skeleton */}
       <div className="space-y-4">
-        <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+        <div className="h-5 w-36 animate-pulse bg-muted" />
         {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 animate-pulse rounded bg-muted" />
-                  <div className="space-y-1.5">
-                    <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-                    <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-                  </div>
+          <div key={i} className="border-2 border-foreground bg-card p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 animate-pulse bg-muted" />
+                <div className="space-y-1.5">
+                  <div className="h-4 w-24 animate-pulse bg-muted" />
+                  <div className="h-3 w-16 animate-pulse bg-muted" />
                 </div>
-                <div className="h-4 w-10 animate-pulse rounded bg-muted" />
               </div>
-              <div className="mt-4 h-2 w-full animate-pulse rounded-full bg-muted" />
-            </CardContent>
-          </Card>
+              <div className="h-4 w-10 animate-pulse bg-muted" />
+            </div>
+            <div className="mt-4 h-4 w-full animate-pulse bg-muted" />
+          </div>
         ))}
       </div>
     </div>
@@ -130,9 +116,9 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
   if (error) {
     return (
-      <Card className="shadow-sm">
-        <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/30">
+      <div className="border-2 border-foreground bg-card">
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center border-2 border-red-500 bg-red-50 dark:bg-red-950/30">
             <RefreshCw className="h-6 w-6 text-red-500" />
           </div>
           <h3 className="mb-1 text-lg font-semibold text-foreground">
@@ -144,13 +130,13 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           <button
             type="button"
             onClick={() => setActiveBudget(budgetId)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
+            className="inline-flex items-center gap-2 bg-foreground px-4 py-2 text-xs font-bold uppercase tracking-wider text-background border-2 border-foreground shadow-[4px_4px_0px_hsl(var(--foreground)/0.2)] transition-all duration-200 hover:shadow-[2px_2px_0px_hsl(var(--foreground)/0.2)] hover:translate-x-[2px] hover:translate-y-[2px]"
           >
             <RefreshCw className="h-4 w-4" />
             {tc("retry")}
           </button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -174,13 +160,13 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
             <Link
               href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
-              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
+              className="inline-flex size-8 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
               aria-label="Budget settings"
             >
               <Settings className="size-4" />
             </Link>
           </div>
-          <p className="mt-1.5 text-muted-foreground" style={{ fontSize: 'var(--text-fluid-base)' }}>
+          <p className="mt-1.5 text-sm text-muted-foreground">
             {budget.currency} &middot; {billingLabel}
           </p>
         </div>
@@ -206,7 +192,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       {/* Category breakdown */}
       {categories.length > 0 && (
         <div className="space-y-5">
-          <h2 className="font-semibold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
+          <h2 className="font-semibold text-foreground border-b border-border pb-2" style={{ fontSize: 'var(--text-fluid-lg)' }}>
             {t("categoryBreakdown")}
           </h2>
           <div className="space-y-4 sm:space-y-5">

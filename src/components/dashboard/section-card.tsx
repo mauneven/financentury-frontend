@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback, memo, useMemo } from "react";
+import { useState } from "react";
 import { ChevronDown, Pencil } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import type { SectionSummary, Section, Category } from "@/types/budget";
 import {
   formatCurrency,
@@ -22,7 +21,7 @@ interface SectionCardProps {
   onSubcategoryClick?: (subcategoryId: string) => void;
 }
 
-export const SectionCard = memo(function SectionCard({
+export function SectionCard({
   sectionSummary,
   currency,
   onSubcategoryClick,
@@ -35,24 +34,18 @@ export const SectionCard = memo(function SectionCard({
   const { category, categories: subcategories, allocated_amount, total_spent } =
     sectionSummary;
 
-  const { remaining, percentage, progressColor, textColor } = useMemo(() => {
-    const rem = allocated_amount - total_spent;
-    const pct = getPercentage(total_spent, allocated_amount);
-    return {
-      remaining: rem,
-      percentage: pct,
-      progressColor: getProgressColor(pct),
-      textColor: getProgressTextColor(pct),
-    };
-  }, [allocated_amount, total_spent]);
+  const remaining = allocated_amount - total_spent;
+  const percentage = getPercentage(total_spent, allocated_amount);
+  const progressColor = getProgressColor(percentage);
+  const textColor = getProgressTextColor(percentage);
 
-  const toggleExpanded = useCallback(() => {
+  const toggleExpanded = () => {
     setIsExpanded((prev) => !prev);
-  }, []);
+  };
 
   return (
-    <Card className="group shadow-sm transition-shadow duration-200 hover:shadow-md">
-      <CardContent className="p-5 sm:p-7">
+    <div className="border-2 border-foreground bg-card">
+      <div className="p-5 sm:p-7">
         {/* Section header */}
         <div className="flex w-full items-center justify-between min-h-[44px]">
           <button
@@ -68,17 +61,17 @@ export const SectionCard = memo(function SectionCard({
                 <h3 className="text-lg font-semibold text-foreground">
                   {category.name}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   {subcategories.length} {subcategories.length === 1 ? "category" : "categories"} &middot; {category.allocation_percent}% {t("ofIncome")}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-2xl font-bold tabular-nums text-foreground">
+                <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
                   {formatCompact(allocated_amount, currency)}
                 </p>
-                <p className={cn("text-sm font-medium tabular-nums", textColor)}>
+                <p className={cn("text-sm font-semibold tabular-nums font-mono", textColor)}>
                   {percentage}% {t("used")}
                 </p>
               </div>
@@ -96,7 +89,7 @@ export const SectionCard = memo(function SectionCard({
               e.stopPropagation();
               setEditSectionOpen(true);
             }}
-            className="ml-2 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
+            className="ml-2 flex size-8 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
             aria-label={`Edit ${category.name}`}
           >
             <Pencil className="size-3.5" />
@@ -107,7 +100,7 @@ export const SectionCard = memo(function SectionCard({
         <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
           <span>
             {t("spentLabel")}:{" "}
-            <span className="font-medium text-foreground">
+            <span className="font-bold font-mono tabular-nums text-foreground">
               {formatCompact(total_spent, currency)}
             </span>
           </span>
@@ -115,7 +108,7 @@ export const SectionCard = memo(function SectionCard({
             {t("leftLabel")}:{" "}
             <span
               className={cn(
-                "font-medium",
+                "font-bold font-mono tabular-nums",
                 remaining < 0
                   ? "text-red-600 dark:text-red-400"
                   : "text-foreground"
@@ -127,12 +120,12 @@ export const SectionCard = memo(function SectionCard({
           </span>
         </div>
 
-        {/* Overall progress bar - thicker */}
+        {/* Overall progress bar */}
         <div className="mt-3">
-          <div className="h-4 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-3 w-full overflow-hidden bg-muted">
             <div
               className={cn(
-                "h-full rounded-full transition-all duration-300",
+                "h-full transition-all duration-300",
                 progressColor
               )}
               style={{ width: `${Math.min(percentage, 100)}%` }}
@@ -148,8 +141,8 @@ export const SectionCard = memo(function SectionCard({
           )}
         >
           <div className="overflow-hidden">
-            <div className="mt-5 space-y-2.5 border-t pt-5">
-              {subcategories.map((sub) => {
+            <div className="mt-5 border-t border-border pt-5 space-y-0">
+              {subcategories.map((sub, idx) => {
                 const subPercentage = getPercentage(
                   sub.total_spent,
                   sub.allocated_amount
@@ -161,7 +154,10 @@ export const SectionCard = memo(function SectionCard({
                 return (
                   <div
                     key={sub.category.id}
-                    className="group/sub flex items-start gap-1.5 rounded-lg px-3 py-3 transition-colors duration-200 hover:bg-muted/50 min-h-[44px]"
+                    className={cn(
+                      "group/sub flex items-start gap-1.5 px-3 py-3 transition-colors duration-200 hover:bg-muted/50 min-h-[44px]",
+                      idx !== 0 && "border-t border-foreground/10"
+                    )}
                   >
                     <button
                       type="button"
@@ -173,17 +169,17 @@ export const SectionCard = memo(function SectionCard({
                           <span className="text-base" role="img" aria-label={sub.category.name}>
                             {sub.category.icon || "\ud83d\udccc"}
                           </span>
-                          <span className="text-base font-medium text-foreground">
+                          <span className="text-base font-bold text-foreground">
                             {sub.category.name}
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-lg font-semibold tabular-nums text-foreground">
+                          <span className="text-lg font-bold tabular-nums font-mono text-foreground">
                             {formatCompact(sub.allocated_amount, currency)}
                           </span>
                           <span
                             className={cn(
-                              "min-w-[2.5rem] text-right text-sm font-semibold tabular-nums",
+                              "min-w-[2.5rem] text-right text-sm font-bold tabular-nums font-mono",
                               subTextColor
                             )}
                           >
@@ -192,10 +188,10 @@ export const SectionCard = memo(function SectionCard({
                         </div>
                       </div>
                       {/* Mini progress bar */}
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-2 w-full overflow-hidden bg-muted">
                         <div
                           className={cn(
-                            "h-full rounded-full transition-all duration-300",
+                            "h-full transition-all duration-300",
                             subProgressColor
                           )}
                           style={{
@@ -204,10 +200,11 @@ export const SectionCard = memo(function SectionCard({
                         />
                       </div>
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>
+                        <span className="font-mono tabular-nums">
                           {formatCompact(sub.total_spent, currency)} spent
                         </span>
                         <span className={cn(
+                          "font-mono tabular-nums",
                           subRemaining < 0 ? "text-red-600 dark:text-red-400" : ""
                         )}>
                           {subRemaining < 0 ? "-" : ""}
@@ -221,7 +218,7 @@ export const SectionCard = memo(function SectionCard({
                         e.stopPropagation();
                         setEditingSubcategory(sub.category);
                       }}
-                      className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
+                      className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
                       aria-label={`Edit ${sub.category.name}`}
                     >
                       <Pencil className="size-3" />
@@ -230,14 +227,14 @@ export const SectionCard = memo(function SectionCard({
                 );
               })}
               {subcategories.length === 0 && (
-                <p className="py-3 text-center text-base text-muted-foreground">
+                <p className="py-3 text-center text-base text-muted-foreground font-medium">
                   {t("noSubcategories")}
                 </p>
               )}
             </div>
           </div>
         </div>
-      </CardContent>
+      </div>
 
       {/* Edit dialogs */}
       <EditSectionDialog
@@ -258,6 +255,6 @@ export const SectionCard = memo(function SectionCard({
           }}
         />
       )}
-    </Card>
+    </div>
   );
-});
+}

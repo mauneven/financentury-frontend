@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -119,28 +119,19 @@ export function EditExpenseDialog({
   const watchedSubcategoryId = watch("category_id");
   const watchedDate = watch("expense_date");
 
-  const selectedCategory = useMemo(
-    () => categories.find((c) => c.id === selectedCategoryId),
-    [categories, selectedCategoryId]
-  );
+  const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
 
-  const subcategories = useMemo(
-    () => selectedCategory?.categories || [],
-    [selectedCategory]
-  );
+  const subcategories = selectedCategory?.categories || [];
 
   // Find which category owns the expense's subcategory
-  const findCategoryForSubcategory = useCallback(
-    (subcategoryId: string): string | null => {
-      for (const cat of categories) {
-        if (cat.categories?.some((s) => s.id === subcategoryId)) {
-          return cat.id;
-        }
+  const findCategoryForSubcategory = (subcategoryId: string): string | null => {
+    for (const cat of categories) {
+      if (cat.categories?.some((s) => s.id === subcategoryId)) {
+        return cat.id;
       }
-      return null;
-    },
-    [categories]
-  );
+    }
+    return null;
+  };
 
   // Populate form when dialog opens
   useEffect(() => {
@@ -159,33 +150,24 @@ export function EditExpenseDialog({
     }
   }, [open, expense, reset, findCategoryForSubcategory]);
 
-  const handleCategoryChange = useCallback(
-    (value: string | null) => {
-      setSelectedCategoryId(value);
-      setValue("category_id", "");
-    },
-    [setValue]
-  );
+  const handleCategoryChange = (value: string | null) => {
+    setSelectedCategoryId(value);
+    setValue("category_id", "");
+  };
 
-  const handleAmountChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value;
-      const formatted = formatAmountDisplay(raw);
-      setAmountDisplay(formatted);
-      setValue("amount", parseAmountString(formatted), { shouldValidate: true });
-    },
-    [setValue]
-  );
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const formatted = formatAmountDisplay(raw);
+    setAmountDisplay(formatted);
+    setValue("amount", parseAmountString(formatted), { shouldValidate: true });
+  };
 
-  const handleDateSelect = useCallback(
-    (date: Date | undefined) => {
-      if (date) {
-        setValue("expense_date", format(date, "yyyy-MM-dd"), { shouldValidate: true });
-        setCalendarOpen(false);
-      }
-    },
-    [setValue]
-  );
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setValue("expense_date", format(date, "yyyy-MM-dd"), { shouldValidate: true });
+      setCalendarOpen(false);
+    }
+  };
 
   const onSubmit = async (data: ExpenseFormValues) => {
     setIsSubmitting(true);

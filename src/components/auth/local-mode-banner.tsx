@@ -11,7 +11,7 @@ export function LocalModeBanner() {
   if (mode !== "local") return null;
 
   return (
-    <div className="mx-3 mb-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
+    <div className="mx-3 mb-2 border-2 border-amber-500 bg-amber-50 p-3 dark:border-amber-500/50 dark:bg-amber-500/10">
       <div className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
         <div className="flex-1">

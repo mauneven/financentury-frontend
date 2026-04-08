@@ -98,11 +98,11 @@ function EmojiPicker({
           type="button"
           onClick={() => onChange(emoji)}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-md text-lg transition-all duration-150",
+            "flex h-10 w-10 items-center justify-center rounded-none border-2 text-lg transition-all duration-150",
             "hover:bg-muted",
             value === emoji
-              ? "bg-emerald-500/10 ring-2 ring-emerald-500/40"
-              : "bg-transparent"
+              ? "border-emerald-500 bg-emerald-500/10"
+              : "border-transparent bg-transparent"
           )}
         >
           {emoji}
@@ -145,10 +145,10 @@ function CategoryImpactPreview({
   return (
     <div
       className={cn(
-        "rounded-md border px-3 py-2 text-xs space-y-1.5",
+        "rounded-none border-2 px-3 py-2 text-xs space-y-1.5",
         isOverflow
-          ? "border-destructive/40 bg-destructive/5"
-          : "border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/10"
+          ? "border-destructive bg-destructive/5"
+          : "border-amber-400 bg-amber-50/60 dark:bg-amber-900/10"
       )}
     >
       {/* Header row — clickable to collapse */}

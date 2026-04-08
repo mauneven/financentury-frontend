@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Users, X } from "lucide-react";
 
 import type { Collaborator } from "@/types/budget";
@@ -36,7 +36,7 @@ export function CollaboratorsList({ budgetId, isOwner }: CollaboratorsListProps)
   const [removeTarget, setRemoveTarget] = useState<Collaborator | null>(null);
   const [removing, setRemoving] = useState(false);
 
-  const fetchCollaborators = useCallback(async () => {
+  const fetchCollaborators = async () => {
     try {
       const data = await collaboratorApi.list(budgetId);
       setCollaborators(data);
@@ -45,7 +45,7 @@ export function CollaboratorsList({ budgetId, isOwner }: CollaboratorsListProps)
     } finally {
       setLoading(false);
     }
-  }, [budgetId]);
+  };
 
   useEffect(() => {
     fetchCollaborators();

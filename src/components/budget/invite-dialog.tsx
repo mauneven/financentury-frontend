@@ -86,7 +86,7 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
 
         <div className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-destructive/10 p-3 text-center text-sm text-destructive">
+            <div className="rounded-none border-2 border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
               {error}
             </div>
           )}

@@ -19,7 +19,6 @@ import {
   Wallet,
   LogIn,
   Pencil,
-  Settings,
   Sun,
   Moon,
 } from "lucide-react";
@@ -117,13 +116,13 @@ export function BudgetSidebar({
   const currency = summary?.budget.currency ?? "USD";
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col border-r-2 border-foreground">
       {/* Branding */}
-      <div className="flex items-center gap-2.5 px-4 py-4">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-foreground">
+      <div className="flex items-center gap-2.5 px-4 py-4 border-b-2 border-foreground">
+        <div className="flex size-8 items-center justify-center bg-foreground">
           <Wallet className="size-4 text-background" />
         </div>
-        <span className="text-base font-semibold tracking-tight text-foreground">
+        <span className="text-sm font-bold uppercase tracking-widest text-foreground">
           {tApp("title")}
         </span>
       </div>
@@ -131,7 +130,7 @@ export function BudgetSidebar({
       {/* Local mode banner - placed right below branding */}
       <LocalModeBanner />
 
-      <Separator />
+      <Separator className="!border-b !border-border" />
 
       {/* Tree view */}
       <ScrollArea className="flex-1 px-1">
@@ -155,8 +154,8 @@ export function BudgetSidebar({
                   open={isExpanded}
                   onOpenChange={() => toggleBudget(budget.id)}
                 >
-                  <div className="group/budget flex items-center px-1">
-                    <CollapsibleTrigger className="flex size-6 shrink-0 items-center justify-center rounded-md transition-colors duration-200 hover:bg-accent">
+                  <div className="group/budget flex items-center px-1 border-b-2 border-foreground/20">
+                    <CollapsibleTrigger className="flex size-6 shrink-0 items-center justify-center transition-colors duration-200 hover:bg-muted">
                       <ChevronRight
                         className={`size-3.5 text-muted-foreground transition-transform duration-200 ${
                           isExpanded ? "rotate-90" : ""
@@ -166,10 +165,10 @@ export function BudgetSidebar({
                     <button
                       type="button"
                       onClick={() => handleBudgetClick(budget.id)}
-                      className={`flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-base transition-colors duration-200 hover:bg-accent ${
+                      className={`flex flex-1 items-center gap-2 px-2 py-2.5 text-xs uppercase tracking-wider transition-colors duration-200 hover:bg-muted ${
                         isActive
-                          ? "bg-accent/80 font-semibold text-foreground"
-                          : "text-foreground/80"
+                          ? "bg-muted font-bold text-foreground"
+                          : "text-foreground/70"
                       }`}
                     >
                       {isExpanded ? (
@@ -177,7 +176,7 @@ export function BudgetSidebar({
                       ) : (
                         <Folder className="size-4 shrink-0 text-muted-foreground" />
                       )}
-                      <span className="truncate">{budget.name}</span>
+                      <span className="truncate font-bold">{budget.name}</span>
                     </button>
                     <button
                       type="button"
@@ -185,24 +184,17 @@ export function BudgetSidebar({
                         e.stopPropagation();
                         setAddSectionForBudget(budget.id);
                       }}
-                      className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                      className="flex size-6 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100 mr-1"
                       aria-label="Add section"
                     >
                       <Plus className="size-3" />
                     </button>
-                    <Link
-                      href={`${budgetBasePath(budget.id)}/settings`}
-                      className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
-                      aria-label="Budget settings"
-                    >
-                      <Settings className="size-3" />
-                    </Link>
                   </div>
 
                   <CollapsibleContent>
-                    <div className="ml-4 border-l border-border pl-2">
+                    <div className="ml-4 border-l-2 border-foreground/30 pl-2">
                       {budgetSections.length === 0 && isActive && (
-                        <div className="px-2 py-2 text-xs text-muted-foreground">
+                        <div className="px-2 py-2 text-xs text-muted-foreground uppercase tracking-wider">
                           {t("loading")}
                         </div>
                       )}
@@ -226,8 +218,8 @@ export function BudgetSidebar({
                             open={secExpanded}
                             onOpenChange={() => toggleSection(section.id)}
                           >
-                            <div className="group/cat flex items-center">
-                              <CollapsibleTrigger className="flex size-5 shrink-0 items-center justify-center rounded-md transition-colors duration-200 hover:bg-accent">
+                            <div className="group/cat flex items-center border-b border-foreground/15">
+                              <CollapsibleTrigger className="flex size-5 shrink-0 items-center justify-center transition-colors duration-200 hover:bg-muted">
                                 <ChevronRight
                                   className={`size-3 text-muted-foreground transition-transform duration-200 ${
                                     secExpanded ? "rotate-90" : ""
@@ -239,9 +231,9 @@ export function BudgetSidebar({
                                 onClick={() =>
                                   handleSectionClick(budget.id, section.id)
                                 }
-                                className={`flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent text-left min-h-[44px] ${
+                                className={`flex flex-1 items-center gap-2 px-2 py-2.5 text-xs transition-colors duration-200 hover:bg-muted text-left min-h-[44px] ${
                                   isSectionActive
-                                    ? "bg-accent/80 font-semibold text-foreground"
+                                    ? "bg-muted font-bold text-foreground"
                                     : ""
                                 }`}
                               >
@@ -273,7 +265,7 @@ export function BudgetSidebar({
                                   e.stopPropagation();
                                   setEditingSection(section);
                                 }}
-                                className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/cat:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                                className="flex size-5 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/cat:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
                                 aria-label={`Edit ${section.name}`}
                               >
                                 <Pencil className="size-2.5" />
@@ -281,7 +273,7 @@ export function BudgetSidebar({
                             </div>
 
                             <CollapsibleContent>
-                              <div className="ml-3 border-l border-border pl-2">
+                              <div className="ml-3 border-l-2 border-foreground/20 pl-2">
                                 {subcategories.map((sub) => {
                                   const subSummary =
                                     secSummary?.categories.find(
@@ -305,9 +297,9 @@ export function BudgetSidebar({
                                             `${budgetBasePath(budget.id)}/section/${section.id}/category/${sub.id}`
                                           );
                                         }}
-                                        className={`flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent min-h-[44px] ${
+                                        className={`flex flex-1 items-center gap-2 px-2 py-2.5 text-xs transition-colors duration-200 hover:bg-muted min-h-[44px] ${
                                           isCategoryActive
-                                            ? "bg-accent/80 font-semibold text-foreground"
+                                            ? "bg-muted font-bold text-foreground"
                                             : ""
                                         }`}
                                       >
@@ -342,7 +334,7 @@ export function BudgetSidebar({
                                             category: sub,
                                           });
                                         }}
-                                        className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                                        className="flex size-5 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
                                         aria-label={`Edit ${sub.name}`}
                                       >
                                         <Pencil className="size-2.5" />
@@ -370,7 +362,7 @@ export function BudgetSidebar({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
+          className="w-full justify-start gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted"
           onClick={onAddBudget}
         >
           <Plus className="size-3.5" />

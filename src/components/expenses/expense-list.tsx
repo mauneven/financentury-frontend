@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
   MoreHorizontal,
@@ -73,7 +73,7 @@ export function ExpenseList({
   const tc = useTranslations("common");
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
 
-  const grouped = useMemo((): GroupedExpenses[] => {
+  const grouped = ((): GroupedExpenses[] => {
     const sorted = [...expenses].sort(
       (a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()
     );
@@ -92,19 +92,19 @@ export function ExpenseList({
       label: format(parseISO(date), "EEEE, MMMM d, yyyy"),
       expenses: exps,
     }));
-  }, [expenses]);
+  })();
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = () => {
     if (deleteTarget && onDelete) {
       onDelete(deleteTarget.id);
     }
     setDeleteTarget(null);
-  }, [deleteTarget, onDelete]);
+  };
 
   if (expenses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
-        <div className="mb-4 rounded-full bg-muted p-4">
+        <div className="mb-4 bg-muted p-4">
           <Receipt className="size-8 text-muted-foreground" />
         </div>
         <h3 className="mb-1 text-base font-medium text-foreground">{t("noExpenses")}</h3>
@@ -213,7 +213,7 @@ function ExpenseRow({
       )}
     >
       {/* Icon */}
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-lg">
+      <div className="flex size-10 shrink-0 items-center justify-center bg-muted text-lg">
         {subcategoryInfo?.icon || "📝"}
       </div>
 
