@@ -324,6 +324,7 @@ export function CreateBudgetDialog({
   const [step, setStep] = React.useState(1);
   const [mode, setMode] = React.useState<"guided" | "manual" | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [createError, setCreateError] = React.useState<string | null>(null);
   const [customPeriod, setCustomPeriod] = React.useState(false);
   const [incomeDisplay, setIncomeDisplay] = React.useState("");
 
@@ -395,6 +396,7 @@ export function CreateBudgetDialog({
         setStep(1);
         setMode(null);
         setIsSubmitting(false);
+        setCreateError(null);
         setCustomPeriod(false);
         setGuidedCategories(
           GUIDED_SECTIONS.map((c) => ({
@@ -455,8 +457,8 @@ export function CreateBudgetDialog({
       onCreated?.(budget);
       onOpenChange(false);
       router.push(`/${authMode === "local" ? "localBudget" : "budget"}/${budget.id}`);
-    } catch {
-      // Error is handled by the store
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create budget");
     } finally {
       setIsSubmitting(false);
     }
@@ -819,6 +821,9 @@ export function CreateBudgetDialog({
           {step === 1 && renderModeSelection()}
           {step === 2 && renderBudgetForm()}
           {step === 3 && mode === "guided" && renderGuidedReview()}
+          {createError && (
+            <p className="text-xs text-destructive px-1 pt-1">{createError}</p>
+          )}
           {renderFooter()}
         </form>
       </DialogContent>

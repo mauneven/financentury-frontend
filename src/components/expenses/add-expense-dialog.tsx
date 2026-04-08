@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -92,6 +92,7 @@ export function AddExpenseDialog({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [amountDisplay, setAmountDisplay] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const currencyInfo = CURRENCIES.find((c) => c.code === currency);
@@ -121,7 +122,7 @@ export function AddExpenseDialog({
 
   const subcategories = selectedCategory?.categories || [];
 
-  const subcategorySummary = ((): CategorySummary | null => {
+  const subcategorySummary = useMemo((): CategorySummary | null => {
     if (!summary || !watchedSubcategoryId) return null;
     for (const cat of summary.sections) {
       for (const sub of cat.categories) {
@@ -131,7 +132,7 @@ export function AddExpenseDialog({
       }
     }
     return null;
-  })();
+  }, [summary, watchedSubcategoryId]);
 
   // Auto-select category and subcategory when preselected
   useEffect(() => {
@@ -158,6 +159,7 @@ export function AddExpenseDialog({
       });
       setAmountDisplay("");
       setIsSubmitting(false);
+      setSubmitError(null);
       if (!preselectedSubcategoryId) {
         setSelectedCategoryId(null);
       }
@@ -193,7 +195,8 @@ export function AddExpenseDialog({
         expense_date: data.expense_date,
       });
       onOpenChange(false);
-    } catch {
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to add expense");
       setIsSubmitting(false);
     }
   };
@@ -394,6 +397,12 @@ export function AddExpenseDialog({
               {tc("cancel")}
             </DialogClose>
           </DialogFooter>
+          {submitError && (
+            <p className="flex items-center gap-1 text-xs text-destructive px-1">
+              <AlertCircle className="size-3" />
+              {submitError}
+            </p>
+          )}
         </form>
       </DialogContent>
     </Dialog>

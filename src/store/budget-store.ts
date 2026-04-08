@@ -30,6 +30,7 @@ interface BudgetState {
   createBudget: (data: CreateBudgetInput) => Promise<Budget>;
   deleteBudget: (id: string) => Promise<void>;
   refreshSummary: () => Promise<void>;
+  refreshSummaryOnly: () => Promise<void>;
   addExpense: (data: CreateExpenseInput) => Promise<Expense>;
   updateExpense: (budgetId: string, expenseId: string, data: Partial<CreateExpenseInput>) => Promise<Expense>;
   deleteExpense: (expenseId: string) => Promise<void>;
@@ -159,6 +160,23 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     }
   },
 
+  refreshSummaryOnly: async () => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) return;
+    try {
+      const { mode } = useAuthStore.getState();
+      if (mode === "local") {
+        const summary = localBudgetStorage.computeSummary(activeBudgetId);
+        set({ summary, error: null });
+      } else {
+        const summary = await budgetApi.summary(activeBudgetId);
+        set({ summary, error: null });
+      }
+    } catch (e) {
+      set({ error: (e as Error).message });
+    }
+  },
+
   addExpense: async (data) => {
     const { activeBudgetId } = get();
     if (!activeBudgetId) throw new Error("No active budget");
@@ -175,7 +193,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       const expense = await expenseApi.create(activeBudgetId, data);
       set((state) => ({ expenses: [...state.expenses, expense] }));
       // Refresh summary to update totals
-      get().refreshSummary();
+      get().refreshSummaryOnly();
       return expense;
     }
   },
@@ -216,7 +234,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       set((state) => ({
         expenses: state.expenses.filter((e) => e.id !== expenseId),
       }));
-      get().refreshSummary();
+      get().refreshSummaryOnly();
     }
   },
 
@@ -233,7 +251,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return section;
     } else {
       const section = await sectionApi.create(activeBudgetId, data);
-      get().refreshSummary();
+      get().refreshSummaryOnly();
       return section;
     }
   },
@@ -250,7 +268,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return section;
     } else {
       const section = await sectionApi.update(activeBudgetId, sectionId, data);
-      get().refreshSummary();
+      get().refreshSummaryOnly();
       return section;
     }
   },
@@ -267,7 +285,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       set({ summary, expenses });
     } else {
       await sectionApi.delete(activeBudgetId, sectionId);
-      get().refreshSummary();
+      get().refreshSummaryOnly();
     }
   },
 
@@ -283,7 +301,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return category;
     } else {
       const category = await categoryApi.create(activeBudgetId, sectionId, data);
-      get().refreshSummary();
+      get().refreshSummaryOnly();
       return category;
     }
   },
@@ -300,7 +318,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return category;
     } else {
       const category = await categoryApi.update(activeBudgetId, sectionId, categoryId, data);
-      get().refreshSummary();
+      get().refreshSummaryOnly();
       return category;
     }
   },
@@ -317,7 +335,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       set({ summary, expenses });
     } else {
       await categoryApi.delete(activeBudgetId, sectionId, categoryId);
-      get().refreshSummary();
+      get().refreshSummaryOnly();
     }
   },
 }));

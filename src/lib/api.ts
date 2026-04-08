@@ -91,6 +91,8 @@ async function request<T>(
   if (!res.ok) {
     if (res.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("financentury_token");
+      // Force page reload to trigger auth re-initialization
+      window.location.href = "/";
     }
     const error = await res
       .json()

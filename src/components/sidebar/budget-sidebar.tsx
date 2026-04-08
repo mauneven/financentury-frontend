@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import {
@@ -114,7 +114,10 @@ export function BudgetSidebar({
   };
 
   const loading = useBudgetStore((s) => s.loading);
-  const sections: Section[] = summary?.sections.map((c) => c.section) ?? [];
+  const sections: Section[] = useMemo(
+    () => summary?.sections.map((c) => c.section) ?? [],
+    [summary]
+  );
   const currency = summary?.budget.currency ?? "USD";
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -37,10 +37,13 @@ export default function BudgetLayout({
     }
   }, [params.id, setActiveBudget, authLoading]);
 
-  const categories = summary?.sections.map((c) => ({
-    ...c.section,
-    categories: c.categories.map((s) => s.category),
-  })) ?? [];
+  const categories = useMemo(
+    () => summary?.sections.map((c) => ({
+      ...c.section,
+      categories: c.categories.map((s) => s.category),
+    })) ?? [],
+    [summary]
+  );
 
   return (
     <AuthGuard>
