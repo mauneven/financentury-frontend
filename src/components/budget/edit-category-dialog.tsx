@@ -27,10 +27,10 @@ import type { Category, Subcategory } from "@/types/budget";
 // Schema
 // ---------------------------------------------------------------------------
 
-const categorySchema = z.object({
+const subcategorySchema = z.object({
   name: z
     .string()
-    .min(1, "Category name is required")
+    .min(1, "Subcategory name is required")
     .max(60, "Name must be 60 characters or less"),
   allocation_percent: z
     .number({ message: "Allocation is required" })
@@ -39,7 +39,7 @@ const categorySchema = z.object({
   icon: z.string().min(1, "Pick an icon"),
 });
 
-type CategoryFormValues = z.infer<typeof categorySchema>;
+type SubcategoryFormValues = z.infer<typeof subcategorySchema>;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,21 +57,18 @@ function formatAmount(value: number): string {
 /** Parse a formatted string back to a number. Returns NaN if invalid. */
 function parseAmount(formatted: string): number {
   const stripped = formatted.replace(/,/g, "");
-  const num = parseFloat(stripped);
-  return num;
+  return parseFloat(stripped);
 }
 
 /** Handle keystrokes: strip non-numeric (except decimal), re-format. */
 function maskAmountInput(raw: string): string {
-  // Allow digits and at most one decimal point
   const cleaned = raw.replace(/[^0-9.]/g, "");
   const parts = cleaned.split(".");
-  const intPart = parts[0].replace(/^0+(?=\d)/, ""); // remove leading zeros
+  const intPart = parts[0].replace(/^0+(?=\d)/, "");
   const decPart = parts.length > 1 ? "." + parts[1].slice(0, 2) : "";
 
   if (intPart === "") return decPart ? "0" + decPart : "";
 
-  // Add thousands separators to integer part
   const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return formatted + decPart;
 }
@@ -116,27 +113,34 @@ function EmojiPicker({
 }
 
 // ---------------------------------------------------------------------------
-// Impact preview — shown when category allocation changes
+// Parent impact preview — shown when subcategory allocation changes
 // ---------------------------------------------------------------------------
 
-interface CategoryImpactPreviewProps {
-  subcategories: Subcategory[];
-  newCategoryPercent: number;
+interface SubcategoryImpactPreviewProps {
+  parentCategory: Category;
+  siblingSubcategories: Subcategory[];
+  currentSubcategoryId: string;
+  newAllocationPercent: number;
+  originalAllocationPercent: number;
 }
 
-function CategoryImpactPreview({
-  subcategories,
-  newCategoryPercent,
-}: CategoryImpactPreviewProps) {
+function SubcategoryImpactPreview({
+  parentCategory,
+  siblingSubcategories,
+  currentSubcategoryId,
+  newAllocationPercent,
+  originalAllocationPercent,
+}: SubcategoryImpactPreviewProps) {
   const [expanded, setExpanded] = React.useState(true);
 
-  if (subcategories.length === 0) return null;
+  // siblings = all subcategories except the one being edited
+  const siblings = siblingSubcategories.filter((s) => s.id !== currentSubcategoryId);
+  const siblingsTotal = siblings.reduce((sum, s) => sum + s.allocation_percent, 0);
+  const newTotal = siblingsTotal + newAllocationPercent;
+  const parentAlloc = parentCategory.allocation_percent;
+  const isOverflow = newTotal > parentAlloc;
 
-  const childTotal = subcategories.reduce(
-    (sum, s) => sum + s.allocation_percent,
-    0
-  );
-  const isOverflow = childTotal > newCategoryPercent;
+  const direction = newAllocationPercent > originalAllocationPercent ? "increase" : "decrease";
 
   return (
     <div
@@ -169,47 +173,23 @@ function CategoryImpactPreview({
 
       {expanded && (
         <>
-          {/* Summary line */}
+          {/* Parent summary */}
           <p
             className={cn(
-              isOverflow ? "text-destructive font-medium" : "text-amber-700 dark:text-amber-400"
+              "font-medium",
+              isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
             )}
           >
-            {isOverflow
-              ? `Subcategories total ${childTotal.toFixed(1)}% but category is only ${newCategoryPercent.toFixed(1)}%`
-              : `Subcategories total ${childTotal.toFixed(1)}% of ${newCategoryPercent.toFixed(1)}% allocated`}
+            {`Parent category "${parentCategory.icon ? parentCategory.icon + " " : ""}${parentCategory.name}" total would ${direction}: `}
+            <span className="tabular-nums">
+              {originalAllocationPercent !== newAllocationPercent
+                ? `${(siblingsTotal + originalAllocationPercent).toFixed(1)}% → ${newTotal.toFixed(1)}%`
+                : `${newTotal.toFixed(1)}%`}
+            </span>
+            {isOverflow && (
+              <span className="ml-1">{`(category budget: ${parentAlloc.toFixed(1)}%)`}</span>
+            )}
           </p>
-
-          {/* Per-subcategory rows */}
-          <ul className="space-y-0.5 pl-1">
-            {subcategories.map((sub) => {
-              const overflow = sub.allocation_percent > newCategoryPercent;
-              return (
-                <li
-                  key={sub.id}
-                  className={cn(
-                    "flex items-center justify-between",
-                    overflow ? "text-destructive" : "text-muted-foreground"
-                  )}
-                >
-                  <span className="flex items-center gap-1">
-                    {sub.icon && (
-                      <span className="text-[11px]">{sub.icon}</span>
-                    )}
-                    {sub.name}
-                  </span>
-                  <span
-                    className={cn(
-                      "tabular-nums font-medium",
-                      overflow ? "text-destructive" : ""
-                    )}
-                  >
-                    {sub.allocation_percent}%
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
         </>
       )}
     </div>
@@ -220,9 +200,11 @@ function CategoryImpactPreview({
 // Props
 // ---------------------------------------------------------------------------
 
-interface EditCategoryDialogProps {
-  category: Category;
-  subcategories: Subcategory[];
+interface EditSubcategoryDialogProps {
+  categoryId: string;
+  subcategory: Subcategory;
+  parentCategory: Category;
+  siblingSubcategories: Subcategory[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -231,16 +213,18 @@ interface EditCategoryDialogProps {
 // Main dialog
 // ---------------------------------------------------------------------------
 
-export function EditCategoryDialog({
-  category,
-  subcategories,
+export function EditSubcategoryDialog({
+  categoryId,
+  subcategory,
+  parentCategory,
+  siblingSubcategories,
   open,
   onOpenChange,
-}: EditCategoryDialogProps) {
+}: EditSubcategoryDialogProps) {
   const t = useTranslations("category");
   const tc = useTranslations("common");
-  const updateCategory = useBudgetStore((s) => s.updateCategory);
-  const deleteCategoryAction = useBudgetStore((s) => s.deleteCategory);
+  const updateSubcategory = useBudgetStore((s) => s.updateSubcategory);
+  const deleteSubcategoryAction = useBudgetStore((s) => s.deleteSubcategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
 
@@ -261,12 +245,12 @@ export function EditCategoryDialog({
     watch,
     reset,
     formState: { errors },
-  } = useForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema),
+  } = useForm<SubcategoryFormValues>({
+    resolver: zodResolver(subcategorySchema),
     defaultValues: {
-      name: category.name,
-      allocation_percent: category.allocation_percent,
-      icon: category.icon || "🏠",
+      name: subcategory.name,
+      allocation_percent: subcategory.allocation_percent,
+      icon: subcategory.icon || "📌",
     },
   });
 
@@ -278,18 +262,20 @@ export function EditCategoryDialog({
     totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
   const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
 
-  // Reset form and amount input when category changes or dialog opens
+  // Reset form and amount input when subcategory changes or dialog opens
   React.useEffect(() => {
     if (open) {
       reset({
-        name: category.name,
-        allocation_percent: category.allocation_percent,
-        icon: category.icon || "🏠",
+        name: subcategory.name,
+        allocation_percent: subcategory.allocation_percent,
+        icon: subcategory.icon || "📌",
       });
 
       // Convert stored percent to dollar amount
       const initialAmount =
-        totalBudget > 0 ? (category.allocation_percent / 100) * totalBudget : 0;
+        totalBudget > 0
+          ? (subcategory.allocation_percent / 100) * totalBudget
+          : 0;
       setRawAmount(initialAmount);
       setAmountInput(formatAmount(initialAmount));
 
@@ -297,7 +283,7 @@ export function EditCategoryDialog({
       setIsSubmitting(false);
       setIsDeleting(false);
     }
-  }, [open, category, reset, totalBudget]);
+  }, [open, subcategory, reset, totalBudget]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskAmountInput(e.target.value);
@@ -313,10 +299,10 @@ export function EditCategoryDialog({
     });
   };
 
-  const onSubmit = async (values: CategoryFormValues) => {
+  const onSubmit = async (values: SubcategoryFormValues) => {
     setIsSubmitting(true);
     try {
-      await updateCategory(category.id, {
+      await updateSubcategory(categoryId, subcategory.id, {
         name: values.name,
         allocation_percent: values.allocation_percent,
         icon: values.icon,
@@ -333,7 +319,7 @@ export function EditCategoryDialog({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deleteCategoryAction(category.id);
+      await deleteSubcategoryAction(categoryId, subcategory.id);
       await refreshSummary();
       onOpenChange(false);
     } catch {
@@ -343,17 +329,19 @@ export function EditCategoryDialog({
     }
   };
 
-  // Show impact preview only when allocation has changed from the original
+  // Show impact preview only when allocation has actually changed
   const allocationChanged =
-    Math.abs(watchAllocation - category.allocation_percent) > 0.001;
-  const showImpact = allocationChanged && subcategories.length > 0;
+    Math.abs(watchAllocation - subcategory.allocation_percent) > 0.001;
+  const showImpact = allocationChanged;
 
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("editCategory")}</DialogTitle>
-          <DialogDescription>{t("editDescription")}</DialogDescription>
+          <DialogTitle>{t("editSubcategory")}</DialogTitle>
+          <DialogDescription>
+            {t("editSubcategoryDescription")}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -371,10 +359,10 @@ export function EditCategoryDialog({
 
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-cat-name">{t("categoryName")}</Label>
+            <Label htmlFor="edit-sub-name">{t("subcategoryName")}</Label>
             <Input
-              id="edit-cat-name"
-              placeholder={t("categoryNamePlaceholder")}
+              id="edit-sub-name"
+              placeholder={t("subcategoryName")}
               autoFocus
               aria-invalid={!!errors.name}
               {...register("name")}
@@ -386,14 +374,14 @@ export function EditCategoryDialog({
 
           {/* Allocation — dollar amount with live % indicator */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-cat-allocation">{t("allocationPercent")}</Label>
+            <Label htmlFor="edit-sub-allocation">{t("allocationPercent")}</Label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
                   $
                 </span>
                 <Input
-                  id="edit-cat-allocation"
+                  id="edit-sub-allocation"
                   type="text"
                   inputMode="decimal"
                   className="pl-6"
@@ -421,11 +409,14 @@ export function EditCategoryDialog({
             )}
           </div>
 
-          {/* Impact preview */}
+          {/* Parent impact preview */}
           {showImpact && (
-            <CategoryImpactPreview
-              subcategories={subcategories}
-              newCategoryPercent={watchAllocation}
+            <SubcategoryImpactPreview
+              parentCategory={parentCategory}
+              siblingSubcategories={siblingSubcategories}
+              currentSubcategoryId={subcategory.id}
+              newAllocationPercent={watchAllocation}
+              originalAllocationPercent={subcategory.allocation_percent}
             />
           )}
 
@@ -443,7 +434,7 @@ export function EditCategoryDialog({
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="size-4 mr-1" />
-                {t("deleteCategory")}
+                {t("deleteSubcategory")}
               </Button>
             ) : (
               <div className="flex items-center gap-2">
@@ -496,7 +487,7 @@ export function EditCategoryDialog({
 
           {showDeleteConfirm && (
             <p className="text-xs text-destructive">
-              {t("confirmDeleteCategory")}
+              {t("confirmDeleteSubcategory")}
             </p>
           )}
         </form>
