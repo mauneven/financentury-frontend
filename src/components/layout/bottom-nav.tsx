@@ -111,7 +111,7 @@ export function BottomNav({
             {activeBudgetId && (
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`/budget/${activeBudgetId}/settings`)
+                  router.push(`/${mode === "local" ? "localBudget" : "budget"}/${activeBudgetId}/settings`)
                 }
               >
                 {t("budgetSettings")}

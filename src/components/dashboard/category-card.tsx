@@ -225,6 +225,7 @@ export function CategoryCard({
       {/* Edit dialogs */}
       <EditCategoryDialog
         category={category}
+        subcategories={subcategories.map((s) => s.subcategory)}
         open={editCategoryOpen}
         onOpenChange={setEditCategoryOpen}
       />
@@ -232,6 +233,8 @@ export function CategoryCard({
         <EditSubcategoryDialog
           categoryId={category.id}
           subcategory={editingSubcategory}
+          parentCategory={category}
+          siblingSubcategories={subcategories.map((s) => s.subcategory)}
           open={!!editingSubcategory}
           onOpenChange={(open) => {
             if (!open) setEditingSubcategory(null);

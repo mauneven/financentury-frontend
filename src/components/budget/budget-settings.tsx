@@ -94,11 +94,28 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
     return !BILLING_PERIODS.some((p) => p.value === budget.billing_period_months);
   });
 
+  const formatInputValue = (val: string) => {
+    const nums = val.replace(/[^\d.]/g, "");
+    const parts = nums.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  };
+
+  const numberToDisplay = (num: number): string => {
+    if (!num) return "";
+    return formatInputValue(num.toString());
+  };
+
+  const [incomeDisplay, setIncomeDisplay] = React.useState(() =>
+    numberToDisplay(budget.monthly_income)
+  );
+
   const {
     register,
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -169,11 +186,17 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
             </InputGroupAddon>
             <InputGroupInput
               id="settings-income"
-              type="number"
-              min={0}
-              step="any"
+              type="text"
+              inputMode="decimal"
+              placeholder="0"
+              value={incomeDisplay}
               aria-invalid={!!errors.monthly_income}
-              {...register("monthly_income", { valueAsNumber: true })}
+              onChange={(e) => {
+                const formatted = formatInputValue(e.target.value);
+                setIncomeDisplay(formatted);
+                const num = parseFloat(formatted.replace(/,/g, ""));
+                setValue("monthly_income", isNaN(num) ? (undefined as unknown as number) : num, { shouldValidate: true, shouldDirty: true });
+              }}
             />
           </InputGroup>
           {errors.monthly_income && (
@@ -265,12 +288,11 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
                   {customPeriod && (
                     <div className="mt-2 flex items-center gap-2">
                       <Input
-                        type="number"
-                        min={1}
-                        max={12}
+                        type="text"
+                        inputMode="numeric"
                         value={field.value}
                         onChange={(e) =>
-                          field.onChange(Number(e.target.value) || 1)
+                          field.onChange(Number(e.target.value.replace(/[^\d]/g, "")) || 1)
                         }
                         className="w-20"
                       />

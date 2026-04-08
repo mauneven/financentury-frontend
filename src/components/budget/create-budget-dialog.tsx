@@ -18,6 +18,7 @@ import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS, GUIDED_CATEGORIES } from "@/types/budget";
 import { detectCurrency, formatCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
+import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 
@@ -162,14 +163,13 @@ function GuidedCategoryReview({
               <div className="flex items-center gap-2">
                 <InputGroup className="h-7 w-20">
                   <InputGroupInput
-                    type="number"
-                    min={0}
-                    max={100}
+                    type="text"
+                    inputMode="numeric"
                     value={cat.allocation_percent}
                     onChange={(e) =>
                       handleCategoryPercentChange(
                         catIdx,
-                        Number(e.target.value) || 0
+                        Number(e.target.value.replace(/[^\d.]/g, "")) || 0
                       )
                     }
                     className="text-right text-xs h-7"
@@ -239,6 +239,7 @@ export function CreateBudgetDialog({
 }: CreateBudgetDialogProps) {
   const router = useRouter();
   const createBudget = useBudgetStore((s) => s.createBudget);
+  const { mode: authMode } = useAuthStore();
   const t = useTranslations("budget");
   const tc = useTranslations("common");
   const tCat = useTranslations("categories");
@@ -248,6 +249,7 @@ export function CreateBudgetDialog({
   const [mode, setMode] = React.useState<"guided" | "manual" | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [customPeriod, setCustomPeriod] = React.useState(false);
+  const [incomeDisplay, setIncomeDisplay] = React.useState("");
 
   // Guided categories (mutable copy)
   const [guidedCategories, setGuidedCategories] = React.useState<
@@ -271,12 +273,21 @@ export function CreateBudgetDialog({
     return detectCurrency();
   }, []);
 
+  // Currency input formatting
+  const formatInputValue = (val: string) => {
+    const nums = val.replace(/[^\d.]/g, "");
+    const parts = nums.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  };
+
   // Form
   const {
     register,
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
     reset,
   } = useForm<BudgetFormValues>({
@@ -320,6 +331,7 @@ export function CreateBudgetDialog({
             })),
           }))
         );
+        setIncomeDisplay("");
         reset({
           name: "",
           monthly_income: undefined as unknown as number,
@@ -364,7 +376,7 @@ export function CreateBudgetDialog({
 
       onCreated?.(budget);
       onOpenChange(false);
-      router.push(`/budget/${budget.id}`);
+      router.push(`/${authMode === "local" ? "localBudget" : "budget"}/${budget.id}`);
     } catch {
       // Error is handled by the store
     } finally {
@@ -494,12 +506,17 @@ export function CreateBudgetDialog({
           </InputGroupAddon>
           <InputGroupInput
             id="budget-income"
-            type="number"
-            min={0}
-            step="any"
+            type="text"
+            inputMode="decimal"
             placeholder="0"
+            value={incomeDisplay}
             aria-invalid={!!errors.monthly_income}
-            {...register("monthly_income", { valueAsNumber: true })}
+            onChange={(e) => {
+              const formatted = formatInputValue(e.target.value);
+              setIncomeDisplay(formatted);
+              const num = parseFloat(formatted.replace(/,/g, ""));
+              setValue("monthly_income", isNaN(num) ? (undefined as unknown as number) : num, { shouldValidate: true });
+            }}
           />
         </InputGroup>
         {errors.monthly_income && (
@@ -596,11 +613,10 @@ export function CreateBudgetDialog({
                 {customPeriod && (
                   <div className="mt-2 flex items-center gap-2">
                     <Input
-                      type="number"
-                      min={1}
-                      max={12}
+                      type="text"
+                      inputMode="numeric"
                       value={field.value}
-                      onChange={(e) => field.onChange(Number(e.target.value) || 1)}
+                      onChange={(e) => field.onChange(Number(e.target.value.replace(/[^\d]/g, "")) || 1)}
                       className="w-20"
                     />
                     <span className="text-sm text-muted-foreground">{t("months")}</span>

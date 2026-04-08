@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import {
   Collapsible,
@@ -15,7 +16,6 @@ import {
   Plus,
   FolderOpen,
   Folder,
-  FileText,
   Wallet,
   LogIn,
   Pencil,
@@ -44,8 +44,13 @@ export function BudgetSidebar({
 }: BudgetSidebarProps) {
   const t = useTranslations("sidebar");
   const tApp = useTranslations("app");
+  const router = useRouter();
   const { budgets, activeBudgetId, summary, setActiveBudget } =
     useBudgetStore();
+  const { mode } = useAuthStore();
+
+  const budgetBasePath = (budgetId: string) =>
+    `/${mode === "local" ? "localBudget" : "budget"}/${budgetId}`;
   const [expandedBudgets, setExpandedBudgets] = useState<
     Record<string, boolean>
   >({});
@@ -78,6 +83,7 @@ export function BudgetSidebar({
       ...prev,
       [budgetId]: true,
     }));
+    router.push(budgetBasePath(budgetId));
   };
 
   const categories: Category[] = summary?.categories.map((c) => c.category) ?? [];
@@ -85,11 +91,11 @@ export function BudgetSidebar({
   return (
     <div className="flex h-full flex-col">
       {/* Branding */}
-      <div className="flex items-center gap-2.5 px-4 py-3.5">
-        <div className="flex size-7 items-center justify-center rounded-lg bg-foreground">
-          <Wallet className="size-3.5 text-background" />
+      <div className="flex items-center gap-2.5 px-4 py-4">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-foreground">
+          <Wallet className="size-4 text-background" />
         </div>
-        <span className="text-sm font-semibold tracking-tight text-foreground">
+        <span className="text-base font-semibold tracking-tight text-foreground">
           {tApp("title")}
         </span>
       </div>
@@ -97,8 +103,8 @@ export function BudgetSidebar({
       <Separator />
 
       {/* Section header */}
-      <div className="flex items-center justify-between px-4 py-3.5">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+      <div className="flex items-center justify-between px-4 py-4">
+        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           {t("myBudgets")}
         </span>
         <Button
@@ -115,11 +121,11 @@ export function BudgetSidebar({
       <Separator />
 
       {/* Add Expense button */}
-      <div className="px-3 pt-3 pb-2">
+      <div className="px-3 pt-3.5 pb-2.5">
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2 text-xs font-medium shadow-sm"
+          className="w-full justify-start gap-2 text-sm font-medium shadow-sm"
           onClick={onAddExpense}
         >
           <Plus className="size-3.5" />
@@ -160,7 +166,7 @@ export function BudgetSidebar({
                     <button
                       type="button"
                       onClick={() => handleBudgetClick(budget.id)}
-                      className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-200 hover:bg-accent ${
+                      className={`flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-base transition-colors duration-200 hover:bg-accent ${
                         isActive
                           ? "bg-accent/80 font-semibold text-foreground"
                           : "text-foreground/80"
@@ -174,7 +180,7 @@ export function BudgetSidebar({
                       <span className="truncate">{budget.name}</span>
                     </button>
                     <Link
-                      href={`/budget/${budget.id}/settings`}
+                      href={`${budgetBasePath(budget.id)}/settings`}
                       className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/budget:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
                       aria-label="Budget settings"
                     >
@@ -192,10 +198,23 @@ export function BudgetSidebar({
                       {budgetCategories.map((category) => {
                         const catExpanded =
                           expandedCategories[category.id] ?? false;
+                        const catSummary = summary?.categories.find(
+                          (c) => c.category.id === category.id
+                        );
                         const subcategories: Subcategory[] =
-                          summary?.categories.find(
-                            (c) => c.category.id === category.id
-                          )?.subcategories.map((s) => s.subcategory) ?? [];
+                          catSummary?.subcategories.map((s) => s.subcategory) ??
+                          [];
+                        const totalBudget = summary?.total_budget ?? 0;
+                        const catSpentPercent =
+                          totalBudget > 0 && catSummary
+                            ? Math.round(
+                                (catSummary.total_spent / totalBudget) * 100
+                              )
+                            : 0;
+                        const catAllocatedPercent = category.allocation_percent;
+                        const catExceeded = catSummary
+                          ? catSummary.total_spent > catSummary.allocated_amount
+                          : false;
 
                         return (
                           <Collapsible
@@ -211,17 +230,37 @@ export function BudgetSidebar({
                                   }`}
                                 />
                               </CollapsibleTrigger>
-                              <div className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-xs transition-colors duration-200 hover:bg-accent">
-                                <span className="shrink-0 text-sm leading-none">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(
+                                    `${budgetBasePath(budget.id)}/category/${category.id}`
+                                  )
+                                }
+                                className="flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent text-left min-h-[44px]"
+                              >
+                                <span className="shrink-0 text-sm leading-none w-4 text-center">
                                   {category.icon || ""}
                                 </span>
                                 <span className="truncate font-medium text-foreground/80">
                                   {category.name}
                                 </span>
-                                <span className="ml-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                                  {category.allocation_percent}%
+                                <span className="ml-auto shrink-0 text-xs tabular-nums">
+                                  <span
+                                    className={
+                                      catExceeded
+                                        ? "text-red-500"
+                                        : "text-emerald-600"
+                                    }
+                                  >
+                                    {catSpentPercent}%
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {" / "}
+                                    {catAllocatedPercent}%
+                                  </span>
                                 </span>
-                              </div>
+                              </button>
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -237,43 +276,78 @@ export function BudgetSidebar({
 
                             <CollapsibleContent>
                               <div className="ml-3 border-l border-border pl-2">
-                                {subcategories.map((sub) => (
-                                  <div
-                                    key={sub.id}
-                                    className="group/sub flex items-center"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        onSelectSubcategory?.(budget.id, sub.id)
-                                      }
-                                      className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-xs transition-colors duration-200 hover:bg-accent"
+                                {subcategories.map((sub) => {
+                                  const subSummary =
+                                    catSummary?.subcategories.find(
+                                      (s) => s.subcategory.id === sub.id
+                                    );
+                                  const subSpentPercent =
+                                    totalBudget > 0 && subSummary
+                                      ? Math.round(
+                                          (subSummary.total_spent /
+                                            totalBudget) *
+                                            100
+                                        )
+                                      : 0;
+                                  const subExceeded = subSummary
+                                    ? subSummary.total_spent >
+                                      subSummary.allocated_amount
+                                    : false;
+
+                                  return (
+                                    <div
+                                      key={sub.id}
+                                      className="group/sub flex items-center"
                                     >
-                                      <FileText className="size-3 shrink-0 text-muted-foreground" />
-                                      <span className="truncate text-foreground/70">
-                                        {sub.icon ? `${sub.icon} ` : ""}
-                                        {sub.name}
-                                      </span>
-                                      <span className="ml-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                                        {sub.allocation_percent}%
-                                      </span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditingSubcategory({
-                                          categoryId: category.id,
-                                          subcategory: sub,
-                                        });
-                                      }}
-                                      className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
-                                      aria-label={`Edit ${sub.name}`}
-                                    >
-                                      <Pencil className="size-2.5" />
-                                    </button>
-                                  </div>
-                                ))}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          onSelectSubcategory?.(budget.id, sub.id);
+                                          router.push(
+                                            `${budgetBasePath(budget.id)}/category/${category.id}/subcategory/${sub.id}`
+                                          );
+                                        }}
+                                        className="flex flex-1 items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-200 hover:bg-accent min-h-[44px]"
+                                      >
+                                        <span className="shrink-0 text-sm leading-none w-4 text-center">
+                                          {sub.icon || "·"}
+                                        </span>
+                                        <span className="truncate text-foreground/70">
+                                          {sub.name}
+                                        </span>
+                                        <span className="ml-auto shrink-0 text-xs tabular-nums">
+                                          <span
+                                            className={
+                                              subExceeded
+                                                ? "text-red-500"
+                                                : "text-emerald-600"
+                                            }
+                                          >
+                                            {subSpentPercent}%
+                                          </span>
+                                          <span className="text-muted-foreground">
+                                            {" of "}
+                                            {catAllocatedPercent}%
+                                          </span>
+                                        </span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingSubcategory({
+                                            categoryId: category.id,
+                                            subcategory: sub,
+                                          });
+                                        }}
+                                        className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-accent hover:text-foreground focus:opacity-100"
+                                        aria-label={`Edit ${sub.name}`}
+                                      >
+                                        <Pencil className="size-2.5" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </CollapsibleContent>
                           </Collapsible>
@@ -290,11 +364,11 @@ export function BudgetSidebar({
 
       {/* Add Budget */}
       <Separator />
-      <div className="px-3 py-3">
+      <div className="px-3 py-3.5">
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
+          className="w-full justify-start gap-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
           onClick={onAddBudget}
         >
           <Plus className="size-3.5" />
@@ -307,31 +381,56 @@ export function BudgetSidebar({
 
       {/* User footer */}
       <Separator />
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3.5">
         <UserFooterLink />
         <LanguageSwitcher />
       </div>
 
       {/* Edit dialogs */}
-      {editingCategory && (
-        <EditCategoryDialog
-          category={editingCategory}
-          open={!!editingCategory}
-          onOpenChange={(open) => {
-            if (!open) setEditingCategory(null);
-          }}
-        />
-      )}
-      {editingSubcategory && (
-        <EditSubcategoryDialog
-          categoryId={editingSubcategory.categoryId}
-          subcategory={editingSubcategory.subcategory}
-          open={!!editingSubcategory}
-          onOpenChange={(open) => {
-            if (!open) setEditingSubcategory(null);
-          }}
-        />
-      )}
+      {editingCategory && (() => {
+        const editingCatSubcategories =
+          summary?.categories
+            .find((c) => c.category.id === editingCategory.id)
+            ?.subcategories.map((s) => s.subcategory) ?? [];
+        return (
+          <EditCategoryDialog
+            category={editingCategory}
+            subcategories={editingCatSubcategories}
+            open={!!editingCategory}
+            onOpenChange={(open) => {
+              if (!open) setEditingCategory(null);
+            }}
+          />
+        );
+      })()}
+      {editingSubcategory && (() => {
+        const parentCategorySummary = summary?.categories.find(
+          (c) => c.category.id === editingSubcategory.categoryId
+        );
+        const parentCategory: Category = parentCategorySummary?.category ?? {
+          id: editingSubcategory.categoryId,
+          budget_id: "",
+          name: "",
+          allocation_percent: 0,
+          icon: "",
+          sort_order: 0,
+          created_at: "",
+        };
+        const allSiblings: Subcategory[] =
+          parentCategorySummary?.subcategories.map((s) => s.subcategory) ?? [];
+        return (
+          <EditSubcategoryDialog
+            categoryId={editingSubcategory.categoryId}
+            subcategory={editingSubcategory.subcategory}
+            parentCategory={parentCategory}
+            siblingSubcategories={allSiblings}
+            open={!!editingSubcategory}
+            onOpenChange={(open) => {
+              if (!open) setEditingSubcategory(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -345,7 +444,7 @@ function UserFooterLink() {
       <button
         type="button"
         onClick={signInWithGoogle}
-        className="flex items-center gap-2 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground"
+        className="flex items-center gap-2 rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <LogIn className="size-3.5" />
         <span>{t("signIn")}</span>
@@ -370,7 +469,7 @@ function UserFooterLink() {
         {user?.avatar_url && <AvatarImage src={user.avatar_url} />}
         <AvatarFallback>{initials}</AvatarFallback>
       </Avatar>
-      <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+      <span className="text-sm text-muted-foreground truncate max-w-[140px]">
         {displayName}
       </span>
     </Link>

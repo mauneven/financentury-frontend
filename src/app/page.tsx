@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
+import { useAuthStore } from "@/store/auth-store";
 import { AppShell } from "@/components/layout/app-shell";
 import { CreateBudgetDialog } from "@/components/budget/create-budget-dialog";
 import { BudgetCard } from "@/components/budget/budget-card";
@@ -15,6 +16,7 @@ export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("home");
   const { budgets, fetchBudgets, loading } = useBudgetStore();
+  const { mode } = useAuthStore();
   const [showCreateBudget, setShowCreateBudget] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function HomePage() {
         onAddExpense={() => {
           // If we have budgets, go to the first one then open expense dialog
           if (budgets.length > 0) {
-            router.push(`/budget/${budgets[0].id}`);
+            router.push(`/${mode === "local" ? "localBudget" : "budget"}/${budgets[0].id}`);
           }
         }}
         onAddBudget={() => setShowCreateBudget(true)}
@@ -90,7 +92,7 @@ export default function HomePage() {
                   <BudgetCard
                     key={budget.id}
                     budget={budget}
-                    onClick={() => router.push(`/budget/${budget.id}`)}
+                    onClick={() => router.push(`/${mode === "local" ? "localBudget" : "budget"}/${budget.id}`)}
                   />
                 ))}
               </div>

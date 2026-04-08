@@ -2,6 +2,7 @@
 
 import { RefreshCw, Loader2, Settings } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
+import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 import { OverviewCards } from "./overview-cards";
 import { CategoryCard } from "./category-card";
@@ -87,6 +88,7 @@ function DashboardSkeleton() {
 export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const { summary, loading, error, setActiveBudget, refreshSummary } =
     useBudgetStore();
+  const { mode } = useAuthStore();
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
 
@@ -137,16 +139,16 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{budget.name}</h1>
+            <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
             <Link
-              href={`/budget/${budgetId}/settings`}
+              href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
               className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
               aria-label="Budget settings"
             >
               <Settings className="size-4" />
             </Link>
           </div>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-muted-foreground" style={{ fontSize: 'var(--text-fluid-base)' }}>
             {budget.currency} &middot; {billingLabel}
           </p>
         </div>
@@ -185,7 +187,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       {/* Category breakdown */}
       {categories.length > 0 && (
         <div className="space-y-5">
-          <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+          <h2 className="font-semibold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
             {t("categoryBreakdown")}
           </h2>
           <div className="space-y-4 sm:space-y-5">

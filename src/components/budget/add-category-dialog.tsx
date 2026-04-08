@@ -166,15 +166,14 @@ function SubcategoryEditor({
               />
               <InputGroup className="h-7 w-20">
                 <InputGroupInput
-                  type="number"
-                  min={0}
-                  max={100}
+                  type="text"
+                  inputMode="numeric"
                   value={sub.allocation_percent}
                   onChange={(e) =>
                     updateSubcategory(
                       sub.id,
                       "allocation_percent",
-                      Number(e.target.value) || 0
+                      Number(e.target.value.replace(/[^\d.]/g, "")) || 0
                     )
                   }
                   className="text-right text-xs h-7"
@@ -331,9 +330,8 @@ export function AddCategoryDialog({
             <InputGroup>
               <InputGroupInput
                 id="cat-allocation"
-                type="number"
-                min={0}
-                max={100}
+                type="text"
+                inputMode="numeric"
                 aria-invalid={!!errors.allocation_percent}
                 {...register("allocation_percent", { valueAsNumber: true })}
               />

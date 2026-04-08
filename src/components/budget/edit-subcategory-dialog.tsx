@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Check, Trash2 } from "lucide-react";
+import { Loader2, Check, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
@@ -20,14 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group";
 import { useTranslations } from "@/i18n/client";
-import type { Subcategory } from "@/types/budget";
+import type { Category, Subcategory } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -48,13 +42,45 @@ const subcategorySchema = z.object({
 type SubcategoryFormValues = z.infer<typeof subcategorySchema>;
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Format a raw number as a comma-separated string (no currency symbol). */
+function formatAmount(value: number): string {
+  if (isNaN(value) || value === 0) return "";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+/** Parse a formatted string back to a number. Returns NaN if invalid. */
+function parseAmount(formatted: string): number {
+  const stripped = formatted.replace(/,/g, "");
+  return parseFloat(stripped);
+}
+
+/** Handle keystrokes: strip non-numeric (except decimal), re-format. */
+function maskAmountInput(raw: string): string {
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const parts = cleaned.split(".");
+  const intPart = parts[0].replace(/^0+(?=\d)/, "");
+  const decPart = parts.length > 1 ? "." + parts[1].slice(0, 2) : "";
+
+  if (intPart === "") return decPart ? "0" + decPart : "";
+
+  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return formatted + decPart;
+}
+
+// ---------------------------------------------------------------------------
 // Emoji picker (simple grid)
 // ---------------------------------------------------------------------------
 
 const EMOJI_OPTIONS = [
-  "\ud83c\udfe0", "\ud83c\udf7d\ufe0f", "\ud83d\ude97", "\ud83d\udca1", "\ud83c\udf89", "\ud83c\udfac", "\ud83d\udc55", "\u2708\ufe0f",
-  "\ud83c\udfe6", "\ud83d\udcc8", "\ud83d\udcb0", "\ud83d\udcda", "\ud83c\udfe5", "\ud83d\udc3e", "\ud83c\udfae", "\ud83c\udfb5",
-  "\u2615", "\ud83d\uded2", "\ud83d\udcbb", "\ud83d\udcf1", "\ud83c\udfcb\ufe0f", "\ud83c\udfa8", "\ud83d\udd27", "\ud83c\udf31",
+  "🏠", "🍽️", "🚗", "💡", "🎉", "🎬", "👕", "✈️",
+  "🏦", "📈", "💰", "📚", "🏥", "🐾", "🎮", "🎵",
+  "☕", "🛒", "💻", "📱", "🏋️", "🎨", "🔧", "🌱",
 ];
 
 function EmojiPicker({
@@ -87,12 +113,98 @@ function EmojiPicker({
 }
 
 // ---------------------------------------------------------------------------
+// Parent impact preview — shown when subcategory allocation changes
+// ---------------------------------------------------------------------------
+
+interface SubcategoryImpactPreviewProps {
+  parentCategory: Category;
+  siblingSubcategories: Subcategory[];
+  currentSubcategoryId: string;
+  newAllocationPercent: number;
+  originalAllocationPercent: number;
+}
+
+function SubcategoryImpactPreview({
+  parentCategory,
+  siblingSubcategories,
+  currentSubcategoryId,
+  newAllocationPercent,
+  originalAllocationPercent,
+}: SubcategoryImpactPreviewProps) {
+  const [expanded, setExpanded] = React.useState(true);
+
+  // siblings = all subcategories except the one being edited
+  const siblings = siblingSubcategories.filter((s) => s.id !== currentSubcategoryId);
+  const siblingsTotal = siblings.reduce((sum, s) => sum + s.allocation_percent, 0);
+  const newTotal = siblingsTotal + newAllocationPercent;
+  const parentAlloc = parentCategory.allocation_percent;
+  const isOverflow = newTotal > parentAlloc;
+
+  const direction = newAllocationPercent > originalAllocationPercent ? "increase" : "decrease";
+
+  return (
+    <div
+      className={cn(
+        "rounded-md border px-3 py-2 text-xs space-y-1.5",
+        isOverflow
+          ? "border-destructive/40 bg-destructive/5"
+          : "border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/10"
+      )}
+    >
+      {/* Header row — clickable to collapse */}
+      <button
+        type="button"
+        onClick={() => setExpanded((p) => !p)}
+        className="flex w-full items-center justify-between gap-1 font-medium"
+      >
+        <span
+          className={cn(
+            isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
+          )}
+        >
+          Impact preview
+        </span>
+        {expanded ? (
+          <ChevronDown className="size-3 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="size-3 text-muted-foreground" />
+        )}
+      </button>
+
+      {expanded && (
+        <>
+          {/* Parent summary */}
+          <p
+            className={cn(
+              "font-medium",
+              isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
+            )}
+          >
+            {`Parent category "${parentCategory.icon ? parentCategory.icon + " " : ""}${parentCategory.name}" total would ${direction}: `}
+            <span className="tabular-nums">
+              {originalAllocationPercent !== newAllocationPercent
+                ? `${(siblingsTotal + originalAllocationPercent).toFixed(1)}% → ${newTotal.toFixed(1)}%`
+                : `${newTotal.toFixed(1)}%`}
+            </span>
+            {isOverflow && (
+              <span className="ml-1">{`(category budget: ${parentAlloc.toFixed(1)}%)`}</span>
+            )}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
 interface EditSubcategoryDialogProps {
   categoryId: string;
   subcategory: Subcategory;
+  parentCategory: Category;
+  siblingSubcategories: Subcategory[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -104,6 +216,8 @@ interface EditSubcategoryDialogProps {
 export function EditSubcategoryDialog({
   categoryId,
   subcategory,
+  parentCategory,
+  siblingSubcategories,
   open,
   onOpenChange,
 }: EditSubcategoryDialogProps) {
@@ -112,10 +226,17 @@ export function EditSubcategoryDialog({
   const updateSubcategory = useBudgetStore((s) => s.updateSubcategory);
   const deleteSubcategoryAction = useBudgetStore((s) => s.deleteSubcategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
+  const summary = useBudgetStore((s) => s.summary);
+
+  const totalBudget = summary?.total_budget ?? 0;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
+  // Dollar amount state — managed independently from RHF
+  const [amountInput, setAmountInput] = React.useState<string>("");
+  const [rawAmount, setRawAmount] = React.useState<number>(0);
 
   const {
     register,
@@ -129,25 +250,54 @@ export function EditSubcategoryDialog({
     defaultValues: {
       name: subcategory.name,
       allocation_percent: subcategory.allocation_percent,
-      icon: subcategory.icon || "\ud83d\udccc",
+      icon: subcategory.icon || "📌",
     },
   });
 
   const watchIcon = watch("icon");
+  const watchAllocation = watch("allocation_percent");
 
-  // Reset form when subcategory changes or dialog opens
+  // Compute displayed percentage from current rawAmount
+  const computedPercent =
+    totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
+  const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
+
+  // Reset form and amount input when subcategory changes or dialog opens
   React.useEffect(() => {
     if (open) {
       reset({
         name: subcategory.name,
         allocation_percent: subcategory.allocation_percent,
-        icon: subcategory.icon || "\ud83d\udccc",
+        icon: subcategory.icon || "📌",
       });
+
+      // Convert stored percent to dollar amount
+      const initialAmount =
+        totalBudget > 0
+          ? (subcategory.allocation_percent / 100) * totalBudget
+          : 0;
+      setRawAmount(initialAmount);
+      setAmountInput(formatAmount(initialAmount));
+
       setShowDeleteConfirm(false);
       setIsSubmitting(false);
       setIsDeleting(false);
     }
-  }, [open, subcategory, reset]);
+  }, [open, subcategory, reset, totalBudget]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = maskAmountInput(e.target.value);
+    setAmountInput(masked);
+    const parsed = parseAmount(masked);
+    const numericValue = isNaN(parsed) ? 0 : parsed;
+    setRawAmount(numericValue);
+
+    // Keep RHF in sync
+    const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
+    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
+      shouldValidate: true,
+    });
+  };
 
   const onSubmit = async (values: SubcategoryFormValues) => {
     setIsSubmitting(true);
@@ -178,6 +328,11 @@ export function EditSubcategoryDialog({
       setIsDeleting(false);
     }
   };
+
+  // Show impact preview only when allocation has actually changed
+  const allocationChanged =
+    Math.abs(watchAllocation - subcategory.allocation_percent) > 0.001;
+  const showImpact = allocationChanged;
 
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
@@ -217,30 +372,53 @@ export function EditSubcategoryDialog({
             )}
           </div>
 
-          {/* Allocation */}
+          {/* Allocation — dollar amount with live % indicator */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-sub-allocation">
-              {t("allocationPercent")}
-            </Label>
-            <InputGroup>
-              <InputGroupInput
-                id="edit-sub-allocation"
-                type="number"
-                min={0}
-                max={100}
-                aria-invalid={!!errors.allocation_percent}
-                {...register("allocation_percent", { valueAsNumber: true })}
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupText>%</InputGroupText>
-              </InputGroupAddon>
-            </InputGroup>
+            <Label htmlFor="edit-sub-allocation">{t("allocationPercent")}</Label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
+                  $
+                </span>
+                <Input
+                  id="edit-sub-allocation"
+                  type="text"
+                  inputMode="decimal"
+                  className="pl-6"
+                  value={amountInput}
+                  onChange={handleAmountChange}
+                  aria-invalid={!!errors.allocation_percent}
+                  placeholder="0"
+                />
+              </div>
+              <span
+                className={cn(
+                  "text-sm shrink-0",
+                  percentOverBudget
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+                )}
+              >
+                = {computedPercent.toFixed(1)}%
+              </span>
+            </div>
             {errors.allocation_percent && (
               <p className="text-xs text-destructive">
                 {errors.allocation_percent.message}
               </p>
             )}
           </div>
+
+          {/* Parent impact preview */}
+          {showImpact && (
+            <SubcategoryImpactPreview
+              parentCategory={parentCategory}
+              siblingSubcategories={siblingSubcategories}
+              currentSubcategoryId={subcategory.id}
+              newAllocationPercent={watchAllocation}
+              originalAllocationPercent={subcategory.allocation_percent}
+            />
+          )}
 
           <Separator />
 

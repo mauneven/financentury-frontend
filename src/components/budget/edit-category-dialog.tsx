@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Check, Trash2 } from "lucide-react";
+import { Loader2, Check, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
@@ -20,14 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group";
 import { useTranslations } from "@/i18n/client";
-import type { Category } from "@/types/budget";
+import type { Category, Subcategory } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -48,13 +42,48 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Format a raw number as a comma-separated string (no currency symbol). */
+function formatAmount(value: number): string {
+  if (isNaN(value) || value === 0) return "";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+/** Parse a formatted string back to a number. Returns NaN if invalid. */
+function parseAmount(formatted: string): number {
+  const stripped = formatted.replace(/,/g, "");
+  const num = parseFloat(stripped);
+  return num;
+}
+
+/** Handle keystrokes: strip non-numeric (except decimal), re-format. */
+function maskAmountInput(raw: string): string {
+  // Allow digits and at most one decimal point
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const parts = cleaned.split(".");
+  const intPart = parts[0].replace(/^0+(?=\d)/, ""); // remove leading zeros
+  const decPart = parts.length > 1 ? "." + parts[1].slice(0, 2) : "";
+
+  if (intPart === "") return decPart ? "0" + decPart : "";
+
+  // Add thousands separators to integer part
+  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return formatted + decPart;
+}
+
+// ---------------------------------------------------------------------------
 // Emoji picker (simple grid)
 // ---------------------------------------------------------------------------
 
 const EMOJI_OPTIONS = [
-  "\ud83c\udfe0", "\ud83c\udf7d\ufe0f", "\ud83d\ude97", "\ud83d\udca1", "\ud83c\udf89", "\ud83c\udfac", "\ud83d\udc55", "\u2708\ufe0f",
-  "\ud83c\udfe6", "\ud83d\udcc8", "\ud83d\udcb0", "\ud83d\udcda", "\ud83c\udfe5", "\ud83d\udc3e", "\ud83c\udfae", "\ud83c\udfb5",
-  "\u2615", "\ud83d\uded2", "\ud83d\udcbb", "\ud83d\udcf1", "\ud83c\udfcb\ufe0f", "\ud83c\udfa8", "\ud83d\udd27", "\ud83c\udf31",
+  "🏠", "🍽️", "🚗", "💡", "🎉", "🎬", "👕", "✈️",
+  "🏦", "📈", "💰", "📚", "🏥", "🐾", "🎮", "🎵",
+  "☕", "🛒", "💻", "📱", "🏋️", "🎨", "🔧", "🌱",
 ];
 
 function EmojiPicker({
@@ -87,11 +116,113 @@ function EmojiPicker({
 }
 
 // ---------------------------------------------------------------------------
+// Impact preview — shown when category allocation changes
+// ---------------------------------------------------------------------------
+
+interface CategoryImpactPreviewProps {
+  subcategories: Subcategory[];
+  newCategoryPercent: number;
+}
+
+function CategoryImpactPreview({
+  subcategories,
+  newCategoryPercent,
+}: CategoryImpactPreviewProps) {
+  const [expanded, setExpanded] = React.useState(true);
+
+  if (subcategories.length === 0) return null;
+
+  const childTotal = subcategories.reduce(
+    (sum, s) => sum + s.allocation_percent,
+    0
+  );
+  const isOverflow = childTotal > newCategoryPercent;
+
+  return (
+    <div
+      className={cn(
+        "rounded-md border px-3 py-2 text-xs space-y-1.5",
+        isOverflow
+          ? "border-destructive/40 bg-destructive/5"
+          : "border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/10"
+      )}
+    >
+      {/* Header row — clickable to collapse */}
+      <button
+        type="button"
+        onClick={() => setExpanded((p) => !p)}
+        className="flex w-full items-center justify-between gap-1 font-medium"
+      >
+        <span
+          className={cn(
+            isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
+          )}
+        >
+          Impact preview
+        </span>
+        {expanded ? (
+          <ChevronDown className="size-3 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="size-3 text-muted-foreground" />
+        )}
+      </button>
+
+      {expanded && (
+        <>
+          {/* Summary line */}
+          <p
+            className={cn(
+              isOverflow ? "text-destructive font-medium" : "text-amber-700 dark:text-amber-400"
+            )}
+          >
+            {isOverflow
+              ? `Subcategories total ${childTotal.toFixed(1)}% but category is only ${newCategoryPercent.toFixed(1)}%`
+              : `Subcategories total ${childTotal.toFixed(1)}% of ${newCategoryPercent.toFixed(1)}% allocated`}
+          </p>
+
+          {/* Per-subcategory rows */}
+          <ul className="space-y-0.5 pl-1">
+            {subcategories.map((sub) => {
+              const overflow = sub.allocation_percent > newCategoryPercent;
+              return (
+                <li
+                  key={sub.id}
+                  className={cn(
+                    "flex items-center justify-between",
+                    overflow ? "text-destructive" : "text-muted-foreground"
+                  )}
+                >
+                  <span className="flex items-center gap-1">
+                    {sub.icon && (
+                      <span className="text-[11px]">{sub.icon}</span>
+                    )}
+                    {sub.name}
+                  </span>
+                  <span
+                    className={cn(
+                      "tabular-nums font-medium",
+                      overflow ? "text-destructive" : ""
+                    )}
+                  >
+                    {sub.allocation_percent}%
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
 interface EditCategoryDialogProps {
   category: Category;
+  subcategories: Subcategory[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -102,6 +233,7 @@ interface EditCategoryDialogProps {
 
 export function EditCategoryDialog({
   category,
+  subcategories,
   open,
   onOpenChange,
 }: EditCategoryDialogProps) {
@@ -110,10 +242,17 @@ export function EditCategoryDialog({
   const updateCategory = useBudgetStore((s) => s.updateCategory);
   const deleteCategoryAction = useBudgetStore((s) => s.deleteCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
+  const summary = useBudgetStore((s) => s.summary);
+
+  const totalBudget = summary?.total_budget ?? 0;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
+  // Dollar amount state — managed independently from RHF
+  const [amountInput, setAmountInput] = React.useState<string>("");
+  const [rawAmount, setRawAmount] = React.useState<number>(0);
 
   const {
     register,
@@ -127,25 +266,52 @@ export function EditCategoryDialog({
     defaultValues: {
       name: category.name,
       allocation_percent: category.allocation_percent,
-      icon: category.icon || "\ud83c\udfe0",
+      icon: category.icon || "🏠",
     },
   });
 
   const watchIcon = watch("icon");
+  const watchAllocation = watch("allocation_percent");
 
-  // Reset form when category changes or dialog opens
+  // Compute displayed percentage from current rawAmount
+  const computedPercent =
+    totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
+  const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
+
+  // Reset form and amount input when category changes or dialog opens
   React.useEffect(() => {
     if (open) {
       reset({
         name: category.name,
         allocation_percent: category.allocation_percent,
-        icon: category.icon || "\ud83c\udfe0",
+        icon: category.icon || "🏠",
       });
+
+      // Convert stored percent to dollar amount
+      const initialAmount =
+        totalBudget > 0 ? (category.allocation_percent / 100) * totalBudget : 0;
+      setRawAmount(initialAmount);
+      setAmountInput(formatAmount(initialAmount));
+
       setShowDeleteConfirm(false);
       setIsSubmitting(false);
       setIsDeleting(false);
     }
-  }, [open, category, reset]);
+  }, [open, category, reset, totalBudget]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = maskAmountInput(e.target.value);
+    setAmountInput(masked);
+    const parsed = parseAmount(masked);
+    const numericValue = isNaN(parsed) ? 0 : parsed;
+    setRawAmount(numericValue);
+
+    // Keep RHF in sync
+    const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
+    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
+      shouldValidate: true,
+    });
+  };
 
   const onSubmit = async (values: CategoryFormValues) => {
     setIsSubmitting(true);
@@ -176,6 +342,11 @@ export function EditCategoryDialog({
       setIsDeleting(false);
     }
   };
+
+  // Show impact preview only when allocation has changed from the original
+  const allocationChanged =
+    Math.abs(watchAllocation - category.allocation_percent) > 0.001;
+  const showImpact = allocationChanged && subcategories.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
@@ -213,30 +384,50 @@ export function EditCategoryDialog({
             )}
           </div>
 
-          {/* Allocation */}
+          {/* Allocation — dollar amount with live % indicator */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-cat-allocation">
-              {t("allocationPercent")}
-            </Label>
-            <InputGroup>
-              <InputGroupInput
-                id="edit-cat-allocation"
-                type="number"
-                min={0}
-                max={100}
-                aria-invalid={!!errors.allocation_percent}
-                {...register("allocation_percent", { valueAsNumber: true })}
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupText>%</InputGroupText>
-              </InputGroupAddon>
-            </InputGroup>
+            <Label htmlFor="edit-cat-allocation">{t("allocationPercent")}</Label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
+                  $
+                </span>
+                <Input
+                  id="edit-cat-allocation"
+                  type="text"
+                  inputMode="decimal"
+                  className="pl-6"
+                  value={amountInput}
+                  onChange={handleAmountChange}
+                  aria-invalid={!!errors.allocation_percent}
+                  placeholder="0"
+                />
+              </div>
+              <span
+                className={cn(
+                  "text-sm shrink-0",
+                  percentOverBudget
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+                )}
+              >
+                = {computedPercent.toFixed(1)}%
+              </span>
+            </div>
             {errors.allocation_percent && (
               <p className="text-xs text-destructive">
                 {errors.allocation_percent.message}
               </p>
             )}
           </div>
+
+          {/* Impact preview */}
+          {showImpact && (
+            <CategoryImpactPreview
+              subcategories={subcategories}
+              newCategoryPercent={watchAllocation}
+            />
+          )}
 
           <Separator />
 
