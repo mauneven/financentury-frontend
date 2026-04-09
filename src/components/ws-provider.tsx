@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { useBudgetStore } from "@/store/budget-store";
 import { budgetWS } from "@/lib/websocket";
 import type { WSMessage } from "@/lib/websocket";
 
 /**
- * Connects to the WebSocket when in online mode with a valid token
- * and an active budget. Refreshes the summary on relevant messages.
- * Disconnects on sign-out or when switching to local mode.
+ * Connects to the WebSocket when in online mode with a valid token.
+ * Refreshes the summary on relevant messages.
+ * Disconnects only on sign-out or switch to local mode.
  */
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const mode = useAuthStore((s) => s.mode);
@@ -17,16 +17,23 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const activeBudgetId = useBudgetStore((s) => s.activeBudgetId);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
 
+  // Keep mutable refs so the message handler always sees the latest values
+  // without being part of the connect/disconnect effect's dependency array.
+  const activeBudgetIdRef = useRef(activeBudgetId);
+  const refreshSummaryRef = useRef(refreshSummary);
+
+  useEffect(() => { activeBudgetIdRef.current = activeBudgetId; }, [activeBudgetId]);
+  useEffect(() => { refreshSummaryRef.current = refreshSummary; }, [refreshSummary]);
+
+  // Connect / disconnect only when auth state truly changes.
   useEffect(() => {
-    if (mode !== "online" || !token || !activeBudgetId) {
+    if (mode !== "online" || !token) {
       budgetWS.disconnect();
       return;
     }
 
     const handleMessage = (msg: WSMessage) => {
-      // Only refresh if the message is relevant to the active budget,
-      // or if no budget_id is specified (broadcast).
-      if (msg.budget_id && msg.budget_id !== activeBudgetId) return;
+      if (msg.budget_id && msg.budget_id !== activeBudgetIdRef.current) return;
 
       switch (msg.type) {
         case "budget_updated":
@@ -39,10 +46,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         case "category_added":
         case "category_updated":
         case "category_deleted":
-          refreshSummary();
+          refreshSummaryRef.current();
           break;
         default:
-          // Unknown message type -- ignore.
           break;
       }
     };
@@ -52,7 +58,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       budgetWS.disconnect();
     };
-  }, [mode, token, activeBudgetId, refreshSummary]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, token]);
 
   return <>{children}</>;
 }
