@@ -234,13 +234,16 @@ function ExpenseRow({
         )}
       </div>
 
-      {/* Amount */}
+      {/* Amount + time */}
       <div className="shrink-0 text-right">
         <p className="font-mono text-sm font-medium text-foreground">
           {formatCurrency(expense.amount, currency)}
         </p>
-        <p className="text-sm text-muted-foreground">
-          {subcategoryInfo?.categoryName}
+        <p className="text-xs text-muted-foreground font-mono">
+          {new Date(expense.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+          {expense.updated_at && new Date(expense.updated_at).getTime() - new Date(expense.created_at).getTime() > 60000 && (
+            <span className="ml-1 text-muted-foreground/60">· editado</span>
+          )}
         </p>
       </div>
 

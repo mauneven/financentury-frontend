@@ -245,7 +245,12 @@ export const expenseApi = {
   create: (budgetId: string, data: CreateExpenseInput) =>
     request<Expense>(`/budgets/${budgetId}/expenses`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        subcategory_id: data.category_id,
+        amount: data.amount,
+        description: data.description,
+        expense_date: data.expense_date,
+      }),
     }),
 
   update: (
@@ -255,7 +260,12 @@ export const expenseApi = {
   ) =>
     request<Expense>(`/budgets/${budgetId}/expenses/${expId}`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...(data.category_id && { subcategory_id: data.category_id }),
+        ...(data.amount !== undefined && { amount: data.amount }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.expense_date && { expense_date: data.expense_date }),
+      }),
     }),
 
   delete: (budgetId: string, expId: string) =>

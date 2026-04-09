@@ -21,6 +21,7 @@ import { useBudgetStore } from "@/store/budget-store";
 interface SpendingChartProps {
   budgetId: string;
   currency: string;
+  categoryIds?: string[];
 }
 
 function formatDayLabel(dateStr: string): string {
@@ -32,7 +33,7 @@ function formatDayLabel(dateStr: string): string {
   }
 }
 
-export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
+export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChartProps) {
   const [trendsData, setTrendsData] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +58,10 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
           }
         }
 
+        const categoryIdSet = categoryIds ? new Set(categoryIds) : null;
         const grouped = new Map<string, Map<string, number>>();
         for (const exp of expenses) {
+          if (categoryIdSet && !categoryIdSet.has(exp.category_id)) continue;
           const day = exp.expense_date.slice(0, 10); // "YYYY-MM-DD"
           const catInfo = categoryMap.get(exp.category_id);
           if (!catInfo) continue;
@@ -116,8 +119,10 @@ export function SpendingChart({ budgetId, currency }: SpendingChartProps) {
   const chartData: { date: string; total: number }[] = [];
 
   if (trendsData && trendsData.categories.length > 0) {
+    const categoryIdSet = categoryIds ? new Set(categoryIds) : null;
     const dateTotals = new Map<string, number>();
     for (const cat of trendsData.categories) {
+      if (categoryIdSet && !categoryIdSet.has(cat.category_id)) continue;
       for (const m of cat.months) {
         dateTotals.set(m.month, (dateTotals.get(m.month) || 0) + m.total_spent);
       }

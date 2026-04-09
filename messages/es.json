@@ -150,6 +150,9 @@
     "remainingPercent": "restante",
     "startAddingExpense": "Comienza agregando tu primer gasto",
     "addSection": "Agregar Sección",
+    "addExpense": "Agregar Gasto",
+    "recentExpenses": "Gastos Recientes",
+    "allExpenses": "Todos los Gastos",
     "sectionActions": {
       "reports": "Informes",
       "breakdown": "Desglose",

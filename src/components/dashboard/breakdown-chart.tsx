@@ -22,11 +22,21 @@ const CATEGORY_COLORS = [
 
 interface BreakdownChartProps {
   summary: BudgetSummary;
+  sectionId?: string;
 }
 
-export function BreakdownChart({ summary }: BreakdownChartProps) {
+export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
   const { budget, sections, total_budget, total_spent } = summary;
-  const spentPercentage = getPercentage(total_spent, total_budget);
+  const filteredSections = sectionId
+    ? sections.filter((s) => s.section.id === sectionId)
+    : sections;
+  const scopedSpent = sectionId
+    ? filteredSections.reduce((sum, s) => sum + s.total_spent, 0)
+    : total_spent;
+  const scopedBudget = sectionId
+    ? filteredSections.reduce((sum, s) => sum + s.allocated_amount, 0)
+    : total_budget;
+  const spentPercentage = getPercentage(scopedSpent, scopedBudget);
   const t = useTranslations("dashboard");
 
   // Collect all child categories with spending
@@ -38,7 +48,7 @@ export function BreakdownChart({ summary }: BreakdownChartProps) {
   }[] = [];
 
   let colorIdx = 0;
-  for (const section of sections) {
+  for (const section of filteredSections) {
     for (const cat of section.categories) {
       if (cat.total_spent > 0) {
         categoryData.push({
@@ -67,7 +77,7 @@ export function BreakdownChart({ summary }: BreakdownChartProps) {
               {formatCompact(0, budget.currency)}
             </p>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              {t("ofBudget")} {formatCompact(total_budget, budget.currency)}
+              {t("ofBudget")} {formatCompact(scopedBudget, budget.currency)}
             </p>
             <p className="text-sm font-medium text-muted-foreground mt-2">
               {t("notEnoughData")}
@@ -141,10 +151,10 @@ export function BreakdownChart({ summary }: BreakdownChartProps) {
           {/* Center text overlay */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <p className="text-xl font-bold font-mono tabular-nums text-foreground">
-              {formatCompact(total_spent, budget.currency)}
+              {formatCompact(scopedSpent, budget.currency)}
             </p>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              {t("ofBudget")} {formatCompact(total_budget, budget.currency)}
+              {t("ofBudget")} {formatCompact(scopedBudget, budget.currency)}
             </p>
             <p className="mt-0.5 text-sm font-semibold font-mono tabular-nums text-muted-foreground">
               {spentPercentage}% {t("used")}

@@ -150,6 +150,9 @@
     "remainingPercent": "remaining",
     "startAddingExpense": "Start by adding your first expense",
     "addSection": "Add Section",
+    "addExpense": "Add Expense",
+    "recentExpenses": "Recent Expenses",
+    "allExpenses": "All Expenses",
     "sectionActions": {
       "reports": "Reports",
       "breakdown": "Breakdown",

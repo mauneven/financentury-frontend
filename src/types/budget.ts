@@ -40,6 +40,7 @@ export interface Expense {
   description: string;
   expense_date: string;
   created_at: string;
+  updated_at?: string;
   created_by?: string;
 }
 

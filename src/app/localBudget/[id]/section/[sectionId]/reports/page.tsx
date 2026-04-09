@@ -1,14 +1,28 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BarChart3, Settings, Plus } from "lucide-react";
 import { formatCompact, getPercentage, getProgressColor, getProgressTextColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/lib/icon-picker";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
+import type { Category } from "@/types/budget";
+import { useTranslations } from "@/i18n/client";
+
+const SpendingChart = dynamic(
+  () => import("@/components/dashboard/spending-chart").then((mod) => ({ default: mod.SpendingChart })),
+  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-64 animate-pulse bg-muted" /></div> }
+);
+const BreakdownChart = dynamic(
+  () => import("@/components/dashboard/breakdown-chart").then((mod) => ({ default: mod.BreakdownChart })),
+  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-64 animate-pulse bg-muted" /></div> }
+);
 
 export default function SectionReportsPage() {
   const params = useParams<{ id: string; sectionId: string }>();
@@ -16,6 +30,10 @@ export default function SectionReportsPage() {
   const summary = useBudgetStore((s) => s.summary);
   const mode = useAuthStore((s) => s.mode);
   const budgetBase = mode === "local" ? "localBudget" : "budget";
+  const tActions = useTranslations("dashboard.sectionActions");
+
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [addExpenseOpen, setAddExpenseOpen] = useState(false);
 
   const sectionSummary = summary?.sections.find(
     (s) => s.section.id === params.sectionId
@@ -41,31 +59,42 @@ export default function SectionReportsPage() {
   const percentage = getPercentage(total_spent, allocated_amount);
   const progressColor = getProgressColor(percentage);
   const textColor = getProgressTextColor(percentage);
+  const categoryIds = categories.map((c) => c.category.id);
 
   return (
     <div className="space-y-6">
       <Breadcrumbs />
 
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={() => router.push(`/${budgetBase}/${params.id}`)}
-          className="mt-1 flex size-8 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground transition-colors border border-border"
-        >
-          <ArrowLeft className="size-4" />
-        </button>
-        <div className="flex items-center gap-3">
-          <CategoryIcon iconKey={section.icon} className="size-8" />
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {section.name}
-            </h1>
+      {/* Header — matches section page pattern */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            onClick={() => router.push(`/${budgetBase}/${params.id}`)}
+            className="mt-1 flex size-8 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground transition-colors border border-border"
+          >
+            <ArrowLeft className="size-4" />
+          </button>
+          <div className="flex items-center gap-3">
+            <CategoryIcon iconKey={section.icon} className="size-8" />
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                {section.name}
+              </h1>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
               Informes · {section.allocation_percent}% del presupuesto
             </p>
           </div>
         </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setAddExpenseOpen(true)}
+          className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+        >
+          <Plus className="size-3.5" />
+          <span className="hidden sm:inline">Agregar Gasto</span>
+        </button>
       </div>
 
       {/* Stats totales */}
@@ -106,6 +135,20 @@ export default function SectionReportsPage() {
           />
         </div>
       </div>
+
+      {/* Charts — always show SpendingChart */}
+      {total_spent > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <SpendingChart budgetId={params.id} currency={currency} categoryIds={categoryIds} />
+          </div>
+          <div>
+            <BreakdownChart summary={summary} sectionId={params.sectionId} />
+          </div>
+        </div>
+      ) : (
+        <SpendingChart budgetId={params.id} currency={currency} categoryIds={categoryIds} />
+      )}
 
       {/* Desglose por categorías */}
       <div className="space-y-4">
@@ -181,12 +224,56 @@ export default function SectionReportsPage() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Action buttons */}
+                  <div className="mt-4 flex gap-2 border-t border-border pt-4">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
+                      className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+                    >
+                      <BarChart3 className="size-3.5" />
+                      {tActions("reports")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingCategory(cat.category)}
+                      className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+                    >
+                      <Settings className="size-3.5" />
+                      {tActions("adjust")}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {/* Edit Category Dialog */}
+      {/* Dialogs */}
+      {editingCategory && (
+        <EditCategoryDialog
+          sectionId={section.id}
+          category={editingCategory}
+          parentSection={section}
+          siblingCategories={categories.map((c) => c.category)}
+          open={!!editingCategory}
+          onOpenChange={(open) => { if (!open) setEditingCategory(null); }}
+        />
+      )}
+      <AddExpenseDialog
+        open={addExpenseOpen}
+        onOpenChange={setAddExpenseOpen}
+        budgetId={params.id}
+        categories={summary.sections.map((s) => ({
+          ...s.section,
+          categories: s.categories.map((c) => c.category),
+        }))}
+        currency={currency}
+        preselectedSubcategoryId={categories.length > 0 ? categories[0].category.id : undefined}
+      />
     </div>
   );
 }

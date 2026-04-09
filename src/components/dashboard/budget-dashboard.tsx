@@ -1,17 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { RefreshCw, Settings, Plus, ArrowLeft } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { cn } from "@/lib/utils";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
 import { EmptyDashboard } from "./empty-dashboard";
 import { BILLING_PERIODS } from "@/types/budget";
+import type { Expense } from "@/types/budget";
 import { AddSectionDialog } from "@/components/budget/add-section-dialog";
+import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
+import { EditExpenseDialog } from "@/components/expenses/edit-expense-dialog";
+import { ExpenseList } from "@/components/expenses/expense-list";
 import Link from "next/link";
 
 // Lazy-load chart components (they import recharts which is heavy)
@@ -106,6 +111,8 @@ function DashboardSkeleton() {
 
 export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const summary = useBudgetStore((s) => s.summary);
+  const expenses = useBudgetStore((s) => s.expenses);
+  const deleteExpense = useBudgetStore((s) => s.deleteExpense);
   const loading = useBudgetStore((s) => s.loading);
   const error = useBudgetStore((s) => s.error);
   const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
@@ -113,6 +120,8 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
   const [addSectionOpen, setAddSectionOpen] = useState(false);
+  const [addExpenseOpen, setAddExpenseOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   // Show loading skeleton only on initial load (no summary and loading)
   // Once summary exists, show content even if still loading (e.g., refreshing data)
@@ -136,7 +145,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           <button
             type="button"
             onClick={() => setActiveBudget(budgetId)}
-            className="inline-flex items-center gap-2 bg-foreground px-4 py-2 text-xs font-bold uppercase tracking-wider text-background border-2 border-foreground shadow-[4px_4px_0px_hsl(var(--foreground)/0.2)] transition-all duration-200 hover:shadow-[2px_2px_0px_hsl(var(--foreground)/0.2)] hover:translate-x-[2px] hover:translate-y-[2px]"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
           >
             <RefreshCw className="h-4 w-4" />
             {tc("retry")}
@@ -179,17 +188,45 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             </p>
           </div>
         </div>
-        <Link
-          href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
-          className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
-          aria-label="Budget settings"
-        >
-          <Settings className="size-4" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAddExpenseOpen(true)}
+            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+          >
+            <Plus className="size-3.5" />
+            <span className="hidden sm:inline">{t("addExpense")}</span>
+          </button>
+          <Link
+            href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
+            className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
+            aria-label="Budget settings"
+          >
+            <Settings className="size-4" />
+          </Link>
+        </div>
       </div>
 
       {/* Overview cards */}
       <OverviewCards summary={summary} />
+
+      {/* Progress bar — matches section + category */}
+      {(() => {
+        const pct = summary.total_budget > 0 ? Math.round((summary.total_spent / summary.total_budget) * 100) : 0;
+        const pc = pct >= 100 ? "bg-red-600" : pct >= 75 ? "bg-yellow-500" : "bg-emerald-600";
+        const tc2 = pct >= 100 ? "text-red-600 dark:text-red-400" : pct >= 75 ? "text-yellow-600 dark:text-yellow-400" : "text-emerald-600";
+        return (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Uso del presupuesto</span>
+              <span className={cn("font-bold tabular-nums font-mono", tc2)}>{pct}%</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden bg-muted">
+              <div className={cn("h-full transition-all duration-300", pc)} style={{ width: `${Math.min(pct, 100)}%` }} />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Charts row */}
       {hasAnySpending ? (
@@ -236,12 +273,67 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         <EmptyDashboard />
       )}
 
-      {/* Add Section Dialog */}
+      {/* Expense list */}
+      {expenses.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
+              {t("recentExpenses")}
+            </h2>
+          </div>
+          <ExpenseList
+            expenses={expenses}
+            currency={budget.currency}
+            subcategories={(() => {
+              const m = new Map<string, { name: string; icon: string | null; categoryName: string }>();
+              for (const sec of sections) {
+                for (const cat of sec.categories) {
+                  m.set(cat.category.id, {
+                    name: cat.category.name,
+                    icon: cat.category.icon,
+                    categoryName: sec.section.name,
+                  });
+                }
+              }
+              return m;
+            })()}
+            onEdit={(exp) => setEditingExpense(exp)}
+            onDelete={(id) => deleteExpense(id)}
+          />
+        </div>
+      )}
+
+      {/* Dialogs */}
       <AddSectionDialog
         budgetId={budgetId}
         open={addSectionOpen}
         onOpenChange={setAddSectionOpen}
       />
+
+      <AddExpenseDialog
+        open={addExpenseOpen}
+        onOpenChange={setAddExpenseOpen}
+        budgetId={budgetId}
+        categories={sections.map((s) => ({
+          ...s.section,
+          categories: s.categories.map((c) => c.category),
+        }))}
+        currency={budget.currency}
+      />
+
+      {editingExpense && (
+        <EditExpenseDialog
+          open={!!editingExpense}
+          onOpenChange={(open) => { if (!open) setEditingExpense(null); }}
+          budgetId={budgetId}
+          expense={editingExpense}
+          categories={sections.map((s) => ({
+            ...s.section,
+            categories: s.categories.map((c) => c.category),
+          }))}
+          currency={budget.currency}
+        />
+      )}
     </div>
   );
 }

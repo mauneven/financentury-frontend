@@ -192,8 +192,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     } else {
       const expense = await expenseApi.create(activeBudgetId, data);
       set((state) => ({ expenses: [...state.expenses, expense] }));
-      // Refresh summary to update totals
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
       return expense;
     }
   },
@@ -211,7 +210,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       set((state) => ({
         expenses: state.expenses.map((e) => e.id === expenseId ? updated : e),
       }));
-      await get().refreshSummary();
+      // WS broadcast will trigger refreshSummary via ws-provider
       return updated;
     }
   },
@@ -234,7 +233,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       set((state) => ({
         expenses: state.expenses.filter((e) => e.id !== expenseId),
       }));
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
     }
   },
 
@@ -251,7 +250,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return section;
     } else {
       const section = await sectionApi.create(activeBudgetId, data);
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
       return section;
     }
   },
@@ -268,7 +267,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return section;
     } else {
       const section = await sectionApi.update(activeBudgetId, sectionId, data);
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
       return section;
     }
   },
@@ -285,7 +284,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       set({ summary, expenses });
     } else {
       await sectionApi.delete(activeBudgetId, sectionId);
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
     }
   },
 
@@ -301,7 +300,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return category;
     } else {
       const category = await categoryApi.create(activeBudgetId, sectionId, data);
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
       return category;
     }
   },
@@ -318,7 +317,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return category;
     } else {
       const category = await categoryApi.update(activeBudgetId, sectionId, categoryId, data);
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
       return category;
     }
   },
@@ -335,7 +334,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       set({ summary, expenses });
     } else {
       await categoryApi.delete(activeBudgetId, sectionId, categoryId);
-      get().refreshSummaryOnly();
+      // WS broadcast will trigger refreshSummary via ws-provider
     }
   },
 }));
