@@ -13,7 +13,6 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
-import { useAuthStore } from "@/store/auth-store";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { CategoryIcon } from "@/lib/icon-picker";
@@ -35,7 +34,6 @@ export function SectionCard({
   const [editSectionOpen, setEditSectionOpen] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
   const router = useRouter();
-  const mode = useAuthStore((s) => s.mode);
   const t = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.sectionActions");
 
@@ -95,7 +93,7 @@ export function SectionCard({
             <button
               type="button"
               onClick={() => {
-                router.push(`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/section/${section.id}/reports`);
+                router.push(`/budget/${budgetId}/section/${section.id}/reports`);
               }}
               className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
             >
@@ -154,7 +152,7 @@ export function SectionCard({
             <button
               type="button"
               onClick={() => {
-                router.push(`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/section/${section.id}/reports`);
+                router.push(`/budget/${budgetId}/section/${section.id}/reports`);
               }}
               className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
             >

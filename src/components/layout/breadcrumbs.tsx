@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { usePathname, useParams } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -20,12 +19,11 @@ export function Breadcrumbs() {
     sectionId?: string;
     categoryId?: string;
   }>();
-  const mode = useAuthStore((s) => s.mode);
   const summary = useBudgetStore((s) => s.summary);
   const budgets = useBudgetStore((s) => s.budgets);
   const t = useTranslations("navbar");
 
-  const basePath = mode === "local" ? "/localBudget" : "/budget";
+  const basePath = "/budget";
 
   const segments = useMemo((): BreadcrumbSegment[] => {
     const segs: BreadcrumbSegment[] = [];
@@ -87,7 +85,7 @@ export function Breadcrumbs() {
     }
 
     return segs;
-  }, [pathname, params, summary, budgets, basePath, t]);
+  }, [pathname, params, summary, budgets, t]);
 
   if (segments.length === 0) return null;
 

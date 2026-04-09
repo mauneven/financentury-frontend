@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
 import { BudgetSettings } from "@/components/budget/budget-settings";
 import { ArrowLeft } from "lucide-react";
 
@@ -10,8 +9,6 @@ export default function BudgetSettingsPage() {
   const params = useParams<{ id: string }>();
   const summary = useBudgetStore((s) => s.summary);
   const router = useRouter();
-  const mode = useAuthStore((s) => s.mode);
-  const budgetBase = mode === "local" ? "localBudget" : "budget";
 
   if (!summary) {
     return (
@@ -25,7 +22,7 @@ export default function BudgetSettingsPage() {
     <div className="mx-auto max-w-2xl p-6 lg:p-12">
       <button
         type="button"
-        onClick={() => router.push(`/${budgetBase}/${params.id}`)}
+        onClick={() => router.push(`/budget/${params.id}`)}
         className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="size-4" />

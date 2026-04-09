@@ -15,7 +15,7 @@ export function Navbar() {
         <div className="flex h-14 items-center justify-between">
           {/* Branding */}
           <Link
-            href="/"
+            href="/home"
             className="flex items-center gap-2.5 shrink-0 transition-opacity hover:opacity-80"
           >
             <div className="flex size-8 items-center justify-center bg-foreground">

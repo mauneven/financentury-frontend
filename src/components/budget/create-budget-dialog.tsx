@@ -18,7 +18,6 @@ import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS, GUIDED_SECTIONS } from "@/types/budget";
 import { detectCurrency, formatCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { useTranslations } from "@/i18n/client";
@@ -321,7 +320,6 @@ export function CreateBudgetDialog({
 }: CreateBudgetDialogProps) {
   const router = useRouter();
   const createBudget = useBudgetStore((s) => s.createBudget);
-  const { mode: authMode } = useAuthStore();
   const t = useTranslations("budget");
   const tc = useTranslations("common");
   const tCat = useTranslations("categories");
@@ -462,7 +460,7 @@ export function CreateBudgetDialog({
 
       onCreated?.(budget);
       onOpenChange(false);
-      router.push(`/${authMode === "local" ? "localBudget" : "budget"}/${budget.id}`);
+      router.push(`/budget/${budget.id}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Failed to create budget");
     } finally {

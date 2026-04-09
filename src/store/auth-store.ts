@@ -2,8 +2,7 @@
 
 import { create } from "zustand";
 import { budgetWS } from "@/lib/websocket";
-
-export type AppMode = "local" | "online";
+import { authApi } from "@/lib/api";
 
 export interface AuthUser {
   id: string;
@@ -15,7 +14,6 @@ export interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   token: string | null;
-  mode: AppMode;
   loading: boolean;
   initialized: boolean;
   justLoggedIn: boolean;
@@ -23,8 +21,9 @@ interface AuthState {
   initialize: () => void;
   signInWithGoogle: () => void;
   handleGoogleCallback: (code: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
-  setMode: (mode: AppMode) => void;
 }
 
 const API_BASE =
@@ -71,7 +70,6 @@ function generateOAuthState(): string {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
-  mode: "local",
   loading: true,
   initialized: false,
   justLoggedIn: false,
@@ -81,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ initialized: true });
 
     if (typeof window === "undefined") {
-      set({ mode: "local", loading: false });
+      set({ loading: false });
       return;
     }
 
@@ -89,7 +87,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (!token || !isValidJWTFormat(token) || isTokenExpired(token)) {
       if (token) localStorage.removeItem("financentury_token");
-      set({ mode: "local", loading: false });
+      set({ user: null, token: null, loading: false });
       return;
     }
 
@@ -106,12 +104,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return res.json();
       })
       .then((user: AuthUser) => {
-        set({ user, token, mode: "online", loading: false });
+        set({ user, token, loading: false });
       })
       .catch(() => {
         clearTimeout(timeoutId);
         localStorage.removeItem("financentury_token");
-        set({ mode: "local", loading: false });
+        set({ user: null, token: null, loading: false });
       });
   },
 
@@ -164,7 +162,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({
       user: data.user,
       token: data.token,
-      mode: "online",
+      justLoggedIn: true,
+    });
+  },
+
+  signInWithEmail: async (email: string, password: string) => {
+    const data = await authApi.login(email, password);
+
+    if (!isValidJWTFormat(data.token)) {
+      throw new Error("Received invalid token from server");
+    }
+
+    localStorage.setItem("financentury_token", data.token);
+    set({
+      user: data.user,
+      token: data.token,
+      justLoggedIn: true,
+    });
+  },
+
+  registerWithEmail: async (name: string, email: string, password: string) => {
+    const data = await authApi.register(name, email, password);
+
+    if (!isValidJWTFormat(data.token)) {
+      throw new Error("Received invalid token from server");
+    }
+
+    localStorage.setItem("financentury_token", data.token);
+    set({
+      user: data.user,
+      token: data.token,
       justLoggedIn: true,
     });
   },
@@ -178,12 +205,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({
       user: null,
       token: null,
-      mode: "local",
       justLoggedIn: false,
     });
-  },
-
-  setMode: (mode: AppMode) => {
-    set({ mode });
   },
 }));

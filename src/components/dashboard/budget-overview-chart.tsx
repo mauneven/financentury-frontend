@@ -76,8 +76,8 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  borderColor: "hsl(var(--border))",
+                  backgroundColor: "var(--background)",
+                  borderColor: "var(--border)",
                   borderRadius: "0.5rem",
                   fontSize: "0.8125rem",
                 }}

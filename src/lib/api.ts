@@ -12,7 +12,9 @@ import type {
   TrendsResponse,
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
-import type { MigratePayload } from "@/types/migrate";
+interface MigratePayload {
+  budgets: Array<Record<string, unknown>>;
+}
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -91,8 +93,8 @@ async function request<T>(
   if (!res.ok) {
     if (res.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("financentury_token");
-      // Force page reload to trigger auth re-initialization
-      window.location.href = "/";
+      // Redirect to login
+      window.location.href = "/login";
     }
     const error = await res
       .json()
@@ -120,6 +122,16 @@ export const authApi = {
     request<{ budgets: Budget[] }>("/migrate", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+  register: (name: string, email: string, password: string) =>
+    request<{ token: string; user: { id: string; email: string; full_name: string; avatar_url: string } }>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password }),
+    }),
+  login: (email: string, password: string) =>
+    request<{ token: string; user: { id: string; email: string; full_name: string; avatar_url: string } }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
     }),
 };
 

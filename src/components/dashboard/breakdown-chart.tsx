@@ -110,7 +110,7 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
                 strokeWidth={0}
                 isAnimationActive={false}
               >
-                <Cell fill="hsl(var(--muted))" />
+                <Cell fill="var(--muted)" />
               </Pie>
               {/* Category spending slices */}
               <Pie
@@ -122,7 +122,7 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
                 paddingAngle={1}
                 dataKey="value"
                 strokeWidth={2}
-                stroke="hsl(var(--background))"
+                stroke="var(--background)"
                 startAngle={90}
                 endAngle={90 - (spentPercentage / 100) * 360}
               >
@@ -132,15 +132,15 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "2px solid hsl(var(--foreground))",
+                  backgroundColor: "var(--card)",
+                  border: "2px solid var(--foreground)",
                   borderRadius: "0",
                   fontSize: "0.75rem",
                   fontFamily: "monospace",
-                  boxShadow: "4px 4px 0px hsl(var(--foreground))",
-                  color: "hsl(var(--foreground))",
+                  boxShadow: "4px 4px 0px var(--foreground)",
+                  color: "var(--foreground)",
                 }}
-                itemStyle={{ color: "hsl(var(--foreground))" }}
+                itemStyle={{ color: "var(--foreground)" }}
                 formatter={(value, name) => [
                   formatCompact(Number(value), budget.currency),
                   String(name),

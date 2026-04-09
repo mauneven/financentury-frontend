@@ -24,7 +24,7 @@ export default function InviteAcceptPage() {
   const router = useRouter();
   const t = useTranslations("invite");
   const tAuth = useTranslations("auth");
-  const { mode, signInWithGoogle, initialized } = useAuthStore();
+  const { user, signInWithGoogle, initialized } = useAuthStore();
 
   const [info, setInfo] = useState<InviteInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +51,7 @@ export default function InviteAcceptPage() {
 
   // Auto-accept if user just logged in and we have a valid invite
   useEffect(() => {
-    if (initialized && mode === "online" && info && !info.is_expired && !info.is_used && !accepted && !accepting) {
+    if (initialized && user && info && !info.is_expired && !info.is_used && !accepted && !accepting) {
       // Check if we were redirected back after login
       const pending = typeof window !== "undefined" && sessionStorage.getItem("pending_invite");
       if (pending === params.token) {
@@ -59,7 +59,7 @@ export default function InviteAcceptPage() {
         handleAccept();
       }
     }
-  }, [initialized, mode, info, accepted, accepting]);
+  }, [initialized, user, info, accepted, accepting]);
 
   const handleAccept = async () => {
     setAccepting(true);
@@ -107,7 +107,7 @@ export default function InviteAcceptPage() {
             <div className="text-center">
               <h1 className="text-lg font-semibold">{error}</h1>
             </div>
-            <Button variant="outline" onClick={() => router.push("/")}>
+            <Button variant="outline" onClick={() => router.push("/home")}>
               {t("budgetName")}
             </Button>
           </CardContent>
@@ -187,7 +187,7 @@ export default function InviteAcceptPage() {
             <div className="w-full rounded-lg bg-destructive/10 p-3 text-center text-sm text-destructive">
               {info?.is_expired ? t("expired") : t("used")}
             </div>
-          ) : mode === "online" ? (
+          ) : user ? (
             /* Logged in - accept directly */
             <Button
               size="lg"

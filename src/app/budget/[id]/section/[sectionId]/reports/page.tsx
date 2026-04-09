@@ -3,7 +3,6 @@
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
 import { ArrowLeft, BarChart3, Settings, Plus } from "lucide-react";
 import { formatCompact, getPercentage, getProgressColor, getProgressTextColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -28,8 +27,7 @@ export default function SectionReportsPage() {
   const params = useParams<{ id: string; sectionId: string }>();
   const router = useRouter();
   const summary = useBudgetStore((s) => s.summary);
-  const mode = useAuthStore((s) => s.mode);
-  const budgetBase = mode === "local" ? "localBudget" : "budget";
+  const budgetBase = "budget";
   const tActions = useTranslations("dashboard.sectionActions");
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);

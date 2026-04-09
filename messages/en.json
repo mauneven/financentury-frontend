@@ -235,10 +235,20 @@
     "continueWithGoogle": "Continue with Google",
     "authFailed": "Authentication failed. Please try again.",
     "termsNotice": "By continuing, you agree to our terms of service and privacy policy.",
-    "signIn": "Sign in",
+    "signIn": "Sign In",
     "signOut": "Sign out",
     "signingIn": "Signing in...",
-    "welcomeBack": "Welcome back"
+    "welcomeBack": "Welcome back",
+    "createAccount": "Create Account",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Min. 8 characters",
+    "or": "or",
+    "emailInUse": "This email is already registered.",
+    "invalidCredentials": "Invalid email or password."
   },
   "account": {
     "title": "Account",
@@ -248,21 +258,6 @@
     "signOut": "Sign Out",
     "profile": "Profile",
     "settings": "Settings"
-  },
-  "localMode": {
-    "warning": "Local mode",
-    "warningDescription": "Your data is stored locally and may be lost if you clear browser data.",
-    "signIn": "Sign in",
-    "continueWithout": "Continue without signing in",
-    "title": "LOCAL MODE",
-    "description": "Your data is local and can only be accessed from this device and browser. Sign in, save it, and access your finances securely across your devices."
-  },
-  "migration": {
-    "title": "Local data found",
-    "description": "You have {count} budget(s) stored locally. Would you like to save them to your account?",
-    "saveToAccount": "Save to my account",
-    "discardLocal": "Start fresh",
-    "migrating": "Saving your data..."
   },
   "invite": {
     "title": "Invite Collaborator",

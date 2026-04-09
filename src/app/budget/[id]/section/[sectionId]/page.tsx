@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
 import { ArrowLeft, Plus, Settings, BarChart3 } from "lucide-react";
 import {
   formatCompact,
@@ -37,8 +36,7 @@ export default function SectionPage() {
   const summary = useBudgetStore((s) => s.summary);
   const expenses = useBudgetStore((s) => s.expenses);
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
-  const mode = useAuthStore((s) => s.mode);
-  const budgetBase = mode === "local" ? "localBudget" : "budget";
+  const budgetBase = "budget";
 
   const [editSectionOpen, setEditSectionOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);

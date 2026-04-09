@@ -17,7 +17,7 @@ export default function AuthCallbackPage() {
       return;
     }
     handleGoogleCallback(code)
-      .then(() => router.replace("/"))
+      .then(() => router.replace("/home"))
       .catch(() => router.replace("/login?error=auth_failed"));
   }, [searchParams, handleGoogleCallback, router]);
 

@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
 import { budgetApi } from "@/lib/api";
-import { localBudgetStorage } from "@/lib/local-storage";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
@@ -86,9 +85,8 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const router = useRouter();
   const deleteBudget = useBudgetStore((s) => s.deleteBudget);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
-  const { user, mode } = useAuthStore();
-  const isOwner = mode === "online" && budget.user_id === user?.id;
-  const isOnline = mode === "online";
+  const { user } = useAuthStore();
+  const isOwner = budget.user_id === user?.id;
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -138,11 +136,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const onSubmit = async (values: SettingsFormValues) => {
     setIsSaving(true);
     try {
-      if (mode === "local") {
-        localBudgetStorage.updateBudget(budget.id, values);
-      } else {
-        await budgetApi.update(budget.id, values);
-      }
+      await budgetApi.update(budget.id, values);
       await refreshSummary();
       onSaved?.();
     } catch {
@@ -157,7 +151,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
     try {
       await deleteBudget(budget.id);
       setDeleteDialogOpen(false);
-      router.push("/");
+      router.push("/home");
     } catch {
       // error handling upstream
     } finally {
@@ -365,10 +359,9 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
         </Button>
       </form>
 
-      {/* Collaborators section (only for online users) */}
-      {isOnline && (
-        <>
-          <Separator />
+      {/* Collaborators section */}
+      <>
+        <Separator />
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -392,13 +385,12 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
             <CollaboratorsList budgetId={budget.id} isOwner={isOwner} />
           </div>
 
-          <InviteDialog
-            budgetId={budget.id}
-            open={inviteDialogOpen}
-            onOpenChange={setInviteDialogOpen}
-          />
-        </>
-      )}
+        <InviteDialog
+          budgetId={budget.id}
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+        />
+      </>
 
       <Separator />
 

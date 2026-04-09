@@ -235,10 +235,20 @@
     "continueWithGoogle": "Continuar con Google",
     "authFailed": "La autenticación falló. Inténtalo de nuevo.",
     "termsNotice": "Al continuar, aceptas nuestros términos de servicio y política de privacidad.",
-    "signIn": "Iniciar sesión",
-    "signOut": "Cerrar sesión",
-    "signingIn": "Iniciando sesión...",
-    "welcomeBack": "Bienvenido de vuelta"
+    "signIn": "Iniciar Sesi\u00f3n",
+    "signOut": "Cerrar sesi\u00f3n",
+    "signingIn": "Iniciando sesi\u00f3n...",
+    "welcomeBack": "Bienvenido de vuelta",
+    "createAccount": "Crear Cuenta",
+    "name": "Nombre",
+    "email": "Correo electr\u00f3nico",
+    "password": "Contrase\u00f1a",
+    "namePlaceholder": "Tu nombre",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "M\u00edn. 8 caracteres",
+    "or": "o",
+    "emailInUse": "Este correo ya est\u00e1 registrado.",
+    "invalidCredentials": "Correo o contrase\u00f1a incorrectos."
   },
   "account": {
     "title": "Cuenta",
@@ -248,21 +258,6 @@
     "signOut": "Cerrar Sesión",
     "profile": "Perfil",
     "settings": "Configuración"
-  },
-  "localMode": {
-    "warning": "Modo local",
-    "warningDescription": "Tus datos están guardados localmente y se pueden perder si borras los datos del navegador.",
-    "signIn": "Iniciar sesión",
-    "continueWithout": "Continuar sin iniciar sesión",
-    "title": "MODO LOCAL",
-    "description": "Tus datos son locales y solo puedes acceder a ellos mediante este dispositivo y navegador. Inicia sesión, guárdalos y accede a tus finanzas de forma segura en todos tus dispositivos."
-  },
-  "migration": {
-    "title": "Datos locales encontrados",
-    "description": "Tienes {count} presupuesto(s) guardados localmente. ¿Deseas guardarlos en tu cuenta?",
-    "saveToAccount": "Guardar en mi cuenta",
-    "discardLocal": "Empezar de nuevo",
-    "migrating": "Guardando tus datos..."
   },
   "invite": {
     "title": "Invitar Colaborador",

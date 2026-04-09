@@ -2,7 +2,6 @@
 
 import { Navbar } from "@/components/layout/navbar";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { LocalModeBanner } from "@/components/auth/local-mode-banner";
 import { Footer } from "@/components/layout/footer";
 import { BottomNav } from "@/components/layout/bottom-nav";
 
@@ -20,7 +19,6 @@ export function AppShell({
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
-      <LocalModeBanner />
 
       <main className="flex-1 pb-16 lg:pb-0">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

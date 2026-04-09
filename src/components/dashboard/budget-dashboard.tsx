@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { RefreshCw, Settings, Plus, ArrowLeft } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { cn } from "@/lib/utils";
@@ -116,7 +115,6 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const loading = useBudgetStore((s) => s.loading);
   const error = useBudgetStore((s) => s.error);
   const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
-  const mode = useAuthStore((s) => s.mode);
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
   const [addSectionOpen, setAddSectionOpen] = useState(false);
@@ -175,7 +173,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <Link
-            href="/"
+            href="/home"
             className="mt-1 flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border border-border"
             aria-label="Go back"
           >
@@ -198,7 +196,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             <span className="hidden sm:inline">{t("addExpense")}</span>
           </button>
           <Link
-            href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
+            href={`/budget/${budgetId}/settings`}
             className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
             aria-label="Budget settings"
           >

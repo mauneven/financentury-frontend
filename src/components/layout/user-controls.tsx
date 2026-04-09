@@ -1,9 +1,8 @@
 "use client";
 
 import { useAuthStore } from "@/store/auth-store";
-import { useTranslations } from "@/i18n/client";
 import { useTheme } from "next-themes";
-import { LogIn, Sun, Moon } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -26,21 +25,7 @@ export function ThemeToggle() {
 }
 
 export function UserIndicator() {
-  const { user, mode, signInWithGoogle } = useAuthStore();
-  const t = useTranslations("localMode");
-
-  if (mode === "local") {
-    return (
-      <button
-        type="button"
-        onClick={signInWithGoogle}
-        className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <LogIn className="size-3.5" />
-        <span className="hidden sm:inline">{t("signIn")}</span>
-      </button>
-    );
-  }
+  const { user } = useAuthStore();
 
   const displayName = user?.full_name || user?.email || "User";
   const initials = displayName

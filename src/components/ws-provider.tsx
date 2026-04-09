@@ -7,12 +7,11 @@ import { budgetWS } from "@/lib/websocket";
 import type { WSMessage } from "@/lib/websocket";
 
 /**
- * Connects to the WebSocket when in online mode with a valid token.
+ * Connects to the WebSocket when a valid token is present.
  * Refreshes the summary on relevant messages.
- * Disconnects only on sign-out or switch to local mode.
+ * Disconnects on sign-out.
  */
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
-  const mode = useAuthStore((s) => s.mode);
   const token = useAuthStore((s) => s.token);
   const activeBudgetId = useBudgetStore((s) => s.activeBudgetId);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
@@ -27,7 +26,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   // Connect / disconnect only when auth state truly changes.
   useEffect(() => {
-    if (mode !== "online" || !token) {
+    if (!token) {
       budgetWS.disconnect();
       return;
     }
@@ -59,7 +58,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       budgetWS.disconnect();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, token]);
+  }, [token]);
 
   return <>{children}</>;
 }

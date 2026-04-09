@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 import { useLocaleStore } from "@/i18n/locale";
 import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,11 +28,8 @@ export function BottomNav({
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("bottomNav");
-  const tAuth = useTranslations("auth");
   const { locale, setLocale } = useLocaleStore();
   const activeBudgetId = useBudgetStore((s) => s.activeBudgetId);
-  const mode = useAuthStore((s) => s.mode);
-  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
 
   const isHome = pathname === "/";
 
@@ -48,7 +44,7 @@ export function BottomNav({
       <div className="flex h-14 items-center justify-around px-2">
         {/* Budgets tab */}
         <button
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/home")}
           className={cn(
             "flex flex-1 flex-col items-center gap-0.5 py-1 transition-colors duration-200",
             isHome
@@ -85,15 +81,9 @@ export function BottomNav({
             sideOffset={12}
             className="min-w-[180px]"
           >
-            {mode === "local" ? (
-              <DropdownMenuItem onClick={signInWithGoogle}>
-                {tAuth("signIn")}
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={() => router.push("/account")}>
-                {t("account")}
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={() => router.push("/account")}>
+              {t("account")}
+            </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 
@@ -112,7 +102,7 @@ export function BottomNav({
             {activeBudgetId && (
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`/${mode === "local" ? "localBudget" : "budget"}/${activeBudgetId}/settings`)
+                  router.push(`/budget/${activeBudgetId}/settings`)
                 }
               >
                 {t("budgetSettings")}
