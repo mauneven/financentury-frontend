@@ -148,31 +148,31 @@ export const GUIDED_SECTIONS = [
     name: "Necesidades",
     allocation_percent: 50,
     icon: "home",
-    subcategories: [
-      { name: "Vivienda", allocation_percent: 28, icon: "home" },
-      { name: "Comida", allocation_percent: 12, icon: "utensils" },
-      { name: "Transporte", allocation_percent: 6, icon: "car" },
-      { name: "Servicios", allocation_percent: 4, icon: "lightbulb" },
+    categories: [
+      { name: "Vivienda", allocation_percent: 56, icon: "home" },
+      { name: "Comida", allocation_percent: 24, icon: "utensils" },
+      { name: "Transporte", allocation_percent: 12, icon: "car" },
+      { name: "Servicios", allocation_percent: 8, icon: "lightbulb" },
     ],
   },
   {
     name: "Deseos",
     allocation_percent: 30,
     icon: "party",
-    subcategories: [
-      { name: "Salidas", allocation_percent: 10, icon: "party" },
-      { name: "Entretenimiento", allocation_percent: 5, icon: "clapperboard" },
-      { name: "Ropa", allocation_percent: 7, icon: "shirt" },
-      { name: "Viajes", allocation_percent: 8, icon: "plane" },
+    categories: [
+      { name: "Salidas", allocation_percent: 33, icon: "party" },
+      { name: "Entretenimiento", allocation_percent: 17, icon: "clapperboard" },
+      { name: "Ropa", allocation_percent: 23, icon: "shirt" },
+      { name: "Viajes", allocation_percent: 27, icon: "plane" },
     ],
   },
   {
     name: "Ahorro",
     allocation_percent: 20,
     icon: "coins",
-    subcategories: [
-      { name: "Fondo de emergencia", allocation_percent: 8, icon: "landmark" },
-      { name: "Inversi\u00f3n", allocation_percent: 12, icon: "trending" },
+    categories: [
+      { name: "Fondo de emergencia", allocation_percent: 40, icon: "landmark" },
+      { name: "Inversi\u00f3n", allocation_percent: 60, icon: "trending" },
     ],
   },
 ] as const;

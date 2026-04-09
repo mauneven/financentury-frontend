@@ -166,83 +166,121 @@ export default function SectionReportsPage() {
             const catProgressColor = getProgressColor(catPct);
             const catTextColor = getProgressTextColor(catPct);
             const catRemaining = cat.allocated_amount - cat.total_spent;
-            const shareOfSection = allocated_amount > 0
-              ? Math.round((cat.allocated_amount / allocated_amount) * 100)
-              : 0;
 
             return (
               <div key={cat.category.id} className="border-2 border-foreground bg-card">
-                <div className="p-5">
-                  {/* Category header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <CategoryIcon iconKey={cat.category.icon} className="size-5" />
-                      <div>
-                        <p className="font-bold text-foreground">{cat.category.name}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                          {shareOfSection}% de la sección
+                <div className="p-5 sm:p-7">
+                  {/* Mobile layout */}
+                  <div className="sm:hidden">
+                    <div className="flex items-center gap-3 mb-4">
+                      <CategoryIcon iconKey={cat.category.icon} className="size-6" />
+                      <div className="flex-1">
+                        <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                          {cat.expense_count} {cat.expense_count === 1 ? "gasto" : "gastos"}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={cn("text-xl font-bold tabular-nums font-mono", catTextColor)}>
-                        {catPct}%
-                      </p>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider">usado</p>
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Monto asignado</p>
+                        <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+                          {formatCompact(cat.allocated_amount, currency)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">usado</p>
+                        <p className={cn("text-2xl font-bold tabular-nums font-mono", catTextColor)}>{catPct}%</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
+                        className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+                      >
+                        <BarChart3 className="size-3.5" />
+                        {tActions("reports")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingCategory(cat.category)}
+                        className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+                      >
+                        <Settings className="size-3.5" />
+                        {tActions("adjust")}
+                      </button>
                     </div>
                   </div>
 
-                  {/* Category progress */}
-                  <div className="h-3 w-full overflow-hidden bg-muted mb-3">
-                    <div
-                      className={cn("h-full transition-all duration-500", catProgressColor)}
-                      style={{ width: `${Math.min(catPct, 100)}%` }}
-                    />
-                  </div>
-
-                  {/* Category numbers */}
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Asignado</p>
-                      <p className="text-sm font-bold tabular-nums font-mono">
+                  {/* Desktop layout */}
+                  <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
+                    <div className="flex items-center gap-3 flex-1">
+                      <CategoryIcon iconKey={cat.category.icon} className="size-6" />
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                          {cat.expense_count} {cat.expense_count === 1 ? "gasto" : "gastos"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mr-6">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
+                        className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+                      >
+                        <BarChart3 className="size-3.5" />
+                        {tActions("reports")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingCategory(cat.category)}
+                        className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+                      >
+                        <Settings className="size-3.5" />
+                        {tActions("adjust")}
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Monto asignado</p>
+                      <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
                         {formatCompact(cat.allocated_amount, currency)}
                       </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Gastado</p>
-                      <p className={cn("text-sm font-bold tabular-nums font-mono", catTextColor)}>
-                        {formatCompact(cat.total_spent, currency)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Restante</p>
-                      <p className={cn(
-                        "text-sm font-bold tabular-nums font-mono",
-                        catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600"
-                      )}>
-                        {catRemaining < 0 ? "-" : ""}{formatCompact(Math.abs(catRemaining), currency)}
+                      <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>
+                        {catPct}% usado
                       </p>
                     </div>
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="mt-4 flex gap-2 border-t border-border pt-4">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
-                      className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                    >
-                      <BarChart3 className="size-3.5" />
-                      {tActions("reports")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingCategory(cat.category)}
-                      className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                    >
-                      <Settings className="size-3.5" />
-                      {tActions("adjust")}
-                    </button>
+                  {/* Spent / Remaining row */}
+                  <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
+                    <span>
+                      Gastado:{" "}
+                      <span className="font-bold font-mono tabular-nums text-foreground">
+                        {formatCompact(cat.total_spent, currency)}
+                      </span>
+                    </span>
+                    <span>
+                      Restante:{" "}
+                      <span className={cn(
+                        "font-bold font-mono tabular-nums",
+                        catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
+                      )}>
+                        {catRemaining < 0 ? "-" : ""}
+                        {formatCompact(Math.abs(catRemaining), currency)}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mt-3">
+                    <div className="h-3 w-full overflow-hidden bg-muted">
+                      <div
+                        className={cn("h-full transition-all duration-300", catProgressColor)}
+                        style={{ width: `${Math.min(catPct, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

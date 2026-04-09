@@ -13,6 +13,7 @@ import type { Expense } from "@/types/budget";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { CategoryIcon } from "@/lib/icon-picker";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -213,8 +214,11 @@ function ExpenseRow({
       )}
     >
       {/* Icon */}
-      <div className="flex size-10 shrink-0 items-center justify-center bg-muted text-lg">
-        {subcategoryInfo?.icon || "📝"}
+      <div className="flex size-10 shrink-0 items-center justify-center bg-muted text-muted-foreground">
+        {subcategoryInfo?.icon
+          ? <CategoryIcon iconKey={subcategoryInfo.icon} className="size-5" />
+          : <Receipt className="size-5" />
+        }
       </div>
 
       {/* Info */}

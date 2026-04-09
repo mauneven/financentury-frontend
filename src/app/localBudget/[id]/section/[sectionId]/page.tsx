@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
-import { ArrowLeft, Plus, Settings } from "lucide-react";
+import { ArrowLeft, Plus, Settings, BarChart3 } from "lucide-react";
 import {
   formatCompact,
   getPercentage,
@@ -24,11 +24,11 @@ import type { Category, Expense } from "@/types/budget";
 
 const SpendingChart = dynamic(
   () => import("@/components/dashboard/spending-chart").then((mod) => ({ default: mod.SpendingChart })),
-  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-64 animate-pulse bg-muted" /></div> }
+  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-72 animate-pulse bg-muted" /></div> }
 );
 const BreakdownChart = dynamic(
   () => import("@/components/dashboard/breakdown-chart").then((mod) => ({ default: mod.BreakdownChart })),
-  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-64 animate-pulse bg-muted" /></div> }
+  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-72 animate-pulse bg-muted" /></div> }
 );
 
 export default function SectionPage() {
@@ -41,7 +41,7 @@ export default function SectionPage() {
   const budgetBase = mode === "local" ? "localBudget" : "budget";
 
   const [editSectionOpen, setEditSectionOpen] = useState(false);
-  const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
@@ -63,7 +63,7 @@ export default function SectionPage() {
     );
   }
 
-  const { section, categories: subcategories, allocated_amount, total_spent } = sectionSummary;
+  const { section, categories, allocated_amount, total_spent } = sectionSummary;
   const remaining = allocated_amount - total_spent;
   const percentage = getPercentage(total_spent, allocated_amount);
   const progressColor = getProgressColor(percentage);
@@ -156,89 +156,168 @@ export default function SectionPage() {
         </div>
       </div>
 
-      {/* Charts — always show SpendingChart, only BreakdownChart when there's spending */}
+      {/* Charts */}
       {total_spent > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={subcategories.map(s => s.category.id)} />
+            <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={categories.map(s => s.category.id)} />
           </div>
           <div>
             <BreakdownChart summary={summary} sectionId={params.sectionId} />
           </div>
         </div>
       ) : (
-        <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={subcategories.map(s => s.category.id)} />
+        <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={categories.map(s => s.category.id)} />
       )}
 
-      {/* Categories */}
+      {/* Category cards — same layout as SectionCard */}
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-2">
           <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
             Categorías
           </h2>
         </div>
-        {subcategories.length === 0 ? (
+        {categories.length === 0 ? (
           <p className="text-sm font-medium text-muted-foreground py-4 text-center">
             Aún no hay categorías.
           </p>
         ) : (
           <div className="space-y-4">
-            {subcategories.map((sub) => {
-              const subPct = getPercentage(sub.total_spent, sub.allocated_amount);
-              const subProgressColor = getProgressColor(subPct);
-              const subTextColor = getProgressTextColor(subPct);
-              const subRemaining = sub.allocated_amount - sub.total_spent;
+            {categories.map((cat) => {
+              const catPct = getPercentage(cat.total_spent, cat.allocated_amount);
+              const catProgressColor = getProgressColor(catPct);
+              const catTextColor = getProgressTextColor(catPct);
+              const catRemaining = cat.allocated_amount - cat.total_spent;
 
               return (
-                <div key={sub.category.id} className="border-2 border-foreground bg-card p-5">
-                  {/* Category info */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <CategoryIcon iconKey={sub.category.icon} className="size-5" />
-                      <div>
-                        <p className="font-bold text-foreground">{sub.category.name}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                          {formatCompact(sub.total_spent, summary.budget.currency)} / {formatCompact(sub.allocated_amount, summary.budget.currency)}
+                <div key={cat.category.id} className="border-2 border-foreground bg-card">
+                  <div className="p-5 sm:p-7">
+                    {/* Mobile layout */}
+                    <div className="sm:hidden">
+                      <div className="flex items-center gap-3 mb-4">
+                        <CategoryIcon iconKey={cat.category.icon} className="size-6" />
+                        <div className="flex-1">
+                          <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                            {cat.expense_count} {cat.expense_count === 1 ? "gasto" : "gastos"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Amount row - Mobile */}
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                            Monto asignado
+                          </p>
+                          <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+                            {formatCompact(cat.allocated_amount, summary.budget.currency)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">usado</p>
+                          <p className={cn("text-2xl font-bold tabular-nums font-mono", catTextColor)}>
+                            {catPct}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action buttons - Mobile */}
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
+                          className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+                        >
+                          <BarChart3 className="size-3.5" />
+                          Reportes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategory(cat.category)}
+                          className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+                        >
+                          <Settings className="size-3.5" />
+                          Ajustar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Desktop layout */}
+                    <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <CategoryIcon iconKey={cat.category.icon} className="size-6" />
+                        <div>
+                          <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                            {cat.expense_count} {cat.expense_count === 1 ? "gasto" : "gastos"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Desktop action buttons */}
+                      <div className="flex items-center gap-2 mr-6">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
+                          className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+                        >
+                          <BarChart3 className="size-3.5" />
+                          Reportes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategory(cat.category)}
+                          className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+                        >
+                          <Settings className="size-3.5" />
+                          Ajustar
+                        </button>
+                      </div>
+
+                      {/* Amount display - right side */}
+                      <div className="text-right">
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                          Monto asignado
+                        </p>
+                        <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
+                          {formatCompact(cat.allocated_amount, summary.budget.currency)}
+                        </p>
+                        <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>
+                          {catPct}% usado
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={cn("text-xl font-bold tabular-nums font-mono", subTextColor)}>
-                        {subPct}%
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {subRemaining < 0 ? (
-                          <span className="text-red-600 dark:text-red-400 font-bold">excedido</span>
-                        ) : (
-                          <span>{formatCompact(subRemaining, summary.budget.currency)} restante</span>
-                        )}
-                      </p>
+
+                    {/* Spent / Remaining row */}
+                    <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
+                      <span>
+                        Gastado:{" "}
+                        <span className="font-bold font-mono tabular-nums text-foreground">
+                          {formatCompact(cat.total_spent, summary.budget.currency)}
+                        </span>
+                      </span>
+                      <span>
+                        Restante:{" "}
+                        <span className={cn(
+                          "font-bold font-mono tabular-nums",
+                          catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
+                        )}>
+                          {catRemaining < 0 ? "-" : ""}
+                          {formatCompact(Math.abs(catRemaining), summary.budget.currency)}
+                        </span>
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Progress */}
-                  <div className="h-3 w-full overflow-hidden bg-muted mb-4">
-                    <div className={cn("h-full", subProgressColor)} style={{ width: `${Math.min(subPct, 100)}%` }} />
-                  </div>
-
-                  {/* Action buttons — same style as SectionCard */}
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${sub.category.id}`)}
-                      className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                    >
-                      <ArrowLeft className="size-3.5 rotate-180" />
-                      Ver
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSubcategory(sub.category)}
-                      className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                    >
-                      <Settings className="size-3.5" />
-                      Ajustar
-                    </button>
+                    {/* Progress bar */}
+                    <div className="mt-3">
+                      <div className="h-3 w-full overflow-hidden bg-muted">
+                        <div
+                          className={cn("h-full transition-all duration-300", catProgressColor)}
+                          style={{ width: `${Math.min(catPct, 100)}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
@@ -249,7 +328,7 @@ export default function SectionPage() {
 
       {/* Expense list for this section */}
       {(() => {
-        const catIds = new Set(subcategories.map(s => s.category.id));
+        const catIds = new Set(categories.map(s => s.category.id));
         const sectionExpenses = expenses.filter(e => catIds.has(e.category_id));
         if (sectionExpenses.length === 0) return null;
         const subMap = new Map<string, { name: string; icon: string | null; categoryName: string }>();
@@ -282,25 +361,25 @@ export default function SectionPage() {
           categories: s.categories.map((c) => c.category),
         }))}
         currency={summary.budget.currency}
-        preselectedSubcategoryId={subcategories.length > 0 ? subcategories[0].category.id : undefined}
+        preselectedSubcategoryId={categories.length > 0 ? categories[0].category.id : undefined}
       />
 
       {/* Edit dialogs */}
       <EditSectionDialog
         section={section}
-        categories={subcategories.map((s) => s.category)}
+        categories={categories.map((s) => s.category)}
         open={editSectionOpen}
         onOpenChange={setEditSectionOpen}
       />
-      {editingSubcategory && (
+      {editingCategory && (
         <EditCategoryDialog
           sectionId={section.id}
-          category={editingSubcategory}
+          category={editingCategory}
           parentSection={section}
-          siblingCategories={subcategories.map((s) => s.category)}
-          open={!!editingSubcategory}
+          siblingCategories={categories.map((s) => s.category)}
+          open={!!editingCategory}
           onOpenChange={(open) => {
-            if (!open) setEditingSubcategory(null);
+            if (!open) setEditingCategory(null);
           }}
         />
       )}

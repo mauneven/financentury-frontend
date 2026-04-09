@@ -96,7 +96,7 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
         </h3>
       </div>
       <div className="px-3 sm:px-6 py-6">
-        <div className="relative h-56 sm:h-64 w-full">
+        <div className="relative h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               {/* Background ring for total budget */}

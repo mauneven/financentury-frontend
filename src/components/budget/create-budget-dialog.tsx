@@ -20,6 +20,7 @@ import { detectCurrency, formatCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
+import { CategoryIcon } from "@/lib/icon-picker";
 import { useTranslations } from "@/i18n/client";
 
 import {
@@ -114,11 +115,15 @@ interface GuidedCategoryState {
   name: string;
   allocation_percent: number;
   icon: string;
-  subcategories: {
+  categories: {
     name: string;
     allocation_percent: number;
     icon: string;
   }[];
+}
+
+function formatWithCommas(n: number): string {
+  return Math.round(n).toLocaleString("en-US");
 }
 
 function AmountInput({
@@ -134,13 +139,13 @@ function AmountInput({
   className?: string;
   inputClassName?: string;
 }) {
-  const [display, setDisplay] = React.useState(String(Math.round(amount)));
+  const [display, setDisplay] = React.useState(formatWithCommas(amount));
   const [focused, setFocused] = React.useState(false);
 
   // Sync from parent only when not focused (avoid overwriting user typing)
   React.useEffect(() => {
     if (!focused) {
-      setDisplay(String(Math.round(amount)));
+      setDisplay(formatWithCommas(amount));
     }
   }, [amount, focused]);
 
@@ -156,7 +161,7 @@ function AmountInput({
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
-          setDisplay(String(Math.round(amount)));
+          setDisplay(formatWithCommas(amount));
         }}
         onChange={(e) => {
           const raw = e.target.value;
@@ -197,11 +202,12 @@ function GuidedCategoryReview({
 
   const handleSubcategoryAmountChange = (catIdx: number, subIdx: number, amountStr: string) => {
     const amount = parseFloat(amountStr.replace(/[^\d.]/g, "")) || 0;
-    const percent = income > 0 ? Math.round((amount / income) * 100) : 0;
+    const sectionAmount = (income * categories[catIdx].allocation_percent) / 100;
+    const percent = sectionAmount > 0 ? Math.round((amount / sectionAmount) * 100) : 0;
     const updated = [...categories];
-    const updatedSubs = [...updated[catIdx].subcategories];
+    const updatedSubs = [...updated[catIdx].categories];
     updatedSubs[subIdx] = { ...updatedSubs[subIdx], allocation_percent: percent };
-    updated[catIdx] = { ...updated[catIdx], subcategories: updatedSubs };
+    updated[catIdx] = { ...updated[catIdx], categories: updatedSubs };
     onChange(updated);
   };
 
@@ -221,14 +227,14 @@ function GuidedCategoryReview({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{cat.icon}</span>
+                  <CategoryIcon iconKey={cat.icon} className="size-5" />
                   <span className="font-medium text-sm">{cat.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <AmountInput
                     amount={sectionAmount}
                     onAmountChange={(raw) => handleSectionAmountChange(catIdx, raw)}
-                    className="h-7 w-24"
+                    className="h-7 w-32"
                     inputClassName="text-right text-xs h-7"
                   />
                   <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">
@@ -238,22 +244,22 @@ function GuidedCategoryReview({
               </div>
 
               <div className="pl-7 space-y-1.5">
-                {cat.subcategories.map((sub, subIdx) => {
-                  const subAmount = (income * sub.allocation_percent) / 100;
+                {cat.categories.map((sub, subIdx) => {
+                  const subAmount = (sectionAmount * sub.allocation_percent) / 100;
                   return (
                     <div
                       key={sub.name}
                       className="flex items-center justify-between text-xs"
                     >
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <span>{sub.icon}</span>
+                        <CategoryIcon iconKey={sub.icon} className="size-3.5" />
                         {sub.name}
                       </span>
                       <div className="flex items-center gap-2">
                         <AmountInput
                           amount={subAmount}
                           onAmountChange={(raw) => handleSubcategoryAmountChange(catIdx, subIdx, raw)}
-                          className="h-6 w-20"
+                          className="h-6 w-28"
                           inputClassName="text-right text-[11px] h-6"
                         />
                         <span className="text-muted-foreground w-8 text-right tabular-nums">
@@ -336,7 +342,7 @@ export function CreateBudgetDialog({
       name: c.name,
       allocation_percent: c.allocation_percent,
       icon: c.icon,
-      subcategories: c.subcategories.map((s) => ({
+      categories: c.categories.map((s) => ({
         name: s.name,
         allocation_percent: s.allocation_percent,
         icon: s.icon,
@@ -403,7 +409,7 @@ export function CreateBudgetDialog({
             name: c.name,
             allocation_percent: c.allocation_percent,
             icon: c.icon,
-            subcategories: c.subcategories.map((s) => ({
+            categories: c.categories.map((s) => ({
               name: s.name,
               allocation_percent: s.allocation_percent,
               icon: s.icon,

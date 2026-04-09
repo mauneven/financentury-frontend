@@ -147,7 +147,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
   if (loading) {
     return (
       <ChartWrapper>
-        <div className="flex h-64 items-center justify-center">
+        <div className="flex h-72 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       </ChartWrapper>
@@ -157,7 +157,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
   if (error) {
     return (
       <ChartWrapper>
-        <div className="flex h-64 flex-col items-center justify-center gap-2">
+        <div className="flex h-72 flex-col items-center justify-center gap-2">
           <p className="text-sm font-medium text-muted-foreground">
             {t("errorLoading")}
           </p>
@@ -169,7 +169,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
   if (chartData.length === 0) {
     return (
       <ChartWrapper>
-        <div className="flex h-64 items-center justify-center">
+        <div className="flex h-72 items-center justify-center">
           <p className="text-sm font-medium text-muted-foreground">
             {t("notEnoughData")}
           </p>
@@ -180,7 +180,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
 
   return (
     <ChartWrapper>
-      <div className="h-64 sm:h-72 w-full">
+      <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
             <defs>

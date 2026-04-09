@@ -237,13 +237,31 @@ export const collaboratorApi = {
     }),
 };
 
+/**
+ * Normalizes an expense object from the API so that category_id is always
+ * populated. The backend stores expenses with column name subcategory_id and
+ * serializes using that JSON key. We remap it here to the canonical category_id
+ * field used everywhere else in the frontend.
+ */
+function normalizeExpense(e: Record<string, unknown>): Expense {
+  return {
+    ...e,
+    category_id:
+      (e.category_id as string | undefined) ||
+      (e.subcategory_id as string | undefined) ||
+      "",
+  } as Expense;
+}
+
 // Expenses
 export const expenseApi = {
   list: (budgetId: string) =>
-    request<Expense[]>(`/budgets/${budgetId}/expenses`),
+    request<Record<string, unknown>[]>(`/budgets/${budgetId}/expenses`).then(
+      (expenses) => expenses.map(normalizeExpense)
+    ),
 
   create: (budgetId: string, data: CreateExpenseInput) =>
-    request<Expense>(`/budgets/${budgetId}/expenses`, {
+    request<Record<string, unknown>>(`/budgets/${budgetId}/expenses`, {
       method: "POST",
       body: JSON.stringify({
         subcategory_id: data.category_id,
@@ -251,14 +269,14 @@ export const expenseApi = {
         description: data.description,
         expense_date: data.expense_date,
       }),
-    }),
+    }).then(normalizeExpense),
 
   update: (
     budgetId: string,
     expId: string,
     data: Partial<CreateExpenseInput>
   ) =>
-    request<Expense>(`/budgets/${budgetId}/expenses/${expId}`, {
+    request<Record<string, unknown>>(`/budgets/${budgetId}/expenses/${expId}`, {
       method: "PUT",
       body: JSON.stringify({
         ...(data.category_id && { subcategory_id: data.category_id }),
@@ -266,7 +284,7 @@ export const expenseApi = {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.expense_date && { expense_date: data.expense_date }),
       }),
-    }),
+    }).then(normalizeExpense),
 
   delete: (budgetId: string, expId: string) =>
     request<void>(`/budgets/${budgetId}/expenses/${expId}`, {

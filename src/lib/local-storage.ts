@@ -82,7 +82,7 @@ export const localBudgetStorage = {
         });
 
         let catSortOrder = 0;
-        for (const gs of gc.subcategories) {
+        for (const gs of gc.categories) {
           this.saveCategory(section.id, {
             name: gs.name,
             allocation_percent: gs.allocation_percent,
@@ -334,10 +334,10 @@ export const localBudgetStorage = {
 
       const categorySummaries: CategorySummary[] = categories.map(
         (cat) => {
-          // Category allocation_percent is a percentage of
-          // total income, NOT of the parent section. Use totalBudget directly.
+          // Category allocation_percent is a percentage of the parent
+          // section, NOT of total income.
           const catAllocated =
-            (totalBudget * cat.allocation_percent) / 100;
+            (allocatedAmount * cat.allocation_percent) / 100;
 
           const catExpenses = periodExpenses.filter(
             (e) => e.category_id === cat.id
