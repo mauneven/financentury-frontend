@@ -1,7 +1,9 @@
 "use client";
 
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { LocalModeBanner } from "@/components/auth/local-mode-banner";
+import { Footer } from "@/components/layout/footer";
 import { BottomNav } from "@/components/layout/bottom-nav";
 
 interface AppShellProps {
@@ -21,8 +23,12 @@ export function AppShell({
       <LocalModeBanner />
 
       <main className="flex-1 pb-16 lg:pb-0">
-        {children}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {children}
+        </div>
       </main>
+
+      <Footer />
 
       <BottomNav
         onAddExpense={onAddExpense ?? (() => {})}

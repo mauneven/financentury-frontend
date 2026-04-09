@@ -104,7 +104,7 @@
     "addSection": "Agregar Sección",
     "sectionName": "Nombre de la Sección",
     "sectionNamePlaceholder": "ej. Necesidades",
-    "allocationPercent": "% de Asignación",
+    "allocationPercent": "Monto asignado",
     "icon": "Ícono",
     "subcategories": "Categorías",
     "addSubcategory": "Agregar Categoría",
@@ -113,7 +113,7 @@
     "subcategoriesOptional": "Categorías (opcional)",
     "add": "Agregar",
     "createDescription": "Crea una nueva sección de gastos para tu presupuesto.",
-    "editSection": "Editar Sección",
+    "editSection": "Ajustar Sección",
     "editSubcategory": "Editar Categoría",
     "deleteSection": "Eliminar Sección",
     "deleteSubcategory": "Eliminar Categoría",
@@ -149,7 +149,13 @@
     "overBudgetPercent": "excedido",
     "remainingPercent": "restante",
     "startAddingExpense": "Comienza agregando tu primer gasto",
-    "addSection": "Agregar Sección"
+    "addSection": "Agregar Sección",
+    "sectionActions": {
+      "reports": "Informes",
+      "breakdown": "Desglose",
+      "collapse": "Contraer",
+      "adjust": "Ajustar"
+    }
   },
   "expense": {
     "addExpense": "Agregar Gasto",

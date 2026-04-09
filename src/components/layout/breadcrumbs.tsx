@@ -95,47 +95,40 @@ export function Breadcrumbs() {
   const backHref = segments.length > 1 ? segments[segments.length - 2].href : "/";
 
   return (
-    <nav className="flex items-center gap-1.5 min-w-0" aria-label="Breadcrumb">
-      {/* Back button */}
-      <Link
-        href={backHref}
-        className="flex size-7 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
-        aria-label="Go back"
-      >
-        <ArrowLeft className="size-4" />
-      </Link>
-
-      {/* Breadcrumb segments */}
-      <ol className="flex items-center gap-1 min-w-0 overflow-hidden">
-        {segments.map((seg, i) => {
-          const isLast = i === segments.length - 1;
-          return (
-            <li key={seg.href} className="flex items-center gap-1 min-w-0">
-              {i > 0 && (
-                <ChevronRight className="size-3 shrink-0 text-muted-foreground/50" />
-              )}
-              {isLast ? (
-                <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">
-                  {seg.label}
-                </span>
-              ) : (
-                <Link
-                  href={seg.href}
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground truncate transition-colors hover:text-foreground"
-                >
-                  {/* On mobile, hide all but last 2 segments */}
-                  <span className={i < segments.length - 2 ? "hidden sm:inline" : ""}>
-                    {seg.label}
-                  </span>
-                  {i < segments.length - 2 && (
-                    <span className="sm:hidden">...</span>
+    <div>
+      <nav className="flex items-center gap-2 py-3 min-w-0" aria-label="Breadcrumb">
+          {/* Breadcrumb segments only - no back button */}
+          <ol className="flex items-center gap-1 min-w-0 overflow-hidden">
+            {segments.map((seg, i) => {
+              const isLast = i === segments.length - 1;
+              return (
+                <li key={seg.href} className="flex items-center gap-1 min-w-0">
+                  {i > 0 && (
+                    <ChevronRight className="size-3 shrink-0 text-muted-foreground/50" />
                   )}
-                </Link>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+                  {isLast ? (
+                    <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">
+                      {seg.label}
+                    </span>
+                  ) : (
+                    <Link
+                      href={seg.href}
+                      className="text-xs font-bold uppercase tracking-widest text-muted-foreground truncate transition-colors hover:text-foreground"
+                    >
+                      {/* On mobile, hide all but last 2 segments */}
+                      <span className={i < segments.length - 2 ? "hidden sm:inline" : ""}>
+                        {seg.label}
+                      </span>
+                      {i < segments.length - 2 && (
+                        <span className="sm:hidden">...</span>
+                      )}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+    </div>
   );
 }

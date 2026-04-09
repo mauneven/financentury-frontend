@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { RefreshCw, Settings, Plus } from "lucide-react";
+import { RefreshCw, Settings, Plus, ArrowLeft } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
 import { EmptyDashboard } from "./empty-dashboard";
@@ -158,13 +159,25 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {/* Breadcrumbs */}
+      <Breadcrumbs />
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {budget.currency} &middot; {billingLabel}
-          </p>
+        <div className="flex items-start gap-3">
+          <Link
+            href="/"
+            className="mt-1 flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border border-border"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="size-4" />
+          </Link>
+          <div>
+            <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {budget.currency} &middot; {billingLabel}
+            </p>
+          </div>
         </div>
         <Link
           href={`/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/settings`}
@@ -214,6 +227,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
                 key={cat.section.id}
                 sectionSummary={cat}
                 currency={budget.currency}
+                budgetId={budgetId}
               />
             ))}
           </div>

@@ -104,7 +104,7 @@
     "addSection": "Add Section",
     "sectionName": "Section Name",
     "sectionNamePlaceholder": "e.g. Needs",
-    "allocationPercent": "Allocation %",
+    "allocationPercent": "Allocated amount",
     "icon": "Icon",
     "subcategories": "Categories",
     "addSubcategory": "Add Category",
@@ -113,7 +113,7 @@
     "subcategoriesOptional": "Categories (optional)",
     "add": "Add",
     "createDescription": "Create a new spending section for your budget.",
-    "editSection": "Edit Section",
+    "editSection": "Adjust Section",
     "editSubcategory": "Edit Category",
     "deleteSection": "Delete Section",
     "deleteSubcategory": "Delete Category",
@@ -149,7 +149,13 @@
     "overBudgetPercent": "over budget",
     "remainingPercent": "remaining",
     "startAddingExpense": "Start by adding your first expense",
-    "addSection": "Add Section"
+    "addSection": "Add Section",
+    "sectionActions": {
+      "reports": "Reports",
+      "breakdown": "Breakdown",
+      "collapse": "Collapse",
+      "adjust": "Adjust"
+    }
   },
   "expense": {
     "addExpense": "Add Expense",

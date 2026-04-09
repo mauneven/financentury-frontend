@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Pencil } from "lucide-react";
+import { ChevronDown, Pencil, BarChart3, ChevronUp, Settings } from "lucide-react";
 import type { SectionSummary, Section, Category } from "@/types/budget";
 import {
   formatCurrency,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { useAuthStore } from "@/store/auth-store";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { CategoryIcon } from "@/lib/icon-picker";
@@ -19,18 +20,22 @@ import { CategoryIcon } from "@/lib/icon-picker";
 interface SectionCardProps {
   sectionSummary: SectionSummary;
   currency: string;
+  budgetId: string;
   onSubcategoryClick?: (subcategoryId: string) => void;
 }
 
 export function SectionCard({
   sectionSummary,
   currency,
+  budgetId,
   onSubcategoryClick,
 }: SectionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [editSectionOpen, setEditSectionOpen] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
+  const mode = useAuthStore((s) => s.mode);
   const t = useTranslations("dashboard");
+  const tActions = useTranslations("dashboard.sectionActions");
 
   const { section, categories: subcategories, allocated_amount, total_spent } =
     sectionSummary;
@@ -45,56 +50,159 @@ export function SectionCard({
   };
 
   return (
-    <div className="group border-2 border-foreground bg-card">
+    <div className="border-2 border-foreground bg-card">
       <div className="p-5 sm:p-7">
-        {/* Section header */}
-        <div className="flex w-full items-center justify-between min-h-[44px]">
-          <button
-            type="button"
-            onClick={toggleExpanded}
-            className="flex flex-1 items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl" role="img" aria-label={section.name}>
-                <CategoryIcon iconKey={section.icon} className="size-6" />
-              </span>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  {section.name}
-                </h3>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  {subcategories.length} {subcategories.length === 1 ? "category" : "categories"} &middot; {section.allocation_percent}% {t("ofIncome")}
-                </p>
-              </div>
+        {/* Section header - Mobile layout */}
+        <div className="sm:hidden">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl" role="img" aria-label={section.name}>
+              <CategoryIcon iconKey={section.icon} className="size-6" />
+            </span>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-foreground">
+                {section.name}
+              </h3>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                {subcategories.length} {subcategories.length === 1 ? "category" : "categories"}
+              </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
-                  {formatCompact(allocated_amount, currency)}
-                </p>
-                <p className={cn("text-sm font-semibold tabular-nums font-mono", textColor)}>
-                  {percentage}% {t("used")}
-                </p>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
-                  isExpanded && "rotate-180"
-                )}
-              />
+          </div>
+
+          {/* Amount row - Mobile */}
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                Monto asignado
+              </p>
+              <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+                {formatCompact(allocated_amount, currency)}
+              </p>
             </div>
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditSectionOpen(true);
-            }}
-            className="ml-2 flex size-8 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
-            aria-label={`Edit ${section.name}`}
-          >
-            <Pencil className="size-3.5" />
-          </button>
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                {t("used")}
+              </p>
+              <p className={cn("text-2xl font-bold tabular-nums font-mono", textColor)}>
+                {percentage}%
+              </p>
+            </div>
+          </div>
+
+          {/* Action buttons - Mobile */}
+          <div className="flex gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                // Navigate to reports page
+                window.location.href = `/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/section/${section.id}/reports`;
+              }}
+              className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+            >
+              <BarChart3 className="size-3.5" />
+              {tActions("reports")}
+            </button>
+            <button
+              type="button"
+              onClick={toggleExpanded}
+              className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5 min-w-max"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="size-3.5" />
+                  {tActions("collapse")}
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="size-3.5" />
+                  {tActions("breakdown")}
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditSectionOpen(true);
+              }}
+              className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+            >
+              <Settings className="size-3.5" />
+              {tActions("adjust")}
+            </button>
+          </div>
+        </div>
+
+        {/* Section header - Desktop layout */}
+        <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-2xl" role="img" aria-label={section.name}>
+              <CategoryIcon iconKey={section.icon} className="size-6" />
+            </span>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">
+                {section.name}
+              </h3>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                {subcategories.length} {subcategories.length === 1 ? "category" : "categories"}
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop action buttons - left side of amount */}
+          <div className="flex items-center gap-2 mr-6">
+            <button
+              type="button"
+              onClick={() => {
+                // Navigate to reports page
+                window.location.href = `/${mode === "local" ? "localBudget" : "budget"}/${budgetId}/section/${section.id}/reports`;
+              }}
+              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+            >
+              <BarChart3 className="size-3.5" />
+              {tActions("reports")}
+            </button>
+            <button
+              type="button"
+              onClick={toggleExpanded}
+              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5 min-w-max"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="size-3.5" />
+                  {tActions("collapse")}
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="size-3.5" />
+                  {tActions("breakdown")}
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditSectionOpen(true);
+              }}
+              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+            >
+              <Settings className="size-3.5" />
+              {tActions("adjust")}
+            </button>
+          </div>
+
+          {/* Amount display - right side */}
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+              Monto asignado
+            </p>
+            <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
+              {formatCompact(allocated_amount, currency)}
+            </p>
+            <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", textColor)}>
+              {percentage}% {t("used")}
+            </p>
+          </div>
         </div>
 
         {/* Budget / Spent / Left summary */}
