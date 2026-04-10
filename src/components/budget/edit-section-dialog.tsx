@@ -17,6 +17,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -324,30 +329,38 @@ export function EditSectionDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Icon picker */}
-          <div className="space-y-1.5">
-            <Label>{t("icon")}</Label>
-            <IconPicker
-              value={watchIcon}
-              onChange={(iconKey) => setValue("icon", iconKey)}
-            />
-            {errors.icon && (
-              <p className="text-xs text-destructive">{errors.icon.message}</p>
-            )}
-          </div>
-
-          {/* Name */}
+          {/* Name with icon button */}
           <div className="space-y-1.5">
             <Label htmlFor="edit-cat-name">{t("sectionName")}</Label>
-            <Input
-              id="edit-cat-name"
-              placeholder={t("sectionNamePlaceholder")}
-              autoFocus
-              aria-invalid={!!errors.name}
-              {...register("name")}
-            />
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger
+                  className="flex size-10 shrink-0 items-center justify-center border-2 border-foreground bg-background transition-colors hover:bg-muted"
+                  aria-label={t("icon")}
+                >
+                  <CategoryIcon iconKey={watchIcon} className="size-5" />
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <IconPicker
+                    value={watchIcon}
+                    onChange={(iconKey) => setValue("icon", iconKey)}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Input
+                id="edit-cat-name"
+                placeholder={t("sectionNamePlaceholder")}
+                autoFocus
+                aria-invalid={!!errors.name}
+                className="flex-1"
+                {...register("name")}
+              />
+            </div>
             {errors.name && (
               <p className="text-xs text-destructive">{errors.name.message}</p>
+            )}
+            {errors.icon && (
+              <p className="text-xs text-destructive">{errors.icon.message}</p>
             )}
           </div>
 

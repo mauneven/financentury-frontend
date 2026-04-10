@@ -4,11 +4,11 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle, Loader2, Check, Trash2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
-import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
+import { IconPicker, CategoryIcon, ICON_OPTIONS } from "@/lib/icon-picker";
 
 import {
   Dialog,
@@ -17,16 +17,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group";
 import { useTranslations } from "@/i18n/client";
 
 // ---------------------------------------------------------------------------
@@ -48,120 +46,40 @@ const sectionSchema = z.object({
 type SectionFormValues = z.infer<typeof sectionSchema>;
 
 // ---------------------------------------------------------------------------
-// (Icon picker imported from @/lib/icon-picker)
+// Helpers
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// Category inline editor
-// ---------------------------------------------------------------------------
-
-interface CategoryDraft {
-  id: string;
-  name: string;
-  allocation_percent: number;
-  icon: string;
+/** Format a raw number as a comma-separated string (no currency symbol). */
+function formatAmount(value: number): string {
+  if (isNaN(value) || value === 0) return "";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
-function CategoryEditor({
-  categories,
-  onChange,
-}: {
-  categories: CategoryDraft[];
-  onChange: (updated: CategoryDraft[]) => void;
-}) {
-  const t = useTranslations("section");
-  const addCategory = () => {
-    onChange([
-      ...categories,
-      {
-        id: crypto.randomUUID(),
-        name: "",
-        allocation_percent: 0,
-        icon: "tag",
-      },
-    ]);
-  };
+/** Parse a formatted string back to a number. */
+function parseAmount(formatted: string): number {
+  const stripped = formatted.replace(/,/g, "");
+  return parseFloat(stripped);
+}
 
-  const removeCategory = (id: string) => {
-    onChange(categories.filter((s) => s.id !== id));
-  };
+/** Mask input to formatted money string. */
+function maskAmountInput(raw: string): string {
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const parts = cleaned.split(".");
+  const intPart = parts[0].replace(/^0+(?=\d)/, "");
+  const decPart = parts.length > 1 ? "." + parts[1].slice(0, 2) : "";
+  if (intPart === "") return decPart ? "0" + decPart : "";
+  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return formatted + decPart;
+}
 
-  const updateCategory = (
-    id: string,
-    field: keyof CategoryDraft,
-    value: string | number
-  ) => {
-    onChange(
-      categories.map((s) => (s.id === id ? { ...s, [field]: value } : s))
-    );
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label className="text-xs text-muted-foreground">
-          {t("subcategoriesOptional")}
-        </Label>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={addCategory}
-        >
-          <PlusCircle className="size-3 mr-1" />
-          {t("add")}
-        </Button>
-      </div>
-
-      {categories.length > 0 && (
-        <div className="space-y-2">
-          {categories.map((sub) => (
-            <div
-              key={sub.id}
-              className="flex items-center gap-2 border-2 border-foreground bg-card/50 p-2"
-            >
-              <CategoryIcon iconKey={sub.icon} className="size-4" />
-              <Input
-                placeholder={t("subcategoryName")}
-                value={sub.name}
-                onChange={(e) =>
-                  updateCategory(sub.id, "name", e.target.value)
-                }
-                className="h-7 text-xs flex-1"
-              />
-              <InputGroup className="h-7 w-20">
-                <InputGroupInput
-                  type="text"
-                  inputMode="numeric"
-                  value={sub.allocation_percent}
-                  onChange={(e) =>
-                    updateCategory(
-                      sub.id,
-                      "allocation_percent",
-                      Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                    )
-                  }
-                  className="text-right text-xs h-7"
-                />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupText className="text-xs">%</InputGroupText>
-                </InputGroupAddon>
-              </InputGroup>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => removeCategory(sub.id)}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 className="size-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+/** Pick a random icon not already used by existing sections. */
+function pickRandomIcon(usedIcons: string[]): string {
+  const available = ICON_OPTIONS.filter((o) => !usedIcons.includes(o.key));
+  const pool = available.length > 0 ? available : ICON_OPTIONS;
+  return pool[Math.floor(Math.random() * pool.length)].key;
 }
 
 // ---------------------------------------------------------------------------
@@ -186,12 +104,22 @@ export function AddSectionDialog({
   const t = useTranslations("section");
   const tc = useTranslations("common");
   const addSection = useBudgetStore((s) => s.addSection);
-  const addCategoryAction = useBudgetStore((s) => s.addCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
+  const summary = useBudgetStore((s) => s.summary);
+
+  const totalBudget = summary?.total_budget ?? 0;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [categories, setCategories] = React.useState<CategoryDraft[]>(
-    []
+  const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
+
+  // Dollar amount state
+  const [amountInput, setAmountInput] = React.useState<string>("");
+  const [rawAmount, setRawAmount] = React.useState<number>(0);
+
+  // Compute used icons from existing sections
+  const usedIcons = React.useMemo(
+    () => (summary?.sections ?? []).map((s) => s.section.icon),
+    [summary]
   );
 
   const {
@@ -206,42 +134,50 @@ export function AddSectionDialog({
     defaultValues: {
       name: "",
       allocation_percent: 0,
-      icon: "🏠",
+      icon: "tag",
     },
   });
 
   const watchIcon = watch("icon");
 
-  // Reset on close
+  // Compute displayed percentage from current rawAmount
+  const computedPercent =
+    totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
+  const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
+
+  // On open: pick a random icon and reset form
   React.useEffect(() => {
-    if (!open) {
-      const timeout = setTimeout(() => {
-        reset({ name: "", allocation_percent: 0, icon: "🏠" });
-        setCategories([]);
-        setIsSubmitting(false);
-      }, 200);
-      return () => clearTimeout(timeout);
+    if (open) {
+      const randomIcon = pickRandomIcon(usedIcons);
+      reset({ name: "", allocation_percent: 0, icon: randomIcon });
+      setAmountInput("");
+      setRawAmount(0);
+      setIsSubmitting(false);
     }
-  }, [open, reset]);
+  }, [open, reset, usedIcons]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = maskAmountInput(e.target.value);
+    setAmountInput(masked);
+    const parsed = parseAmount(masked);
+    const numericValue = isNaN(parsed) ? 0 : parsed;
+    setRawAmount(numericValue);
+
+    // Keep RHF in sync — store as percent for the backend
+    const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
+    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
+      shouldValidate: true,
+    });
+  };
 
   const onSubmit = async (values: SectionFormValues) => {
     setIsSubmitting(true);
     try {
-      const section = await addSection({
+      await addSection({
         name: values.name,
         allocation_percent: values.allocation_percent,
         icon: values.icon,
       });
-
-      // Create categories
-      const validCats = categories.filter((s) => s.name.trim().length > 0);
-      for (const cat of validCats) {
-        await addCategoryAction(section.id, {
-          name: cat.name,
-          allocation_percent: cat.allocation_percent,
-          icon: cat.icon,
-        });
-      }
 
       await refreshSummary();
       onOpenChange(false);
@@ -263,62 +199,80 @@ export function AddSectionDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Icon picker */}
+          {/* Name with icon button */}
           <div className="space-y-1.5">
-            <Label>{t("icon")}</Label>
-            <IconPicker
-              value={watchIcon}
-              onChange={(iconKey) => setValue("icon", iconKey)}
-            />
+            <Label htmlFor="cat-name">{t("sectionName")}</Label>
+            <div className="flex items-center gap-2">
+              <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
+                <PopoverTrigger
+                  className="flex size-10 shrink-0 items-center justify-center border-2 border-foreground bg-background transition-colors hover:bg-muted"
+                  aria-label={t("icon")}
+                >
+                  <CategoryIcon iconKey={watchIcon} className="size-5" />
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <IconPicker
+                    value={watchIcon}
+                    onChange={(iconKey) => {
+                      setValue("icon", iconKey);
+                      setIconPickerOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Input
+                id="cat-name"
+                placeholder={t("sectionNamePlaceholder")}
+                autoFocus
+                aria-invalid={!!errors.name}
+                className="flex-1"
+                {...register("name")}
+              />
+            </div>
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name.message}</p>
+            )}
             {errors.icon && (
               <p className="text-xs text-destructive">{errors.icon.message}</p>
             )}
           </div>
 
-          {/* Name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="cat-name">{t("sectionName")}</Label>
-            <Input
-              id="cat-name"
-              placeholder={t("sectionNamePlaceholder")}
-              autoFocus
-              aria-invalid={!!errors.name}
-              {...register("name")}
-            />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          {/* Allocation */}
+          {/* Allocation — dollar amount with live % indicator */}
           <div className="space-y-1.5">
             <Label htmlFor="cat-allocation">{t("allocationPercent")}</Label>
-            <InputGroup>
-              <InputGroupInput
-                id="cat-allocation"
-                type="text"
-                inputMode="numeric"
-                aria-invalid={!!errors.allocation_percent}
-                {...register("allocation_percent", { valueAsNumber: true })}
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupText>%</InputGroupText>
-              </InputGroupAddon>
-            </InputGroup>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
+                  $
+                </span>
+                <Input
+                  id="cat-allocation"
+                  type="text"
+                  inputMode="decimal"
+                  className="pl-6"
+                  value={amountInput}
+                  onChange={handleAmountChange}
+                  aria-invalid={!!errors.allocation_percent}
+                  placeholder="0"
+                />
+              </div>
+              <span
+                className={cn(
+                  "text-sm shrink-0",
+                  percentOverBudget
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+                )}
+              >
+                = {computedPercent.toFixed(1)}%
+              </span>
+            </div>
             {errors.allocation_percent && (
               <p className="text-xs text-destructive">
                 {errors.allocation_percent.message}
               </p>
             )}
           </div>
-
-          <Separator />
-
-          {/* Categories */}
-          <CategoryEditor
-            categories={categories}
-            onChange={setCategories}
-          />
 
           {/* Submit */}
           <div className="flex justify-end pt-2">

@@ -172,6 +172,7 @@
     "used": "usado",
     "ofIncome": "del ingreso",
     "noSubcategories": "Aún no hay categorías",
+    "noCategoriesHint": "Agrega categorías a esta sección para organizar y rastrear tus gastos en detalle.",
     "notEnoughData": "Aún no hay suficientes datos para mostrar tendencias",
     "ofBudgetUsed": "del presupuesto usado",
     "overBudgetPercent": "excedido",

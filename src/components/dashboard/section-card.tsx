@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Pencil, BarChart3, ChevronUp, Settings } from "lucide-react";
+import { ChevronDown, Pencil, BarChart3, ChevronUp, Settings, Plus } from "lucide-react";
 import type { SectionSummary, Section, Category } from "@/types/budget";
 import {
   formatCurrency,
@@ -335,9 +335,17 @@ export function SectionCard({
                 );
               })}
               {sectionCategories.length === 0 && (
-                <p className="py-3 text-center text-base text-muted-foreground font-medium">
-                  {t("noSubcategories")}
-                </p>
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-foreground bg-muted">
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h4 className="mb-1 text-base font-semibold text-foreground">
+                    {t("noSubcategories")}
+                  </h4>
+                  <p className="max-w-xs text-sm text-muted-foreground leading-relaxed">
+                    {t("noCategoriesHint")}
+                  </p>
+                </div>
               )}
             </div>
           </div>

@@ -172,6 +172,7 @@
     "used": "used",
     "ofIncome": "of income",
     "noSubcategories": "No categories yet",
+    "noCategoriesHint": "Add categories to this section to organize and track your spending in detail.",
     "notEnoughData": "Not enough data to show trends yet",
     "ofBudgetUsed": "of budget used",
     "overBudgetPercent": "over budget",
