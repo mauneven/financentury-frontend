@@ -54,13 +54,20 @@
     "budgetCount": "{count} budget",
     "budgetCountPlural": "{count} budgets",
     "newBudget": "New Budget",
-    "loadingBudgets": "Loading budgets..."
+    "loadingBudgets": "Loading budgets...",
+    "budgetCountLabel": "budgets"
   },
   "budget": {
     "createTitle": "Create New Budget",
     "modeSelection": "Choose your approach",
-    "guidedMode": "Guided (50/30/20)",
-    "guidedDescription": "Pre-configured with recommended spending categories based on the 50/30/20 budgeting rule",
+    "balancedMode": "Balanced",
+    "balancedDescription": "50% needs, 30% wants, 10% debt, 10% savings",
+    "debtFreeMode": "Financially free",
+    "debtFreeDescription": "50% needs, 30% wants, 20% savings",
+    "travelMode": "Travel",
+    "travelDescription": "For trips — one-time by default",
+    "eventMode": "Event",
+    "eventDescription": "For events — one-time by default",
     "manualMode": "Manual",
     "manualDescription": "Start from scratch with full control over your categories and allocations",
     "budgetDetails": "Budget Details",
@@ -88,6 +95,7 @@
     "saving": "Saving...",
     "deleting": "Deleting...",
     "createBudget": "Create Budget",
+    "canChangeLater": "You can change everything later in each section's settings.",
     "chooseSetup": "Choose how you want to set up your budget",
     "enterDetails": "Enter your budget details",
     "reviewAllocations": "Review your category allocations",
@@ -95,16 +103,22 @@
     "saveChanges": "Save Changes",
     "deleteDescription": "Deleting a budget removes all associated sections, categories, and expenses. This action cannot be undone.",
     "months": "months",
-    "oneTimeDescription": "No billing cycle \u2014 all expenses count toward the total",
-    "aggressiveMode": "Aggressive (70/20/10)",
-    "aggressiveDescription": "Maximize savings by limiting wants to just 10%",
-    "debtPayoffMode": "Debt Payoff (60/20/20)",
-    "debtPayoffDescription": "Focused on paying down debt while covering essentials"
+    "oneTimeDescription": "No billing cycle \u2014 income doesn't renew. Great for trip or event budgets.",
+    "debtPayoffMode": "Debt payoff",
+    "debtPayoffDescription": "50% needs, 20% wants, 30% debt",
+    "limitReached": "Budget limit reached (max 7)",
+    "limitReachedDescription": "You can't create more than 7 budgets. Delete an existing one first."
   },
   "budgetCard": {
     "perMonth": "/mo",
     "guided": "Guided",
-    "manual": "Manual"
+    "manual": "Manual",
+    "aggressive": "Aggressive",
+    "balanced": "Balanced",
+    "debtFree": "Debt-free",
+    "debtPayoff": "Debt payoff",
+    "travel": "Travel",
+    "event": "Event"
   },
   "section": {
     "addSection": "Add Section",
@@ -121,14 +135,22 @@
     "createDescription": "Create a new spending section for your budget.",
     "editSection": "Adjust Section",
     "editSubcategory": "Edit Category",
+    "editCategory": "Edit Category",
+    "editCategoryDescription": "Update this category's details.",
+    "categoryName": "Category Name",
     "deleteSection": "Delete Section",
     "deleteSubcategory": "Delete Category",
+    "deleteCategory": "Delete Category",
     "confirmDeleteSection": "Delete this section? All categories and their expenses will be permanently removed.",
     "confirmDeleteSubcategory": "Delete this category? All its expenses will be permanently removed.",
+    "confirmDeleteCategory": "Delete this category? All its expenses will be permanently removed.",
     "editDescription": "Update this section's details.",
     "editSubcategoryDescription": "Update this category's details.",
     "saving": "Saving...",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "impactPreview": "Impact preview",
+    "categoryCount": "{count} category",
+    "categoryCountPlural": "{count} categories"
   },
   "dashboard": {
     "refresh": "Refresh",
@@ -157,6 +179,9 @@
     "startAddingExpense": "Start by adding your first expense",
     "addSection": "Add Section",
     "addExpense": "Add Expense",
+    "noSectionsYet": "No sections yet",
+    "noSectionsHint": "Create your first section to start organizing your budget.",
+    "addFirstSection": "Add Section",
     "recentExpenses": "Recent Expenses",
     "allExpenses": "All Expenses",
     "sectionActions": {
@@ -210,7 +235,8 @@
     "addExpenseHere": "Add your first expense for {name} to start tracking.",
     "addExpenseFor": "Add Expense",
     "spentSummary": "Spent: {spent} / {total}",
-    "actions": "Actions"
+    "actions": "Actions",
+    "edited": "edited"
   },
   "categories": {
     "necesidades": "Needs",

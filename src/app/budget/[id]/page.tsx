@@ -9,29 +9,30 @@ import { CategoryDetail } from "@/components/expenses/category-detail";
 export default function BudgetDashboardPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
-  const subcategoryId = searchParams.get("sub");
+  const categoryId = searchParams.get("sub");
   const summary = useBudgetStore((s) => s.summary);
   const expenses = useBudgetStore((s) => s.expenses);
 
-  if (subcategoryId && summary) {
-    // Find the subcategory in summary
-    for (const cat of summary.sections) {
-      const subSummary = cat.categories.find(
-        (s) => s.category.id === subcategoryId
+  if (categoryId && summary) {
+    // Find the category in summary
+    for (const sec of summary.sections) {
+      const catSummary = sec.categories.find(
+        (s) => s.category.id === categoryId
       );
-      if (subSummary) {
-        const allCategories = summary.sections.map((c) => ({
+      if (catSummary) {
+        const allSections = summary.sections.map((c) => ({
           ...c.section,
           categories: c.categories.map((s) => s.category),
         }));
 
         return (
           <CategoryDetail
-            subcategorySummary={subSummary}
+            categorySummary={catSummary}
             expenses={expenses}
             currency={summary.budget.currency}
             budgetId={params.id}
-            categories={allCategories}
+            categories={allSections}
+            sectionId={sec.section.id}
           />
         );
       }

@@ -269,7 +269,25 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           </div>
         </div>
       ) : (
-        <EmptyDashboard />
+        <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
+          <div className="mb-6 flex h-16 w-16 items-center justify-center border-2 border-foreground bg-muted">
+            <Plus className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="mb-2 text-lg font-semibold text-foreground">
+            {t("noSectionsYet")}
+          </h3>
+          <p className="mb-6 max-w-sm text-sm text-muted-foreground leading-relaxed">
+            {t("noSectionsHint")}
+          </p>
+          <button
+            type="button"
+            onClick={() => setAddSectionOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+          >
+            <Plus className="size-3.5" />
+            {t("addFirstSection")}
+          </button>
+        </div>
       )}
 
       {/* Expense list */}
@@ -283,7 +301,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           <ExpenseList
             expenses={expenses}
             currency={budget.currency}
-            subcategories={(() => {
+            categoriesMap={(() => {
               const m = new Map<string, { name: string; icon: string | null; categoryName: string }>();
               for (const sec of sections) {
                 for (const cat of sec.categories) {

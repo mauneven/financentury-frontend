@@ -54,7 +54,12 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-3 sm:px-6">
-        <div className="relative h-56 sm:h-64 w-full">
+        <div
+          className="relative h-56 sm:h-64 w-full [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:focus:outline-none [&_*]:focus:outline-none"
+          style={{ outline: "none" }}
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -66,6 +71,9 @@ export function BudgetOverviewChart({ summary }: BudgetOverviewChartProps) {
                 paddingAngle={2}
                 dataKey="value"
                 strokeWidth={0}
+                isAnimationActive={false}
+                cursor="default"
+                activeShape={undefined}
               >
                 {finalDisplayData.map((entry, index) => (
                   <Cell

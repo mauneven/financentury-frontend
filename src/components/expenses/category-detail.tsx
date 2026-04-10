@@ -29,19 +29,21 @@ import { AddExpenseDialog } from "./add-expense-dialog";
 import { EditExpenseDialog } from "./edit-expense-dialog";
 
 interface CategoryDetailProps {
-  subcategorySummary: CategorySummary;
+  categorySummary: CategorySummary;
   expenses: Expense[];
   currency: string;
   budgetId: string;
   categories: Section[];
+  sectionId: string;
 }
 
 export function CategoryDetail({
-  subcategorySummary,
+  categorySummary,
   expenses,
   currency,
   budgetId,
   categories,
+  sectionId,
 }: CategoryDetailProps) {
   const t = useTranslations("expense");
   const tDash = useTranslations("dashboard");
@@ -51,7 +53,7 @@ export function CategoryDetail({
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
-  const { category: detailCategory, allocated_amount, total_spent, expense_count } = subcategorySummary;
+  const { category: detailCategory, allocated_amount, total_spent, expense_count } = categorySummary;
 
   const remaining = allocated_amount - total_spent;
   const percentage = getPercentage(total_spent, allocated_amount);
@@ -60,22 +62,22 @@ export function CategoryDetail({
   const overBudget = remaining < 0;
   // averageExpense available if needed: expense_count > 0 ? total_spent / expense_count : 0
 
-  // Build subcategories map for expense list
-  const subcategoriesMap = (() => {
+  // Build categories map for expense list
+  const categoriesMap = (() => {
     const map = new Map<string, { name: string; icon: string | null; categoryName: string }>();
-    for (const cat of categories) {
-      for (const sub of cat.categories || []) {
-        map.set(sub.id, {
-          name: sub.name,
-          icon: sub.icon,
-          categoryName: cat.name,
+    for (const sec of categories) {
+      for (const cat of sec.categories || []) {
+        map.set(cat.id, {
+          name: cat.name,
+          icon: cat.icon,
+          categoryName: sec.name,
         });
       }
     }
     return map;
   })();
 
-  // Filter expenses for this subcategory
+  // Filter expenses for this category
   const filteredExpenses = expenses.filter((e) => e.category_id === detailCategory.id);
 
   const handleDelete = async (expenseId: string) => {
@@ -160,7 +162,7 @@ export function CategoryDetail({
       </div>
 
       {/* Chart — always show like budget dashboard */}
-      <SpendingChart budgetId={budgetId} currency={currency} categoryIds={[detailCategory.id]} />
+      <SpendingChart budgetId={budgetId} currency={currency} categoryIds={[sectionId]} />
 
       {/* Expense List */}
       <div className="space-y-4">
@@ -188,7 +190,7 @@ export function CategoryDetail({
           <ExpenseList
             expenses={filteredExpenses}
             currency={currency}
-            subcategories={subcategoriesMap}
+            categoriesMap={categoriesMap}
             onEdit={(expense) => setEditingExpense(expense)}
             onDelete={handleDelete}
           />
@@ -202,7 +204,7 @@ export function CategoryDetail({
         budgetId={budgetId}
         categories={categories}
         currency={currency}
-        preselectedSubcategoryId={detailCategory.id}
+        preselectedCategoryId={detailCategory.id}
       />
 
       {/* Edit Expense Dialog */}

@@ -46,11 +46,12 @@ export default function CategoryPage() {
 
   return (
     <CategoryDetail
-      subcategorySummary={result.catSummary}
+      categorySummary={result.catSummary}
       expenses={expenses}
       currency={summary!.budget.currency}
       budgetId={params.id}
       categories={result.allSections}
+      sectionId={params.sectionId}
     />
   );
 }

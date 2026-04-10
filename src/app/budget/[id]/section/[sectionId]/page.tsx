@@ -164,14 +164,14 @@ export default function SectionPage() {
       {total_spent > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={categories.map(s => s.category.id)} />
+            <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={[params.sectionId]} />
           </div>
           <div>
             <BreakdownChart summary={summary} sectionId={params.sectionId} />
           </div>
         </div>
       ) : (
-        <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={categories.map(s => s.category.id)} />
+        <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={[params.sectionId]} />
       )}
 
       {/* Category cards — same layout as SectionCard */}
@@ -282,7 +282,7 @@ export default function SectionPage() {
                       {/* Amount display - right side */}
                       <div className="text-right">
                         <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                          Monto asignado
+                          {tSection("allocationPercent")}
                         </p>
                         <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
                           {formatCompact(cat.allocated_amount, summary.budget.currency)}
@@ -335,10 +335,10 @@ export default function SectionPage() {
         const catIds = new Set(categories.map(s => s.category.id));
         const sectionExpenses = expenses.filter(e => catIds.has(e.category_id));
         if (sectionExpenses.length === 0) return null;
-        const subMap = new Map<string, { name: string; icon: string | null; categoryName: string }>();
+        const categoryMap = new Map<string, { name: string; icon: string | null; categoryName: string }>();
         for (const sec of summary.sections) {
           for (const cat of sec.categories) {
-            subMap.set(cat.category.id, { name: cat.category.name, icon: cat.category.icon, categoryName: sec.section.name });
+            categoryMap.set(cat.category.id, { name: cat.category.name, icon: cat.category.icon, categoryName: sec.section.name });
           }
         }
         return (
@@ -347,7 +347,7 @@ export default function SectionPage() {
             <ExpenseList
               expenses={sectionExpenses}
               currency={summary.budget.currency}
-              subcategories={subMap}
+              categoriesMap={categoryMap}
               onEdit={(exp) => setEditingExpense(exp)}
               onDelete={(id) => deleteExpense(id)}
             />
@@ -365,7 +365,7 @@ export default function SectionPage() {
           categories: s.categories.map((c) => c.category),
         }))}
         currency={summary.budget.currency}
-        preselectedSubcategoryId={categories.length > 0 ? categories[0].category.id : undefined}
+        preselectedCategoryId={categories.length > 0 ? categories[0].category.id : undefined}
       />
 
       {/* Edit dialogs */}

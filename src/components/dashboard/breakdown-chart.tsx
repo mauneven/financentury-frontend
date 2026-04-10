@@ -96,7 +96,12 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
         </h3>
       </div>
       <div className="px-3 sm:px-6 py-6">
-        <div className="relative h-72 w-full">
+        <div
+          className="relative h-72 w-full [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:focus:outline-none [&_*]:focus:outline-none"
+          style={{ outline: "none" }}
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               {/* Background ring for total budget */}
@@ -109,6 +114,8 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
                 dataKey="value"
                 strokeWidth={0}
                 isAnimationActive={false}
+                cursor="default"
+                activeShape={undefined}
               >
                 <Cell fill="var(--muted)" />
               </Pie>
@@ -125,6 +132,9 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
                 stroke="var(--background)"
                 startAngle={90}
                 endAngle={90 - (spentPercentage / 100) * 360}
+                isAnimationActive={false}
+                cursor="default"
+                activeShape={undefined}
               >
                 {categoryData.map((entry, index) => (
                   <Cell key={index} fill={entry.color} />
@@ -140,6 +150,7 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
                   boxShadow: "4px 4px 0px var(--foreground)",
                   color: "var(--foreground)",
                 }}
+                wrapperStyle={{ zIndex: 50 }}
                 itemStyle={{ color: "var(--foreground)" }}
                 formatter={(value, name) => [
                   formatCompact(Number(value), budget.currency),

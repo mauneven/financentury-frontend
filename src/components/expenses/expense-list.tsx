@@ -34,7 +34,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
-interface SubcategoryInfo {
+interface CategoryInfo {
   name: string;
   icon: string | null;
   categoryName: string;
@@ -48,7 +48,7 @@ export interface CollaboratorInfo {
 interface ExpenseListProps {
   expenses: Expense[];
   currency: string;
-  subcategories: Map<string, SubcategoryInfo>;
+  categoriesMap: Map<string, CategoryInfo>;
   collaborators?: Map<string, CollaboratorInfo>;
   currentUserId?: string;
   onEdit?: (expense: Expense) => void;
@@ -64,7 +64,7 @@ interface GroupedExpenses {
 export function ExpenseList({
   expenses,
   currency,
-  subcategories,
+  categoriesMap,
   collaborators,
   currentUserId,
   onEdit,
@@ -132,13 +132,13 @@ export function ExpenseList({
               {/* Expense Items */}
               <div>
                 {group.expenses.map((expense) => {
-                  const subInfo = subcategories.get(expense.category_id);
+                  const catInfo = categoriesMap.get(expense.category_id);
                   return (
                     <ExpenseRow
                       key={expense.id}
                       expense={expense}
                       currency={currency}
-                      subcategoryInfo={subInfo}
+                      categoryInfo={catInfo}
                       collaborators={collaborators}
                       currentUserId={currentUserId}
                       onEdit={onEdit}
@@ -180,7 +180,7 @@ export function ExpenseList({
 interface ExpenseRowProps {
   expense: Expense;
   currency: string;
-  subcategoryInfo?: SubcategoryInfo;
+  categoryInfo?: CategoryInfo;
   collaborators?: Map<string, CollaboratorInfo>;
   currentUserId?: string;
   onEdit?: (expense: Expense) => void;
@@ -190,7 +190,7 @@ interface ExpenseRowProps {
 function ExpenseRow({
   expense,
   currency,
-  subcategoryInfo,
+  categoryInfo,
   collaborators,
   currentUserId,
   onEdit,
@@ -215,8 +215,8 @@ function ExpenseRow({
     >
       {/* Icon */}
       <div className="flex size-10 shrink-0 items-center justify-center bg-muted text-muted-foreground">
-        {subcategoryInfo?.icon
-          ? <CategoryIcon iconKey={subcategoryInfo.icon} className="size-5" />
+        {categoryInfo?.icon
+          ? <CategoryIcon iconKey={categoryInfo.icon} className="size-5" />
           : <Receipt className="size-5" />
         }
       </div>
@@ -224,7 +224,7 @@ function ExpenseRow({
       {/* Info */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
-          {subcategoryInfo?.name || "Unknown"}
+          {categoryInfo?.name || "Unknown"}
         </p>
         {expense.description && (
           <p className="truncate text-sm text-muted-foreground">
@@ -246,7 +246,7 @@ function ExpenseRow({
         <p className="text-xs text-muted-foreground font-mono">
           {new Date(expense.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
           {expense.updated_at && new Date(expense.updated_at).getTime() - new Date(expense.created_at).getTime() > 60000 && (
-            <span className="ml-1 text-muted-foreground/60">· editado</span>
+            <span className="ml-1 text-muted-foreground/60">· {t("edited")}</span>
           )}
         </p>
       </div>

@@ -54,15 +54,22 @@
     "budgetCount": "{count} presupuesto",
     "budgetCountPlural": "{count} presupuestos",
     "newBudget": "Nuevo Presupuesto",
-    "loadingBudgets": "Cargando presupuestos..."
+    "loadingBudgets": "Cargando presupuestos...",
+    "budgetCountLabel": "presupuestos"
   },
   "budget": {
     "createTitle": "Crear Nuevo Presupuesto",
     "modeSelection": "Elige tu enfoque",
-    "guidedMode": "Guiado (50/30/20)",
-    "guidedDescription": "Preconfigurado con categorías de gasto recomendadas basadas en la regla 50/30/20",
+    "balancedMode": "Balanceado",
+    "balancedDescription": "50% necesidades, 30% deseos, 10% deudas, 10% ahorro",
+    "debtFreeMode": "Libre econ\u00f3micamente",
+    "debtFreeDescription": "50% necesidades, 30% deseos, 20% ahorro",
+    "travelMode": "Viaje",
+    "travelDescription": "Para viajes \u2014 \u00fanica vez por defecto",
+    "eventMode": "Evento",
+    "eventDescription": "Para eventos \u2014 \u00fanica vez por defecto",
     "manualMode": "Manual",
-    "manualDescription": "Empieza desde cero con control total sobre tus categorías y asignaciones",
+    "manualDescription": "Empieza desde cero con control total sobre tus categor\u00edas y asignaciones",
     "budgetDetails": "Detalles del Presupuesto",
     "budgetName": "Nombre del Presupuesto",
     "budgetNamePlaceholder": "ej. Mi Plan 2025",
@@ -88,23 +95,30 @@
     "saving": "Guardando...",
     "deleting": "Eliminando...",
     "createBudget": "Crear Presupuesto",
-    "chooseSetup": "Elige cómo quieres configurar tu presupuesto",
+    "canChangeLater": "Puedes cambiar todo despu\u00e9s en los ajustes de cada secci\u00f3n.",
+    "chooseSetup": "Elige c\u00f3mo quieres configurar tu presupuesto",
     "enterDetails": "Ingresa los detalles de tu presupuesto",
     "reviewAllocations": "Revisa tus asignaciones de categorías",
     "customCategories": "Tus categorías personalizadas",
     "saveChanges": "Guardar Cambios",
     "deleteDescription": "Eliminar un presupuesto elimina todas las secciones, categorías y gastos asociados. Esta acción no se puede deshacer.",
     "months": "meses",
-    "oneTimeDescription": "Sin ciclo de facturaci\u00f3n \u2014 todos los gastos cuentan hacia el total",
-    "aggressiveMode": "Agresivo (70/20/10)",
-    "aggressiveDescription": "Maximiza el ahorro limitando deseos al 10%",
-    "debtPayoffMode": "Pago de deudas (60/20/20)",
-    "debtPayoffDescription": "Enfocado en pagar deudas cubriendo lo esencial"
+    "oneTimeDescription": "Sin ciclo de facturaci\u00f3n, los ingresos no se renuevan. Excelente para presupuestos de salidas o viajes.",
+    "debtPayoffMode": "Pago de deudas",
+    "debtPayoffDescription": "50% necesidades, 20% deseos, 30% deuda",
+    "limitReached": "Limite de presupuestos alcanzado (max. 7)",
+    "limitReachedDescription": "No puedes crear mas de 7 presupuestos. Elimina uno existente primero."
   },
   "budgetCard": {
     "perMonth": "/mes",
     "guided": "Guiado",
-    "manual": "Manual"
+    "manual": "Manual",
+    "aggressive": "Agresivo",
+    "balanced": "Balanceado",
+    "debtFree": "Libre",
+    "debtPayoff": "Deudas",
+    "travel": "Viaje",
+    "event": "Evento"
   },
   "section": {
     "addSection": "Agregar Sección",
@@ -121,14 +135,22 @@
     "createDescription": "Crea una nueva sección de gastos para tu presupuesto.",
     "editSection": "Ajustar Sección",
     "editSubcategory": "Editar Categoría",
+    "editCategory": "Editar Categoría",
+    "editCategoryDescription": "Actualiza los detalles de esta categoría.",
+    "categoryName": "Nombre de Categoría",
     "deleteSection": "Eliminar Sección",
     "deleteSubcategory": "Eliminar Categoría",
+    "deleteCategory": "Eliminar Categoría",
     "confirmDeleteSection": "¿Eliminar esta sección? Todas las categorías y sus gastos serán eliminados permanentemente.",
     "confirmDeleteSubcategory": "¿Eliminar esta categoría? Todos sus gastos serán eliminados permanentemente.",
+    "confirmDeleteCategory": "¿Eliminar esta categoría? Todos sus gastos serán eliminados permanentemente.",
     "editDescription": "Actualiza los detalles de esta sección.",
     "editSubcategoryDescription": "Actualiza los detalles de esta categoría.",
     "saving": "Guardando...",
-    "deleting": "Eliminando..."
+    "deleting": "Eliminando...",
+    "impactPreview": "Vista previa del impacto",
+    "categoryCount": "{count} categoría",
+    "categoryCountPlural": "{count} categorías"
   },
   "dashboard": {
     "refresh": "Actualizar",
@@ -157,6 +179,9 @@
     "startAddingExpense": "Comienza agregando tu primer gasto",
     "addSection": "Agregar Sección",
     "addExpense": "Agregar Gasto",
+    "noSectionsYet": "Aun no hay secciones",
+    "noSectionsHint": "Crea tu primera seccion para empezar a organizar tu presupuesto.",
+    "addFirstSection": "Agregar Seccion",
     "recentExpenses": "Gastos Recientes",
     "allExpenses": "Todos los Gastos",
     "sectionActions": {
@@ -210,7 +235,8 @@
     "addExpenseHere": "Agrega tu primer gasto para {name} para empezar a registrar.",
     "addExpenseFor": "Agregar Gasto",
     "spentSummary": "Gastado: {spent} / {total}",
-    "actions": "Acciones"
+    "actions": "Acciones",
+    "edited": "editado"
   },
   "categories": {
     "necesidades": "Necesidades",

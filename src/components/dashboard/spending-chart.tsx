@@ -35,6 +35,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
   const [trendsData, setTrendsData] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [range, setRange] = useState<"1M" | "3M" | "6M" | "1Y">("6M");
   const t = useTranslations("dashboard");
 
   useEffect(() => {
@@ -83,12 +84,33 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
     }
   }
 
+  // Filter chartData by selected time range
+  const rangeMonths = { "1M": 1, "3M": 3, "6M": 6, "1Y": 12 } as const;
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - rangeMonths[range]);
+  const filteredData = chartData.filter((d) => new Date(d.date) >= cutoff);
+
   const ChartWrapper = ({ children }: { children: React.ReactNode }) => (
     <div className="border-2 border-foreground bg-card">
-      <div className="border-b-2 border-foreground px-6 py-4">
+      <div className="border-b-2 border-foreground px-6 py-4 flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
           {t("spendingTrends")}
         </h3>
+        <div className="flex gap-1">
+          {(["1M", "3M", "6M", "1Y"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              className={`px-2 py-0.5 text-xs font-mono font-bold uppercase tracking-wider transition-colors ${
+                range === r
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="p-6">{children}</div>
     </div>
@@ -116,7 +138,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
     );
   }
 
-  if (chartData.length === 0) {
+  if (filteredData.length === 0) {
     return (
       <ChartWrapper>
         <div className="flex h-72 items-center justify-center">
@@ -130,9 +152,14 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
 
   return (
     <ChartWrapper>
-      <div className="h-72 w-full">
+      <div
+        className="h-72 w-full [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:focus:outline-none [&_*]:focus:outline-none"
+        style={{ outline: "none" }}
+        tabIndex={-1}
+        onMouseDown={(e) => e.preventDefault()}
+      >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+          <AreaChart data={filteredData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="gradient-total" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--foreground)" stopOpacity={0.15} />
@@ -186,6 +213,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
               fill="url(#gradient-total)"
               strokeWidth={2}
               dot={{ fill: "var(--foreground)", r: 3, strokeWidth: 0 }}
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>

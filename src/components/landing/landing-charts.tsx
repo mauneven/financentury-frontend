@@ -554,6 +554,7 @@ export function LandingCharts() {
                   </Pie>
                   <Tooltip
                     contentStyle={TOOLTIP_STYLE}
+                    wrapperStyle={{ zIndex: 50 }}
                     itemStyle={{ color: "var(--foreground)" }}
                     formatter={(value, name) => [
                       formatAmount(Number(value), currency),

@@ -6,28 +6,22 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
-  Sparkles,
+  Scale,
+  Wallet,
   PenLine,
-  ArrowRight,
   ArrowLeft,
   Check,
   Loader2,
-  TrendingUp,
   CreditCard,
+  Plane,
+  PartyPopper,
 } from "lucide-react";
 
 import type { Budget } from "@/types/budget";
-import {
-  CURRENCIES,
-  BILLING_PERIODS,
-  GUIDED_SECTIONS,
-  AGGRESSIVE_SECTIONS,
-  DEBT_PAYOFF_SECTIONS,
-} from "@/types/budget";
-import { detectCurrency, formatCurrency, formatCompact } from "@/lib/format";
+import { CURRENCIES } from "@/types/budget";
+import { detectCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
-import { CategoryIcon } from "@/lib/icon-picker";
 import { useTranslations } from "@/i18n/client";
 
 import {
@@ -47,14 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import {
   InputGroup,
   InputGroupAddon,
@@ -82,8 +68,16 @@ const budgetFormSchema = z.object({
 type BudgetFormValues = z.infer<typeof budgetFormSchema>;
 
 // ---------------------------------------------------------------------------
-// Props
+// Types
 // ---------------------------------------------------------------------------
+
+type BudgetMode =
+  | "balanced"
+  | "debt-free"
+  | "debt-payoff"
+  | "travel"
+  | "event"
+  | "manual";
 
 interface CreateBudgetDialogProps {
   open: boolean;
@@ -122,290 +116,6 @@ function StepIndicator({
 }
 
 // ---------------------------------------------------------------------------
-// Guided category editor
-// ---------------------------------------------------------------------------
-
-interface GuidedCategoryState {
-  name: string;
-  allocation_percent: number;
-  icon: string;
-  categories: {
-    name: string;
-    allocation_percent: number;
-    icon: string;
-  }[];
-}
-
-function formatWithCommas(n: number): string {
-  return Math.round(n).toLocaleString("en-US");
-}
-
-function AmountInput({
-  amount,
-  onAmountChange,
-  prefix = "$",
-  className = "",
-  inputClassName = "",
-}: {
-  amount: number;
-  onAmountChange: (raw: string) => void;
-  prefix?: string;
-  className?: string;
-  inputClassName?: string;
-}) {
-  const [display, setDisplay] = React.useState(formatWithCommas(amount));
-  const [focused, setFocused] = React.useState(false);
-
-  // Sync from parent only when not focused (avoid overwriting user typing)
-  React.useEffect(() => {
-    if (!focused) {
-      setDisplay(formatWithCommas(amount));
-    }
-  }, [amount, focused]);
-
-  return (
-    <InputGroup className={className}>
-      <InputGroupAddon align="inline-start">
-        <InputGroupText className="text-xs">{prefix}</InputGroupText>
-      </InputGroupAddon>
-      <InputGroupInput
-        type="text"
-        inputMode="decimal"
-        value={display}
-        onFocus={() => setFocused(true)}
-        onBlur={() => {
-          setFocused(false);
-          setDisplay(formatWithCommas(amount));
-        }}
-        onChange={(e) => {
-          const raw = e.target.value;
-          setDisplay(raw);
-          onAmountChange(raw);
-        }}
-        className={inputClassName}
-      />
-    </InputGroup>
-  );
-}
-
-function GuidedCategoryReview({
-  categories,
-  onChange,
-  income,
-  currency,
-}: {
-  categories: GuidedCategoryState[];
-  onChange: (updated: GuidedCategoryState[]) => void;
-  income: number;
-  currency: string;
-}) {
-  const t = useTranslations("budget");
-  const totalPercent = categories.reduce(
-    (acc, c) => acc + c.allocation_percent,
-    0
-  );
-  const totalAmount = (income * totalPercent) / 100;
-
-  const handleSectionAmountChange = (index: number, amountStr: string) => {
-    const amount = parseFloat(amountStr.replace(/[^\d.]/g, "")) || 0;
-    const percent = income > 0 ? Math.round((amount / income) * 100) : 0;
-    const updated = [...categories];
-    updated[index] = { ...updated[index], allocation_percent: percent };
-    onChange(updated);
-  };
-
-  const handleSubcategoryAmountChange = (catIdx: number, subIdx: number, amountStr: string) => {
-    const amount = parseFloat(amountStr.replace(/[^\d.]/g, "")) || 0;
-    const sectionAmount = (income * categories[catIdx].allocation_percent) / 100;
-    const percent = sectionAmount > 0 ? Math.round((amount / sectionAmount) * 100) : 0;
-    const updated = [...categories];
-    const updatedSubs = [...updated[catIdx].categories];
-    updatedSubs[subIdx] = { ...updatedSubs[subIdx], allocation_percent: percent };
-    updated[catIdx] = { ...updated[catIdx], categories: updatedSubs };
-    onChange(updated);
-  };
-
-  const SECTION_COLORS = ["#6366f1", "#f97316", "#14b8a6", "#f43f5e", "#eab308"];
-
-  const pieData = categories.map((cat, i) => ({
-    name: cat.name,
-    value: cat.allocation_percent,
-    amount: (income * cat.allocation_percent) / 100,
-    color: SECTION_COLORS[i % SECTION_COLORS.length],
-  }));
-
-  return (
-    <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">
-        {t("guidelinesNote")}
-      </p>
-
-      {/* Donut chart preview */}
-      <div className="border-2 border-foreground bg-card p-4">
-        <div className="relative h-48 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                innerRadius="55%"
-                outerRadius="80%"
-                paddingAngle={1}
-                dataKey="value"
-                strokeWidth={2}
-                stroke="var(--background)"
-                isAnimationActive={false}
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "var(--card)",
-                  border: "2px solid var(--foreground)",
-                  borderRadius: "0",
-                  fontSize: "0.75rem",
-                  fontFamily: "monospace",
-                  boxShadow: "4px 4px 0px var(--foreground)",
-                  color: "var(--foreground)",
-                }}
-                itemStyle={{ color: "var(--foreground)" }}
-                formatter={(_value, name, props) => [
-                  formatCompact(
-                    (props as unknown as { payload: { amount: number } }).payload
-                      .amount,
-                    currency
-                  ),
-                  String(name),
-                ]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          {/* Center text */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-base font-bold font-mono tabular-nums text-foreground">
-              {formatCompact(income, currency)}
-            </p>
-            <p className="text-xs font-semibold font-mono tabular-nums text-muted-foreground">
-              {totalPercent}%
-            </p>
-          </div>
-        </div>
-        {/* Legend */}
-        <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
-          {pieData.map((entry) => (
-            <div key={entry.name} className="flex items-center gap-1.5">
-              <div
-                className="h-2.5 w-2.5 shrink-0"
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-xs text-muted-foreground">
-                {entry.name}
-              </span>
-              <span className="text-xs font-semibold font-mono tabular-nums text-foreground">
-                {entry.value}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {categories.map((cat, catIdx) => {
-          const sectionAmount = (income * cat.allocation_percent) / 100;
-          return (
-            <div
-              key={cat.name}
-              className="border-2 border-foreground bg-card/50 p-3 space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CategoryIcon iconKey={cat.icon} className="size-5" />
-                  <span className="font-medium text-sm">{cat.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <AmountInput
-                    amount={sectionAmount}
-                    onAmountChange={(raw) => handleSectionAmountChange(catIdx, raw)}
-                    className="h-7 w-32"
-                    inputClassName="text-right text-xs h-7"
-                  />
-                  <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">
-                    {cat.allocation_percent}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="pl-7 space-y-1.5">
-                {cat.categories.map((sub, subIdx) => {
-                  const subAmount = (sectionAmount * sub.allocation_percent) / 100;
-                  return (
-                    <div
-                      key={sub.name}
-                      className="flex items-center justify-between text-xs"
-                    >
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <CategoryIcon iconKey={sub.icon} className="size-3.5" />
-                        {sub.name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <AmountInput
-                          amount={subAmount}
-                          onAmountChange={(raw) => handleSubcategoryAmountChange(catIdx, subIdx, raw)}
-                          className="h-6 w-28"
-                          inputClassName="text-right text-[11px] h-6"
-                        />
-                        <span className="text-muted-foreground w-8 text-right tabular-nums">
-                          {sub.allocation_percent}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <Separator />
-
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">{t("totalAllocation")}</span>
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "font-semibold tabular-nums",
-              totalPercent === 100
-                ? "text-emerald-600"
-                : totalPercent > 100
-                  ? "text-red-600"
-                  : "text-amber-600"
-            )}
-          >
-            {formatCurrency(totalAmount, currency)}
-          </span>
-          <span
-            className={cn(
-              "text-xs tabular-nums",
-              totalPercent === 100
-                ? "text-emerald-600"
-                : totalPercent > 100
-                  ? "text-red-600"
-                  : "text-amber-600"
-            )}
-          >
-            ({totalPercent}%)
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Main dialog
 // ---------------------------------------------------------------------------
 
@@ -418,31 +128,14 @@ export function CreateBudgetDialog({
   const createBudget = useBudgetStore((s) => s.createBudget);
   const t = useTranslations("budget");
   const tc = useTranslations("common");
-  const tCat = useTranslations("categories");
 
   // Step & mode state
   const [step, setStep] = React.useState(1);
-  const [mode, setMode] = React.useState<"guided" | "aggressive" | "debt-payoff" | "manual" | null>(null);
+  const [mode, setMode] = React.useState<BudgetMode | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
   const [customPeriod, setCustomPeriod] = React.useState(false);
   const [incomeDisplay, setIncomeDisplay] = React.useState("");
-
-  // Guided categories (mutable copy)
-  const [guidedCategories, setGuidedCategories] = React.useState<
-    GuidedCategoryState[]
-  >(() =>
-    GUIDED_SECTIONS.map((c) => ({
-      name: c.name,
-      allocation_percent: c.allocation_percent,
-      icon: c.icon,
-      categories: c.categories.map((s) => ({
-        name: s.name,
-        allocation_percent: s.allocation_percent,
-        icon: s.icon,
-      })),
-    }))
-  );
 
   // Detect currency on mount
   const detectedCurrency = (() => {
@@ -479,14 +172,10 @@ export function CreateBudgetDialog({
   });
 
   const watchCurrency = watch("currency");
-  const watchIncome = watch("monthly_income");
   const watchBillingPeriod = watch("billing_period_months");
 
-  // Whether the current mode uses a guided template (has a review step).
-  const isTemplateMode = mode === "guided" || mode === "aggressive" || mode === "debt-payoff";
-
-  // Total steps
-  const totalSteps = isTemplateMode ? 3 : 2;
+  // Always 2 steps for all modes (mode selection -> details)
+  const totalSteps = 2;
 
   // Currency symbol
   const currencyInfo = CURRENCIES.find((c) => c.code === watchCurrency);
@@ -495,25 +184,12 @@ export function CreateBudgetDialog({
   // Reset when dialog closes
   React.useEffect(() => {
     if (!open) {
-      // Small delay so animation completes before resetting
       const timeout = setTimeout(() => {
         setStep(1);
         setMode(null);
         setIsSubmitting(false);
         setCreateError(null);
         setCustomPeriod(false);
-        setGuidedCategories(
-          GUIDED_SECTIONS.map((c) => ({
-            name: c.name,
-            allocation_percent: c.allocation_percent,
-            icon: c.icon,
-            categories: c.categories.map((s) => ({
-              name: s.name,
-              allocation_percent: s.allocation_percent,
-              icon: s.icon,
-            })),
-          }))
-        );
         setIncomeDisplay("");
         reset({
           name: "",
@@ -527,35 +203,13 @@ export function CreateBudgetDialog({
     }
   }, [open, reset, detectedCurrency]);
 
-  // Helper: get sections for a given template mode.
-  const getSectionsForMode = (m: string) => {
-    switch (m) {
-      case "aggressive":
-        return AGGRESSIVE_SECTIONS;
-      case "debt-payoff":
-        return DEBT_PAYOFF_SECTIONS;
-      default:
-        return GUIDED_SECTIONS;
-    }
-  };
-
   // Handlers
-  const selectMode = (m: "guided" | "aggressive" | "debt-payoff" | "manual") => {
+  const selectMode = (m: BudgetMode) => {
     setMode(m);
-    if (m !== "manual") {
-      const sections = getSectionsForMode(m);
-      setGuidedCategories(
-        sections.map((c) => ({
-          name: c.name,
-          allocation_percent: c.allocation_percent,
-          icon: c.icon,
-          categories: c.categories.map((s) => ({
-            name: s.name,
-            allocation_percent: s.allocation_percent,
-            icon: s.icon,
-          })),
-        }))
-      );
+    // For travel and event, default to one-time
+    if (m === "travel" || m === "event") {
+      setValue("billing_period_months", 0);
+      setValue("billing_cutoff_day", 0);
     }
     setStep(2);
   };
@@ -564,19 +218,11 @@ export function CreateBudgetDialog({
     if (step === 2) {
       setStep(1);
       setMode(null);
-    } else if (step === 3) {
-      setStep(2);
     }
   };
 
   const onSubmit = async (values: BudgetFormValues) => {
     if (!mode) return;
-
-    // If template mode and on step 2, go to review first
-    if (isTemplateMode && step === 2) {
-      setStep(3);
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -589,11 +235,89 @@ export function CreateBudgetDialog({
       onOpenChange(false);
       router.push(`/budget/${budget.id}`);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create budget");
+      setCreateError(
+        err instanceof Error ? err.message : "Failed to create budget"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // Mode cards config
+  // ---------------------------------------------------------------------------
+
+  const modeCards: {
+    mode: BudgetMode;
+    icon: React.ReactNode;
+    titleKey: string;
+    descKey: string;
+    borderColor: string;
+    iconBg: string;
+    iconBorder: string;
+    iconText: string;
+  }[] = [
+    {
+      mode: "balanced",
+      icon: <Scale className="size-5" />,
+      titleKey: "balancedMode",
+      descKey: "balancedDescription",
+      borderColor: "hover:border-emerald-500",
+      iconBg: "bg-emerald-500/10",
+      iconBorder: "border-emerald-500/30",
+      iconText: "text-emerald-600",
+    },
+    {
+      mode: "debt-free",
+      icon: <Wallet className="size-5" />,
+      titleKey: "debtFreeMode",
+      descKey: "debtFreeDescription",
+      borderColor: "hover:border-blue-500",
+      iconBg: "bg-blue-500/10",
+      iconBorder: "border-blue-500/30",
+      iconText: "text-blue-600",
+    },
+    {
+      mode: "debt-payoff",
+      icon: <CreditCard className="size-5" />,
+      titleKey: "debtPayoffMode",
+      descKey: "debtPayoffDescription",
+      borderColor: "hover:border-rose-500",
+      iconBg: "bg-rose-500/10",
+      iconBorder: "border-rose-500/30",
+      iconText: "text-rose-600",
+    },
+    {
+      mode: "travel",
+      icon: <Plane className="size-5" />,
+      titleKey: "travelMode",
+      descKey: "travelDescription",
+      borderColor: "hover:border-sky-500",
+      iconBg: "bg-sky-500/10",
+      iconBorder: "border-sky-500/30",
+      iconText: "text-sky-600",
+    },
+    {
+      mode: "event",
+      icon: <PartyPopper className="size-5" />,
+      titleKey: "eventMode",
+      descKey: "eventDescription",
+      borderColor: "hover:border-amber-500",
+      iconBg: "bg-amber-500/10",
+      iconBorder: "border-amber-500/30",
+      iconText: "text-amber-600",
+    },
+    {
+      mode: "manual",
+      icon: <PenLine className="size-5" />,
+      titleKey: "manualMode",
+      descKey: "manualDescription",
+      borderColor: "hover:border-violet-500",
+      iconBg: "bg-violet-500/10",
+      iconBorder: "border-violet-500/30",
+      iconText: "text-violet-600",
+    },
+  ];
 
   // ---------------------------------------------------------------------------
   // Step 1: Mode selection
@@ -601,182 +325,41 @@ export function CreateBudgetDialog({
 
   const renderModeSelection = () => (
     <div className="animate-in fade-in-0 slide-in-from-right-4 duration-300">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Guided card */}
-        <button
-          type="button"
-          onClick={() => selectMode("guided")}
-          className={cn(
-            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
-            "hover:border-emerald-500",
-            mode === "guided"
-              ? "border-emerald-500 bg-emerald-500/5"
-              : "border-foreground/20"
-          )}
-        >
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
-            <Sparkles className="size-5" />
-          </div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">{t("guidedMode")}</h3>
-          <p className="text-sm text-muted-foreground mb-3">
-            {t("guidedDescription")}
-          </p>
-          <div className="w-full space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-emerald-500/20">
-                <div
-                  className="h-full bg-emerald-500 transition-all"
-                  style={{ width: "50%" }}
-                />
+      <p className="text-xs text-muted-foreground mb-3">
+        {t("canChangeLater")}
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {modeCards.map((card) => (
+          <button
+            key={card.mode}
+            type="button"
+            onClick={() => selectMode(card.mode)}
+            className={cn(
+              "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
+              card.borderColor,
+              mode === card.mode
+                ? "border-emerald-500 bg-emerald-500/5"
+                : "border-foreground/20"
+            )}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-none border-2",
+                  card.iconBorder,
+                  card.iconBg,
+                  card.iconText
+                )}
+              >
+                {card.icon}
               </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("necesidades")} 50%
-              </span>
+              <h3 className="font-medium text-sm sm:text-base">
+                {t(card.titleKey)}
+              </h3>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-blue-500/20">
-                <div
-                  className="h-full bg-blue-500 transition-all"
-                  style={{ width: "30%" }}
-                />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("deseos")} 30%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-amber-500/20">
-                <div
-                  className="h-full bg-amber-500 transition-all"
-                  style={{ width: "20%" }}
-                />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("ahorro")} 20%
-              </span>
-            </div>
-          </div>
-        </button>
-
-        {/* Aggressive card */}
-        <button
-          type="button"
-          onClick={() => selectMode("aggressive")}
-          className={cn(
-            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
-            "hover:border-emerald-500",
-            mode === "aggressive"
-              ? "border-emerald-500 bg-emerald-500/5"
-              : "border-foreground/20"
-          )}
-        >
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-orange-500/30 bg-orange-500/10 text-orange-600">
-            <TrendingUp className="size-5" />
-          </div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">{t("aggressiveMode")}</h3>
-          <p className="text-sm text-muted-foreground mb-3">
-            {t("aggressiveDescription")}
-          </p>
-          <div className="w-full space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-emerald-500/20">
-                <div className="h-full bg-emerald-500 transition-all" style={{ width: "70%" }} />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("necesidades")} 70%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-amber-500/20">
-                <div className="h-full bg-amber-500 transition-all" style={{ width: "20%" }} />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("ahorro")} 20%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-blue-500/20">
-                <div className="h-full bg-blue-500 transition-all" style={{ width: "10%" }} />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("deseos")} 10%
-              </span>
-            </div>
-          </div>
-        </button>
-
-        {/* Debt Payoff card */}
-        <button
-          type="button"
-          onClick={() => selectMode("debt-payoff")}
-          className={cn(
-            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
-            "hover:border-emerald-500",
-            mode === "debt-payoff"
-              ? "border-emerald-500 bg-emerald-500/5"
-              : "border-foreground/20"
-          )}
-        >
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-rose-500/30 bg-rose-500/10 text-rose-600">
-            <CreditCard className="size-5" />
-          </div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">{t("debtPayoffMode")}</h3>
-          <p className="text-sm text-muted-foreground mb-3">
-            {t("debtPayoffDescription")}
-          </p>
-          <div className="w-full space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-emerald-500/20">
-                <div className="h-full bg-emerald-500 transition-all" style={{ width: "60%" }} />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("necesidades")} 60%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-rose-500/20">
-                <div className="h-full bg-rose-500 transition-all" style={{ width: "20%" }} />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("deudas")} 20%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 flex-1 bg-amber-500/20">
-                <div className="h-full bg-amber-500 transition-all" style={{ width: "20%" }} />
-              </div>
-              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
-                {tCat("ahorro")} 20%
-              </span>
-            </div>
-          </div>
-        </button>
-
-        {/* Manual card */}
-        <button
-          type="button"
-          onClick={() => selectMode("manual")}
-          className={cn(
-            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
-            "hover:border-emerald-500",
-            mode === "manual"
-              ? "border-emerald-500 bg-emerald-500/5"
-              : "border-foreground/20"
-          )}
-        >
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-violet-500/30 bg-violet-500/10 text-violet-600">
-            <PenLine className="size-5" />
-          </div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">{t("manualMode")}</h3>
-          <p className="text-sm text-muted-foreground mb-3">
-            {t("manualDescription")}
-          </p>
-          <div className="flex h-[52px] w-full items-center justify-center rounded-none border-2 border-dashed border-muted-foreground/20">
-            <span className="text-[10px] text-muted-foreground">
-              {t("customCategories")}
-            </span>
-          </div>
-        </button>
+            <p className="text-xs text-muted-foreground">{t(card.descKey)}</p>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -820,7 +403,11 @@ export function CreateBudgetDialog({
               const formatted = formatInputValue(e.target.value);
               setIncomeDisplay(formatted);
               const num = parseFloat(formatted.replace(/,/g, ""));
-              setValue("monthly_income", isNaN(num) ? (undefined as unknown as number) : num, { shouldValidate: true });
+              setValue(
+                "monthly_income",
+                isNaN(num) ? (undefined as unknown as number) : num,
+                { shouldValidate: true }
+              );
             }}
           />
         </InputGroup>
@@ -843,18 +430,22 @@ export function CreateBudgetDialog({
               onValueChange={(val) => field.onChange(val)}
             >
               <SelectTrigger className="w-full">
-                {field.value ? (() => {
-                  const curr = CURRENCIES.find((c) => c.code === field.value);
-                  return curr ? (
-                    <span className="flex flex-1 text-left">
-                      {curr.symbol} {curr.code} - {curr.name}
-                    </span>
-                  ) : (
+                {field.value
+                  ? (() => {
+                      const curr = CURRENCIES.find(
+                        (c) => c.code === field.value
+                      );
+                      return curr ? (
+                        <span className="flex flex-1 text-left">
+                          {curr.symbol} {curr.code} - {curr.name}
+                        </span>
+                      ) : (
+                        <SelectValue placeholder={t("selectCurrency")} />
+                      );
+                    })()
+                  : (
                     <SelectValue placeholder={t("selectCurrency")} />
-                  );
-                })() : (
-                  <SelectValue placeholder={t("selectCurrency")} />
-                )}
+                  )}
               </SelectTrigger>
               <SelectContent>
                 {CURRENCIES.map((c) => (
@@ -902,7 +493,6 @@ export function CreateBudgetDialog({
                         } else {
                           setCustomPeriod(false);
                           field.onChange(opt.value);
-                          // When selecting one-time, reset cutoff day to 0
                           if (opt.value === 0) {
                             setValue("billing_cutoff_day", 0);
                           } else if (watch("billing_cutoff_day") === 0) {
@@ -934,10 +524,16 @@ export function CreateBudgetDialog({
                       type="text"
                       inputMode="numeric"
                       value={field.value}
-                      onChange={(e) => field.onChange(Number(e.target.value.replace(/[^\d]/g, "")) || 1)}
+                      onChange={(e) =>
+                        field.onChange(
+                          Number(e.target.value.replace(/[^\d]/g, "")) || 1
+                        )
+                      }
                       className="w-20"
                     />
-                    <span className="text-sm text-muted-foreground">{t("months")}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {t("months")}
+                    </span>
                   </div>
                 )}
               </>
@@ -946,11 +542,13 @@ export function CreateBudgetDialog({
         />
       </div>
 
-      {/* Billing cutoff day — hidden for one-time budgets */}
+      {/* Billing cutoff day -- hidden for one-time budgets */}
       {watchBillingPeriod !== 0 && (
         <div className="space-y-1.5">
           <Label>{t("billingCutoffDay")}</Label>
-          <p className="text-xs text-muted-foreground">{t("billingCutoffDayDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("billingCutoffDayDescription")}
+          </p>
           <Controller
             name="billing_cutoff_day"
             control={control}
@@ -980,33 +578,20 @@ export function CreateBudgetDialog({
   );
 
   // ---------------------------------------------------------------------------
-  // Step 3: Guided review
-  // ---------------------------------------------------------------------------
-
-  const renderGuidedReview = () => (
-    <div className="animate-in fade-in-0 slide-in-from-right-4 duration-300">
-      <GuidedCategoryReview
-        categories={guidedCategories}
-        onChange={setGuidedCategories}
-        income={watchIncome || 0}
-        currency={watchCurrency || "USD"}
-      />
-    </div>
-  );
-
-  // ---------------------------------------------------------------------------
   // Navigation footer
   // ---------------------------------------------------------------------------
 
   const renderFooter = () => {
     if (step === 1) return null;
 
-    const isLastStep =
-      (mode === "manual" && step === 2) || (isTemplateMode && step === 3);
-
     return (
       <div className="flex items-center justify-between pt-2">
-        <Button type="button" variant="ghost" onClick={handleBack} className="min-h-[44px]">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={handleBack}
+          className="min-h-[44px]"
+        >
           <ArrowLeft className="size-4 mr-1" />
           {tc("back")}
         </Button>
@@ -1020,15 +605,10 @@ export function CreateBudgetDialog({
               <Loader2 className="size-4 mr-1 animate-spin" />
               {t("creating")}
             </>
-          ) : isLastStep ? (
+          ) : (
             <>
               <Check className="size-4 mr-1" />
               {t("createBudget")}
-            </>
-          ) : (
-            <>
-              {tc("continue")}
-              <ArrowRight className="size-4 ml-1" />
             </>
           )}
         </Button>
@@ -1051,7 +631,6 @@ export function CreateBudgetDialog({
           <DialogDescription>
             {step === 1 && t("chooseSetup")}
             {step === 2 && t("enterDetails")}
-            {step === 3 && t("reviewAllocations")}
           </DialogDescription>
         </DialogHeader>
 
@@ -1060,7 +639,6 @@ export function CreateBudgetDialog({
         <form onSubmit={handleSubmit(onSubmit)}>
           {step === 1 && renderModeSelection()}
           {step === 2 && renderBudgetForm()}
-          {step === 3 && isTemplateMode && renderGuidedReview()}
           {createError && (
             <p className="text-xs text-destructive px-1 pt-1">{createError}</p>
           )}

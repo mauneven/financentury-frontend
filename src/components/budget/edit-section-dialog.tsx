@@ -94,6 +94,7 @@ function SectionImpactPreview({
   categories,
   newSectionPercent,
 }: SectionImpactPreviewProps) {
+  const t = useTranslations("section");
   const [expanded, setExpanded] = React.useState(true);
 
   if (categories.length === 0) return null;
@@ -124,7 +125,7 @@ function SectionImpactPreview({
             isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
           )}
         >
-          Impact preview
+          {t("impactPreview")}
         </span>
         {expanded ? (
           <ChevronDown className="size-3 text-muted-foreground" />

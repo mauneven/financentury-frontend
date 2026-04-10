@@ -21,24 +21,24 @@ interface SectionCardProps {
   sectionSummary: SectionSummary;
   currency: string;
   budgetId: string;
-  onSubcategoryClick?: (subcategoryId: string) => void;
+  onCategoryClick?: (categoryId: string) => void;
 }
 
 export function SectionCard({
   sectionSummary,
   currency,
   budgetId,
-  onSubcategoryClick,
+  onCategoryClick,
 }: SectionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [editSectionOpen, setEditSectionOpen] = useState(false);
-  const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const router = useRouter();
   const t = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.sectionActions");
   const tSection = useTranslations("section");
 
-  const { section, categories: subcategories, allocated_amount, total_spent } =
+  const { section, categories: sectionCategories, allocated_amount, total_spent } =
     sectionSummary;
 
   const remaining = allocated_amount - total_spent;
@@ -64,7 +64,7 @@ export function SectionCard({
                 {section.name}
               </h3>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                {subcategories.length} {subcategories.length === 1 ? "category" : "categories"}
+                {sectionCategories.length === 1 ? tSection("categoryCount", { count: String(sectionCategories.length) }) : tSection("categoryCountPlural", { count: String(sectionCategories.length) })}
               </p>
             </div>
           </div>
@@ -143,7 +143,7 @@ export function SectionCard({
                 {section.name}
               </h3>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                {subcategories.length} {subcategories.length === 1 ? "category" : "categories"}
+                {sectionCategories.length === 1 ? tSection("categoryCount", { count: String(sectionCategories.length) }) : tSection("categoryCountPlural", { count: String(sectionCategories.length) })}
               </p>
             </div>
           </div>
@@ -193,7 +193,7 @@ export function SectionCard({
           {/* Amount display - right side */}
           <div className="text-right">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-              Monto asignado
+              {tSection("allocationPercent")}
             </p>
             <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
               {formatCompact(allocated_amount, currency)}
@@ -250,7 +250,7 @@ export function SectionCard({
         >
           <div className="overflow-hidden">
             <div className="mt-5 border-t border-border pt-5 space-y-0">
-              {subcategories.map((sub, idx) => {
+              {sectionCategories.map((sub, idx) => {
                 const subPercentage = getPercentage(
                   sub.total_spent,
                   sub.allocated_amount
@@ -269,7 +269,7 @@ export function SectionCard({
                   >
                     <button
                       type="button"
-                      onClick={() => onSubcategoryClick?.(sub.category.id)}
+                      onClick={() => onCategoryClick?.(sub.category.id)}
                       className="flex w-full flex-col gap-2 text-left"
                     >
                       <div className="flex items-center justify-between">
@@ -324,7 +324,7 @@ export function SectionCard({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setEditingSubcategory(sub.category);
+                        setEditingCategory(sub.category);
                       }}
                       className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
                       aria-label={`Edit ${sub.category.name}`}
@@ -334,7 +334,7 @@ export function SectionCard({
                   </div>
                 );
               })}
-              {subcategories.length === 0 && (
+              {sectionCategories.length === 0 && (
                 <p className="py-3 text-center text-base text-muted-foreground font-medium">
                   {t("noSubcategories")}
                 </p>
@@ -347,19 +347,19 @@ export function SectionCard({
       {/* Edit dialogs */}
       <EditSectionDialog
         section={section}
-        categories={subcategories.map((s) => s.category)}
+        categories={sectionCategories.map((s) => s.category)}
         open={editSectionOpen}
         onOpenChange={setEditSectionOpen}
       />
-      {editingSubcategory && (
+      {editingCategory && (
         <EditCategoryDialog
           sectionId={section.id}
-          category={editingSubcategory}
+          category={editingCategory}
           parentSection={section}
-          siblingCategories={subcategories.map((s) => s.category)}
-          open={!!editingSubcategory}
+          siblingCategories={sectionCategories.map((s) => s.category)}
+          open={!!editingCategory}
           onOpenChange={(open) => {
-            if (!open) setEditingSubcategory(null);
+            if (!open) setEditingCategory(null);
           }}
         />
       )}

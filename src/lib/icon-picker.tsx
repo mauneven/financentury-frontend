@@ -33,6 +33,13 @@ import {
   Shield,
   Zap,
   Wifi,
+  CreditCard,
+  Bed,
+  Wine,
+  Sparkles,
+  Truck,
+  MapPin,
+  Scale,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -70,6 +77,13 @@ export const ICON_OPTIONS: { key: string; Icon: LucideIcon }[] = [
   { key: "shield", Icon: Shield },
   { key: "zap", Icon: Zap },
   { key: "wifi", Icon: Wifi },
+  { key: "credit-card", Icon: CreditCard },
+  { key: "bed", Icon: Bed },
+  { key: "wine", Icon: Wine },
+  { key: "sparkles", Icon: Sparkles },
+  { key: "truck", Icon: Truck },
+  { key: "map-pin", Icon: MapPin },
+  { key: "scale", Icon: Scale },
 ];
 
 const ICON_MAP = new Map(ICON_OPTIONS.map((o) => [o.key, o.Icon]));

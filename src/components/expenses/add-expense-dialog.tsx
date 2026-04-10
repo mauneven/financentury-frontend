@@ -17,6 +17,7 @@ import { useBudgetStore } from "@/store/budget-store";
 import { formatCurrency, getPercentage, getProgressTextColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { CategoryIcon } from "@/lib/icon-picker";
 
 import {
   Dialog,
@@ -56,7 +57,7 @@ interface AddExpenseDialogProps {
   budgetId: string;
   categories: Section[];
   currency: string;
-  preselectedSubcategoryId?: string;
+  preselectedCategoryId?: string;
 }
 
 function formatAmountDisplay(value: string): string {
@@ -82,7 +83,7 @@ export function AddExpenseDialog({
   budgetId,
   categories,
   currency,
-  preselectedSubcategoryId,
+  preselectedCategoryId,
 }: AddExpenseDialogProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
@@ -115,44 +116,44 @@ export function AddExpenseDialog({
     },
   });
 
-  const watchedSubcategoryId = watch("category_id");
+  const watchedCategoryId = watch("category_id");
   const watchedDate = watch("expense_date");
 
-  const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
+  const selectedSection = categories.find((c) => c.id === selectedCategoryId);
 
-  const subcategories = selectedCategory?.categories || [];
+  const sectionCategories = selectedSection?.categories || [];
 
-  const subcategorySummary = useMemo((): CategorySummary | null => {
-    if (!summary || !watchedSubcategoryId) return null;
-    for (const cat of summary.sections) {
-      for (const sub of cat.categories) {
-        if (sub.category.id === watchedSubcategoryId) {
-          return sub;
+  const categorySummary = useMemo((): CategorySummary | null => {
+    if (!summary || !watchedCategoryId) return null;
+    for (const sec of summary.sections) {
+      for (const cat of sec.categories) {
+        if (cat.category.id === watchedCategoryId) {
+          return cat;
         }
       }
     }
     return null;
-  }, [summary, watchedSubcategoryId]);
+  }, [summary, watchedCategoryId]);
 
-  // Auto-select category and subcategory when preselected
+  // Auto-select section and category when preselected
   useEffect(() => {
-    if (open && preselectedSubcategoryId) {
-      for (const cat of categories) {
-        const sub = cat.categories?.find((s) => s.id === preselectedSubcategoryId);
-        if (sub) {
-          setSelectedCategoryId(cat.id);
-          setValue("category_id", sub.id);
+    if (open && preselectedCategoryId) {
+      for (const sec of categories) {
+        const cat = sec.categories?.find((s) => s.id === preselectedCategoryId);
+        if (cat) {
+          setSelectedCategoryId(sec.id);
+          setValue("category_id", cat.id);
           break;
         }
       }
     }
-  }, [open, preselectedSubcategoryId, categories, setValue]);
+  }, [open, preselectedCategoryId, categories, setValue]);
 
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       reset({
-        category_id: preselectedSubcategoryId || "",
+        category_id: preselectedCategoryId || "",
         amount: 0,
         description: "",
         expense_date: format(new Date(), "yyyy-MM-dd"),
@@ -160,11 +161,11 @@ export function AddExpenseDialog({
       setAmountDisplay("");
       setIsSubmitting(false);
       setSubmitError(null);
-      if (!preselectedSubcategoryId) {
+      if (!preselectedCategoryId) {
         setSelectedCategoryId(null);
       }
     }
-  }, [open, reset, preselectedSubcategoryId]);
+  }, [open, reset, preselectedCategoryId]);
 
   const handleCategoryChange = (value: string | null) => {
     setSelectedCategoryId(value);
@@ -222,7 +223,7 @@ export function AddExpenseDialog({
               <SelectTrigger className="w-full">
                 {selectedCategoryId ? (
                   <span className="flex flex-1 items-center gap-1.5 text-left">
-                    <span>{categories.find((c) => c.id === selectedCategoryId)?.icon}</span>
+                    <CategoryIcon iconKey={categories.find((c) => c.id === selectedCategoryId)?.icon} className="size-4" />
                     {categories.find((c) => c.id === selectedCategoryId)?.name}
                   </span>
                 ) : (
@@ -232,7 +233,7 @@ export function AddExpenseDialog({
               <SelectContent>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
-                    <span className="mr-1.5">{cat.icon}</span>
+                    <CategoryIcon iconKey={cat.icon} className="mr-1.5 inline size-4" />
                     {cat.name}
                   </SelectItem>
                 ))}
@@ -244,18 +245,18 @@ export function AddExpenseDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">{t("subcategory")}</Label>
             <Select
-              value={watchedSubcategoryId || null}
+              value={watchedCategoryId || null}
               onValueChange={(val) => {
                 if (val) setValue("category_id", val, { shouldValidate: true });
               }}
               disabled={!selectedCategoryId}
             >
               <SelectTrigger className={cn("w-full", !selectedCategoryId && "opacity-50")}>
-                {watchedSubcategoryId ? (() => {
-                  const sub = subcategories.find((s) => s.id === watchedSubcategoryId);
+                {watchedCategoryId ? (() => {
+                  const sub = sectionCategories.find((s) => s.id === watchedCategoryId);
                   return sub ? (
                     <span className="flex flex-1 items-center gap-1.5 text-left">
-                      <span>{sub.icon}</span>
+                      <CategoryIcon iconKey={sub.icon} className="size-4" />
                       {sub.name}
                     </span>
                   ) : (
@@ -266,9 +267,9 @@ export function AddExpenseDialog({
                 )}
               </SelectTrigger>
               <SelectContent>
-                {subcategories.map((sub) => (
+                {sectionCategories.map((sub) => (
                   <SelectItem key={sub.id} value={sub.id}>
-                    <span className="mr-1.5">{sub.icon}</span>
+                    <CategoryIcon iconKey={sub.icon} className="mr-1.5 inline size-4" />
                     {sub.name}
                   </SelectItem>
                 ))}
@@ -283,7 +284,7 @@ export function AddExpenseDialog({
           </div>
 
           {/* Remaining Budget Info */}
-          {subcategorySummary && (
+          {categorySummary && (
             <div className="border-2 border-foreground bg-muted/30 px-4 py-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{t("remainingBudget")}</span>
@@ -291,12 +292,12 @@ export function AddExpenseDialog({
                   className={cn(
                     "font-mono font-medium",
                     getProgressTextColor(
-                      getPercentage(subcategorySummary.total_spent, subcategorySummary.allocated_amount)
+                      getPercentage(categorySummary.total_spent, categorySummary.allocated_amount)
                     )
                   )}
                 >
                   {formatCurrency(
-                    Math.max(0, subcategorySummary.allocated_amount - subcategorySummary.total_spent),
+                    Math.max(0, categorySummary.allocated_amount - categorySummary.total_spent),
                     currency
                   )}
                 </span>
@@ -304,8 +305,8 @@ export function AddExpenseDialog({
               <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                   {t("spentOf", {
-                    spent: formatCurrency(subcategorySummary.total_spent, currency),
-                    total: formatCurrency(subcategorySummary.allocated_amount, currency),
+                    spent: formatCurrency(categorySummary.total_spent, currency),
+                    total: formatCurrency(categorySummary.allocated_amount, currency),
                   })}
                 </span>
               </div>

@@ -55,24 +55,24 @@ type SectionFormValues = z.infer<typeof sectionSchema>;
 // Category inline editor
 // ---------------------------------------------------------------------------
 
-interface SubcategoryDraft {
+interface CategoryDraft {
   id: string;
   name: string;
   allocation_percent: number;
   icon: string;
 }
 
-function SubcategoryEditor({
-  subcategories,
+function CategoryEditor({
+  categories,
   onChange,
 }: {
-  subcategories: SubcategoryDraft[];
-  onChange: (updated: SubcategoryDraft[]) => void;
+  categories: CategoryDraft[];
+  onChange: (updated: CategoryDraft[]) => void;
 }) {
   const t = useTranslations("section");
-  const addCategoryDraft = () => {
+  const addCategory = () => {
     onChange([
-      ...subcategories,
+      ...categories,
       {
         id: crypto.randomUUID(),
         name: "",
@@ -82,17 +82,17 @@ function SubcategoryEditor({
     ]);
   };
 
-  const removeCategoryDraft = (id: string) => {
-    onChange(subcategories.filter((s) => s.id !== id));
+  const removeCategory = (id: string) => {
+    onChange(categories.filter((s) => s.id !== id));
   };
 
-  const updateCategoryDraft = (
+  const updateCategory = (
     id: string,
-    field: keyof SubcategoryDraft,
+    field: keyof CategoryDraft,
     value: string | number
   ) => {
     onChange(
-      subcategories.map((s) => (s.id === id ? { ...s, [field]: value } : s))
+      categories.map((s) => (s.id === id ? { ...s, [field]: value } : s))
     );
   };
 
@@ -106,16 +106,16 @@ function SubcategoryEditor({
           type="button"
           variant="ghost"
           size="xs"
-          onClick={addCategoryDraft}
+          onClick={addCategory}
         >
           <PlusCircle className="size-3 mr-1" />
           {t("add")}
         </Button>
       </div>
 
-      {subcategories.length > 0 && (
+      {categories.length > 0 && (
         <div className="space-y-2">
-          {subcategories.map((sub) => (
+          {categories.map((sub) => (
             <div
               key={sub.id}
               className="flex items-center gap-2 border-2 border-foreground bg-card/50 p-2"
@@ -125,7 +125,7 @@ function SubcategoryEditor({
                 placeholder={t("subcategoryName")}
                 value={sub.name}
                 onChange={(e) =>
-                  updateCategoryDraft(sub.id, "name", e.target.value)
+                  updateCategory(sub.id, "name", e.target.value)
                 }
                 className="h-7 text-xs flex-1"
               />
@@ -135,7 +135,7 @@ function SubcategoryEditor({
                   inputMode="numeric"
                   value={sub.allocation_percent}
                   onChange={(e) =>
-                    updateCategoryDraft(
+                    updateCategory(
                       sub.id,
                       "allocation_percent",
                       Number(e.target.value.replace(/[^\d.]/g, "")) || 0
@@ -151,7 +151,7 @@ function SubcategoryEditor({
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                onClick={() => removeCategoryDraft(sub.id)}
+                onClick={() => removeCategory(sub.id)}
                 className="text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="size-3" />
@@ -186,11 +186,11 @@ export function AddSectionDialog({
   const t = useTranslations("section");
   const tc = useTranslations("common");
   const addSection = useBudgetStore((s) => s.addSection);
-  const addSubcategoryAction = useBudgetStore((s) => s.addCategory);
+  const addCategoryAction = useBudgetStore((s) => s.addCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [subcategories, setSubcategories] = React.useState<SubcategoryDraft[]>(
+  const [categories, setCategories] = React.useState<CategoryDraft[]>(
     []
   );
 
@@ -217,7 +217,7 @@ export function AddSectionDialog({
     if (!open) {
       const timeout = setTimeout(() => {
         reset({ name: "", allocation_percent: 0, icon: "🏠" });
-        setSubcategories([]);
+        setCategories([]);
         setIsSubmitting(false);
       }, 200);
       return () => clearTimeout(timeout);
@@ -233,13 +233,13 @@ export function AddSectionDialog({
         icon: values.icon,
       });
 
-      // Create subcategories
-      const validSubs = subcategories.filter((s) => s.name.trim().length > 0);
-      for (const sub of validSubs) {
-        await addSubcategoryAction(section.id, {
-          name: sub.name,
-          allocation_percent: sub.allocation_percent,
-          icon: sub.icon,
+      // Create categories
+      const validCats = categories.filter((s) => s.name.trim().length > 0);
+      for (const cat of validCats) {
+        await addCategoryAction(section.id, {
+          name: cat.name,
+          allocation_percent: cat.allocation_percent,
+          icon: cat.icon,
         });
       }
 
@@ -314,10 +314,10 @@ export function AddSectionDialog({
 
           <Separator />
 
-          {/* Subcategories */}
-          <SubcategoryEditor
-            subcategories={subcategories}
-            onChange={setSubcategories}
+          {/* Categories */}
+          <CategoryEditor
+            categories={categories}
+            onChange={setCategories}
           />
 
           {/* Submit */}

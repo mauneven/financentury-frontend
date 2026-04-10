@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +17,7 @@ import { CURRENCIES } from "@/types/budget";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { CategoryIcon } from "@/lib/icon-picker";
 
 import {
   Dialog,
@@ -116,28 +117,28 @@ export function EditExpenseDialog({
     resolver: zodResolver(expenseSchema),
   });
 
-  const watchedSubcategoryId = watch("category_id");
+  const watchedCategoryId = watch("category_id");
   const watchedDate = watch("expense_date");
 
-  const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
+  const selectedSection = categories.find((c) => c.id === selectedCategoryId);
 
-  const subcategories = selectedCategory?.categories || [];
+  const sectionCategories = selectedSection?.categories || [];
 
-  // Find which category owns the expense's subcategory
-  const findCategoryForSubcategory = (subcategoryId: string): string | null => {
-    for (const cat of categories) {
-      if (cat.categories?.some((s) => s.id === subcategoryId)) {
-        return cat.id;
+  // Find which section owns the expense's category
+  const findSectionForCategory = useCallback((categoryId: string): string | null => {
+    for (const sec of categories) {
+      if (sec.categories?.some((s) => s.id === categoryId)) {
+        return sec.id;
       }
     }
     return null;
-  };
+  }, [categories]);
 
   // Populate form when dialog opens
   useEffect(() => {
     if (open && expense) {
-      const catId = findCategoryForSubcategory(expense.category_id);
-      setSelectedCategoryId(catId);
+      const sectionId = findSectionForCategory(expense.category_id);
+      setSelectedCategoryId(sectionId);
       setAmountDisplay(numberToDisplay(expense.amount));
       setShowDeleteConfirm(false);
 
@@ -148,7 +149,7 @@ export function EditExpenseDialog({
         expense_date: expense.expense_date,
       });
     }
-  }, [open, expense, reset, findCategoryForSubcategory]);
+  }, [open, expense, reset, findSectionForCategory]);
 
   const handleCategoryChange = (value: string | null) => {
     setSelectedCategoryId(value);
@@ -215,7 +216,7 @@ export function EditExpenseDialog({
               <SelectTrigger className="w-full">
                 {selectedCategoryId ? (
                   <span className="flex flex-1 items-center gap-1.5 text-left">
-                    <span>{categories.find((c) => c.id === selectedCategoryId)?.icon}</span>
+                    <CategoryIcon iconKey={categories.find((c) => c.id === selectedCategoryId)?.icon} className="size-4" />
                     {categories.find((c) => c.id === selectedCategoryId)?.name}
                   </span>
                 ) : (
@@ -225,7 +226,7 @@ export function EditExpenseDialog({
               <SelectContent>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
-                    <span className="mr-1.5">{cat.icon}</span>
+                    <CategoryIcon iconKey={cat.icon} className="mr-1.5 inline size-4" />
                     {cat.name}
                   </SelectItem>
                 ))}
@@ -237,18 +238,18 @@ export function EditExpenseDialog({
           <div className="space-y-2">
             <Label>{t("subcategory")}</Label>
             <Select
-              value={watchedSubcategoryId || null}
+              value={watchedCategoryId || null}
               onValueChange={(val) => {
                 if (val) setValue("category_id", val, { shouldValidate: true });
               }}
               disabled={!selectedCategoryId}
             >
               <SelectTrigger className={cn("w-full", !selectedCategoryId && "opacity-50")}>
-                {watchedSubcategoryId ? (() => {
-                  const sub = subcategories.find((s) => s.id === watchedSubcategoryId);
+                {watchedCategoryId ? (() => {
+                  const sub = sectionCategories.find((s) => s.id === watchedCategoryId);
                   return sub ? (
                     <span className="flex flex-1 items-center gap-1.5 text-left">
-                      <span>{sub.icon}</span>
+                      <CategoryIcon iconKey={sub.icon} className="size-4" />
                       {sub.name}
                     </span>
                   ) : (
@@ -259,9 +260,9 @@ export function EditExpenseDialog({
                 )}
               </SelectTrigger>
               <SelectContent>
-                {subcategories.map((sub) => (
+                {sectionCategories.map((sub) => (
                   <SelectItem key={sub.id} value={sub.id}>
-                    <span className="mr-1.5">{sub.icon}</span>
+                    <CategoryIcon iconKey={sub.icon} className="mr-1.5 inline size-4" />
                     {sub.name}
                   </SelectItem>
                 ))}

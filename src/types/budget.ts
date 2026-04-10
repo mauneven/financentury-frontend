@@ -1,3 +1,13 @@
+export type BudgetMode =
+  | "guided"
+  | "aggressive"
+  | "balanced"
+  | "debt-free"
+  | "debt-payoff"
+  | "travel"
+  | "event"
+  | "manual";
+
 export interface Budget {
   id: string;
   user_id: string;
@@ -6,7 +16,7 @@ export interface Budget {
   currency: string;
   billing_period_months: number;
   billing_cutoff_day: number;
-  mode: "guided" | "aggressive" | "debt-payoff" | "manual";
+  mode: BudgetMode;
   created_at: string;
   updated_at: string;
 }
@@ -100,7 +110,7 @@ export interface CreateBudgetInput {
   currency: string;
   billing_period_months: number;
   billing_cutoff_day?: number;
-  mode: "guided" | "aggressive" | "debt-payoff" | "manual";
+  mode: BudgetMode;
 }
 
 export interface CreateSectionInput {
@@ -144,16 +154,16 @@ export const BILLING_PERIODS = [
   { value: 12, labelKey: "annual" },
 ] as const;
 
-export const GUIDED_SECTIONS = [
+export const BALANCED_SECTIONS = [
   {
     name: "Necesidades",
     allocation_percent: 50,
     icon: "home",
     categories: [
-      { name: "Vivienda", allocation_percent: 56, icon: "home" },
-      { name: "Comida", allocation_percent: 24, icon: "utensils" },
-      { name: "Transporte", allocation_percent: 12, icon: "car" },
-      { name: "Servicios", allocation_percent: 8, icon: "lightbulb" },
+      { name: "Vivienda", allocation_percent: 45, icon: "home" },
+      { name: "Comida", allocation_percent: 25, icon: "utensils" },
+      { name: "Transporte", allocation_percent: 18, icon: "car" },
+      { name: "Servicios", allocation_percent: 12, icon: "lightbulb" },
     ],
   },
   {
@@ -161,33 +171,49 @@ export const GUIDED_SECTIONS = [
     allocation_percent: 30,
     icon: "party",
     categories: [
-      { name: "Salidas", allocation_percent: 33, icon: "party" },
-      { name: "Entretenimiento", allocation_percent: 17, icon: "clapperboard" },
-      { name: "Ropa", allocation_percent: 23, icon: "shirt" },
-      { name: "Viajes", allocation_percent: 27, icon: "plane" },
+      { name: "Salidas", allocation_percent: 50, icon: "party" },
+      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
+    ],
+  },
+  {
+    name: "Deudas",
+    allocation_percent: 10,
+    icon: "credit-card",
+    categories: [
+      { name: "Tarjetas", allocation_percent: 50, icon: "credit-card" },
+      { name: "Pr\u00e9stamos", allocation_percent: 50, icon: "landmark" },
     ],
   },
   {
     name: "Ahorro",
-    allocation_percent: 20,
+    allocation_percent: 10,
     icon: "coins",
     categories: [
-      { name: "Fondo de emergencia", allocation_percent: 40, icon: "landmark" },
-      { name: "Inversi\u00f3n", allocation_percent: 60, icon: "trending" },
+      { name: "Fondo de emergencia", allocation_percent: 50, icon: "landmark" },
+      { name: "Inversi\u00f3n", allocation_percent: 50, icon: "trending" },
     ],
   },
 ] as const;
 
-export const AGGRESSIVE_SECTIONS = [
+export const DEBT_FREE_SECTIONS = [
   {
     name: "Necesidades",
-    allocation_percent: 70,
+    allocation_percent: 50,
     icon: "home",
     categories: [
       { name: "Vivienda", allocation_percent: 45, icon: "home" },
       { name: "Comida", allocation_percent: 25, icon: "utensils" },
       { name: "Transporte", allocation_percent: 18, icon: "car" },
       { name: "Servicios", allocation_percent: 12, icon: "lightbulb" },
+    ],
+  },
+  {
+    name: "Deseos",
+    allocation_percent: 30,
+    icon: "party",
+    categories: [
+      { name: "Salidas", allocation_percent: 50, icon: "party" },
+      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
     ],
   },
   {
@@ -199,21 +225,12 @@ export const AGGRESSIVE_SECTIONS = [
       { name: "Inversi\u00f3n", allocation_percent: 50, icon: "trending" },
     ],
   },
-  {
-    name: "Deseos",
-    allocation_percent: 10,
-    icon: "party",
-    categories: [
-      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
-      { name: "Salidas", allocation_percent: 50, icon: "party" },
-    ],
-  },
 ] as const;
 
 export const DEBT_PAYOFF_SECTIONS = [
   {
     name: "Necesidades",
-    allocation_percent: 60,
+    allocation_percent: 50,
     icon: "home",
     categories: [
       { name: "Vivienda", allocation_percent: 45, icon: "home" },
@@ -223,22 +240,84 @@ export const DEBT_PAYOFF_SECTIONS = [
     ],
   },
   {
-    name: "Deudas",
+    name: "Deseos",
     allocation_percent: 20,
-    icon: "credit-card",
+    icon: "party",
     categories: [
-      { name: "Tarjetas de cr\u00e9dito", allocation_percent: 50, icon: "credit-card" },
-      { name: "Pr\u00e9stamos", allocation_percent: 50, icon: "landmark" },
+      { name: "Salidas", allocation_percent: 50, icon: "party" },
+      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
     ],
   },
   {
-    name: "Ahorro/Deseos",
-    allocation_percent: 20,
-    icon: "coins",
+    name: "Deuda",
+    allocation_percent: 30,
+    icon: "credit-card",
     categories: [
-      { name: "Fondo de emergencia", allocation_percent: 40, icon: "landmark" },
-      { name: "Entretenimiento", allocation_percent: 30, icon: "clapperboard" },
-      { name: "Salidas", allocation_percent: 30, icon: "party" },
+      { name: "Tarjetas", allocation_percent: 50, icon: "credit-card" },
+      { name: "Pr\u00e9stamos", allocation_percent: 50, icon: "landmark" },
     ],
   },
 ] as const;
+
+export const TRAVEL_SECTIONS = [
+  {
+    name: "Vuelos",
+    allocation_percent: 30,
+    icon: "plane",
+    categories: [
+      { name: "Vuelos", allocation_percent: 100, icon: "plane" },
+    ],
+  },
+  {
+    name: "Hospedaje",
+    allocation_percent: 30,
+    icon: "bed",
+    categories: [
+      { name: "Hospedaje", allocation_percent: 100, icon: "bed" },
+    ],
+  },
+  {
+    name: "Salidas",
+    allocation_percent: 40,
+    icon: "party",
+    categories: [
+      { name: "Comida", allocation_percent: 40, icon: "utensils" },
+      { name: "Actividades", allocation_percent: 35, icon: "map-pin" },
+      { name: "Transporte local", allocation_percent: 25, icon: "car" },
+    ],
+  },
+] as const;
+
+export const EVENT_SECTIONS = [
+  {
+    name: "Comida",
+    allocation_percent: 50,
+    icon: "utensils",
+    categories: [
+      { name: "Comida", allocation_percent: 100, icon: "utensils" },
+    ],
+  },
+  {
+    name: "Bebidas",
+    allocation_percent: 30,
+    icon: "wine",
+    categories: [
+      { name: "Bebidas", allocation_percent: 100, icon: "wine" },
+    ],
+  },
+  {
+    name: "Gesti\u00f3n",
+    allocation_percent: 20,
+    icon: "settings",
+    categories: [
+      { name: "Decoraci\u00f3n", allocation_percent: 40, icon: "sparkles" },
+      { name: "Log\u00edstica", allocation_percent: 60, icon: "truck" },
+    ],
+  },
+] as const;
+
+/** @deprecated Use BALANCED_SECTIONS instead. Kept for legacy budgets using mode "guided". */
+export const GUIDED_SECTIONS = BALANCED_SECTIONS;
+
+/** @deprecated Use DEBT_FREE_SECTIONS instead. Kept for legacy budgets using mode "aggressive". */
+export const AGGRESSIVE_SECTIONS = DEBT_FREE_SECTIONS;

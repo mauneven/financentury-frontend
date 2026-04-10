@@ -76,19 +76,19 @@ export default function HomePage() {
                     {t("yourBudgets")}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1.5">
-                    {budgets.length === 1
-                      ? t("budgetCount", { count: budgets.length })
-                      : t("budgetCountPlural", { count: budgets.length })}
+                    {budgets.length} / 7 {t("budgetCountLabel")}
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCreateBudget(true)}
-                  className="gap-1.5 h-10 min-w-[44px]"
-                >
-                  <Plus className="size-4" />
-                  <span className="hidden sm:inline">{t("newBudget")}</span>
-                </Button>
+                {budgets.length < 7 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCreateBudget(true)}
+                    className="gap-1.5 h-10 min-w-[44px]"
+                  >
+                    <Plus className="size-4" />
+                    <span className="hidden sm:inline">{t("newBudget")}</span>
+                  </Button>
+                )}
               </div>
 
               <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">

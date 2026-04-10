@@ -61,7 +61,7 @@ export default function SectionReportsPage() {
   const percentage = getPercentage(total_spent, allocated_amount);
   const progressColor = getProgressColor(percentage);
   const textColor = getProgressTextColor(percentage);
-  const categoryIds = categories.map((c) => c.category.id);
+  const categoryIds = [params.sectionId];
 
   return (
     <div className="space-y-6">
@@ -312,7 +312,7 @@ export default function SectionReportsPage() {
           categories: s.categories.map((c) => c.category),
         }))}
         currency={currency}
-        preselectedSubcategoryId={categories.length > 0 ? categories[0].category.id : undefined}
+        preselectedCategoryId={categories.length > 0 ? categories[0].category.id : undefined}
       />
     </div>
   );

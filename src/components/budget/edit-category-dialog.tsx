@@ -97,9 +97,10 @@ function CategoryImpactPreview({
   newAllocationPercent,
   originalAllocationPercent,
 }: CategoryImpactPreviewProps) {
+  const t = useTranslations("section");
   const [expanded, setExpanded] = React.useState(true);
 
-  // siblings = all subcategories except the one being edited
+  // siblings = all categories except the one being edited
   const siblings = siblingCategories.filter((s) => s.id !== currentCategoryId);
   const siblingsTotal = siblings.reduce((sum, s) => sum + s.allocation_percent, 0);
   const newTotal = siblingsTotal + newAllocationPercent;
@@ -128,7 +129,7 @@ function CategoryImpactPreview({
             isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
           )}
         >
-          Impact preview
+          {t("impactPreview")}
         </span>
         {expanded ? (
           <ChevronDown className="size-3 text-muted-foreground" />
