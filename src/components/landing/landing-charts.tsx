@@ -105,16 +105,16 @@ const PROFILES: FinancialProfile[] = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Housing: "#6366f1",
-  Food: "#f43f5e",
-  Transport: "#f97316",
-  Utilities: "#14b8a6",
-  Entertainment: "#eab308",
-  Dining: "#22c55e",
-  Shopping: "#ec4899",
-  "Emergency Fund": "#3b82f6",
-  Investment: "#6366f1",
-  Debt: "#f43f5e",
+  catHousing: "#6366f1",
+  catFood: "#f43f5e",
+  catTransport: "#f97316",
+  catUtilities: "#14b8a6",
+  catEntertainment: "#eab308",
+  catDining: "#22c55e",
+  catShopping: "#ec4899",
+  catEmergencyFund: "#3b82f6",
+  catInvestment: "#6366f1",
+  catDebt: "#f43f5e",
 };
 
 const TOOLTIP_STYLE: React.CSSProperties = {
@@ -235,7 +235,7 @@ function generateCategoryData(
   // Needs breakdown (housing, food, transport, utilities)
   const needsTotal = income * (profile.needs / 100);
   const needsSplit = [0.4, 0.25, 0.2, 0.15]; // housing, food, transport, utilities
-  const needsLabels = ["Housing", "Food", "Transport", "Utilities"];
+  const needsLabels = ["catHousing", "catFood", "catTransport", "catUtilities"];
   needsSplit.forEach((pct, i) => {
     const val = needsTotal * pct * (0.9 + rand() * 0.2);
     slices.push({
@@ -248,7 +248,7 @@ function generateCategoryData(
   // Wants breakdown (entertainment, dining, shopping)
   const wantsTotal = income * (profile.wants / 100);
   const wantsSplit = [0.35, 0.35, 0.3];
-  const wantsLabels = ["Entertainment", "Dining", "Shopping"];
+  const wantsLabels = ["catEntertainment", "catDining", "catShopping"];
   wantsSplit.forEach((pct, i) => {
     const val = wantsTotal * pct * (0.85 + rand() * 0.3);
     slices.push({
@@ -264,8 +264,8 @@ function generateCategoryData(
     const savingsSplit = profile.savings >= 20 ? [0.5, 0.5] : [1];
     const savingsLabels =
       profile.savings >= 20
-        ? ["Emergency Fund", "Investment"]
-        : ["Emergency Fund"];
+        ? ["catEmergencyFund", "catInvestment"]
+        : ["catEmergencyFund"];
     savingsSplit.forEach((pct, i) => {
       slices.push({
         name: savingsLabels[i],
@@ -278,9 +278,9 @@ function generateCategoryData(
   // Debt
   if (profile.debt > 0) {
     slices.push({
-      name: "Debt",
+      name: "catDebt",
       value: Math.round(income * (profile.debt / 100)),
-      color: CATEGORY_COLORS["Debt"],
+      color: CATEGORY_COLORS["catDebt"],
     });
   }
 
@@ -557,7 +557,7 @@ export function LandingCharts() {
                     itemStyle={{ color: "var(--foreground)" }}
                     formatter={(value, name) => [
                       formatAmount(Number(value), currency),
-                      String(name),
+                      tLanding(String(name)),
                     ]}
                   />
                 </PieChart>
@@ -585,7 +585,7 @@ export function LandingCharts() {
                     style={{ backgroundColor: entry.color }}
                   />
                   <span className="truncate text-xs text-muted-foreground">
-                    {entry.name}
+                    {tLanding(entry.name)}
                   </span>
                   <span className="ml-auto text-xs font-semibold font-mono tabular-nums text-foreground">
                     {formatAmount(entry.value, currency)}

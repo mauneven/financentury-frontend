@@ -17,6 +17,8 @@ import {
 import { AuthModal } from "@/components/auth/auth-modal";
 import { LandingCharts } from "@/components/landing/landing-charts";
 import { Footer } from "@/components/layout/footer";
+import { ThemeToggle } from "@/components/layout/user-controls";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useTranslations } from "@/i18n/client";
 
 const FEATURES = [
@@ -79,12 +81,16 @@ export default function LandingPage() {
               Financentury
             </span>
           </div>
-          <button
-            onClick={() => setAuthOpen(true)}
-            className="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
-          >
-            {t("letsStart")}
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LanguageSwitcher />
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+            >
+              {t("letsStart")}
+            </button>
+          </div>
         </div>
       </nav>
 

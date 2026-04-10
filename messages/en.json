@@ -25,6 +25,7 @@
     "quarterly": "Quarterly",
     "semiAnnual": "Semi-annual",
     "annual": "Annual",
+    "oneTime": "One-time",
     "custom": "Custom",
     "toggleSidebar": "Toggle sidebar",
     "navigation": "Navigation"
@@ -93,7 +94,12 @@
     "customCategories": "Your custom categories",
     "saveChanges": "Save Changes",
     "deleteDescription": "Deleting a budget removes all associated sections, categories, and expenses. This action cannot be undone.",
-    "months": "months"
+    "months": "months",
+    "oneTimeDescription": "No billing cycle \u2014 all expenses count toward the total",
+    "aggressiveMode": "Aggressive (70/20/10)",
+    "aggressiveDescription": "Maximize savings by limiting wants to just 10%",
+    "debtPayoffMode": "Debt Payoff (60/20/20)",
+    "debtPayoffDescription": "Focused on paying down debt while covering essentials"
   },
   "budgetCard": {
     "perMonth": "/mo",
@@ -219,7 +225,8 @@
     "ropa": "Clothing",
     "viajes": "Travel",
     "fondoEmergencia": "Emergency Fund",
-    "inversion": "Investments"
+    "inversion": "Investments",
+    "deudas": "Debts"
   },
   "bottomNav": {
     "budgets": "Budgets",
@@ -306,7 +313,17 @@
     "step4Desc": "See trends, category breakdowns, and budget usage metrics in real time.",
     "ctaTitle": "Ready to take control?",
     "ctaSubtitle": "Manage your finances properly. Give yourself the chance to organize your economy.",
-    "used": "used"
+    "used": "used",
+    "catHousing": "Housing",
+    "catFood": "Food",
+    "catTransport": "Transport",
+    "catUtilities": "Utilities",
+    "catEntertainment": "Entertainment",
+    "catDining": "Dining Out",
+    "catShopping": "Shopping",
+    "catEmergencyFund": "Emergency Fund",
+    "catInvestment": "Investment",
+    "catDebt": "Debt"
   },
   "account": {
     "title": "Account",

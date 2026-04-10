@@ -12,11 +12,19 @@ import {
   ArrowLeft,
   Check,
   Loader2,
+  TrendingUp,
+  CreditCard,
 } from "lucide-react";
 
 import type { Budget } from "@/types/budget";
-import { CURRENCIES, BILLING_PERIODS, GUIDED_SECTIONS } from "@/types/budget";
-import { detectCurrency, formatCurrency } from "@/lib/format";
+import {
+  CURRENCIES,
+  BILLING_PERIODS,
+  GUIDED_SECTIONS,
+  AGGRESSIVE_SECTIONS,
+  DEBT_PAYOFF_SECTIONS,
+} from "@/types/budget";
+import { detectCurrency, formatCurrency, formatCompact } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/lib/icon-picker";
@@ -41,6 +49,13 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
@@ -60,8 +75,8 @@ const budgetFormSchema = z.object({
     .number({ message: "Income is required" })
     .positive("Income must be greater than 0"),
   currency: z.string().min(1, "Currency is required"),
-  billing_period_months: z.number().int().min(1).max(12),
-  billing_cutoff_day: z.number().int().min(1).max(31),
+  billing_period_months: z.number().int().min(0).max(12),
+  billing_cutoff_day: z.number().int().min(0).max(31),
 });
 
 type BudgetFormValues = z.infer<typeof budgetFormSchema>;
@@ -210,11 +225,92 @@ function GuidedCategoryReview({
     onChange(updated);
   };
 
+  const SECTION_COLORS = ["#6366f1", "#f97316", "#14b8a6", "#f43f5e", "#eab308"];
+
+  const pieData = categories.map((cat, i) => ({
+    name: cat.name,
+    value: cat.allocation_percent,
+    amount: (income * cat.allocation_percent) / 100,
+    color: SECTION_COLORS[i % SECTION_COLORS.length],
+  }));
+
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
         {t("guidelinesNote")}
       </p>
+
+      {/* Donut chart preview */}
+      <div className="border-2 border-foreground bg-card p-4">
+        <div className="relative h-48 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius="55%"
+                outerRadius="80%"
+                paddingAngle={1}
+                dataKey="value"
+                strokeWidth={2}
+                stroke="var(--background)"
+                isAnimationActive={false}
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={index} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "var(--card)",
+                  border: "2px solid var(--foreground)",
+                  borderRadius: "0",
+                  fontSize: "0.75rem",
+                  fontFamily: "monospace",
+                  boxShadow: "4px 4px 0px var(--foreground)",
+                  color: "var(--foreground)",
+                }}
+                itemStyle={{ color: "var(--foreground)" }}
+                formatter={(_value, name, props) => [
+                  formatCompact(
+                    (props as unknown as { payload: { amount: number } }).payload
+                      .amount,
+                    currency
+                  ),
+                  String(name),
+                ]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Center text */}
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-base font-bold font-mono tabular-nums text-foreground">
+              {formatCompact(income, currency)}
+            </p>
+            <p className="text-xs font-semibold font-mono tabular-nums text-muted-foreground">
+              {totalPercent}%
+            </p>
+          </div>
+        </div>
+        {/* Legend */}
+        <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
+          {pieData.map((entry) => (
+            <div key={entry.name} className="flex items-center gap-1.5">
+              <div
+                className="h-2.5 w-2.5 shrink-0"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-xs text-muted-foreground">
+                {entry.name}
+              </span>
+              <span className="text-xs font-semibold font-mono tabular-nums text-foreground">
+                {entry.value}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="space-y-3">
         {categories.map((cat, catIdx) => {
@@ -326,7 +422,7 @@ export function CreateBudgetDialog({
 
   // Step & mode state
   const [step, setStep] = React.useState(1);
-  const [mode, setMode] = React.useState<"guided" | "manual" | null>(null);
+  const [mode, setMode] = React.useState<"guided" | "aggressive" | "debt-payoff" | "manual" | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
   const [customPeriod, setCustomPeriod] = React.useState(false);
@@ -384,9 +480,13 @@ export function CreateBudgetDialog({
 
   const watchCurrency = watch("currency");
   const watchIncome = watch("monthly_income");
+  const watchBillingPeriod = watch("billing_period_months");
+
+  // Whether the current mode uses a guided template (has a review step).
+  const isTemplateMode = mode === "guided" || mode === "aggressive" || mode === "debt-payoff";
 
   // Total steps
-  const totalSteps = mode === "guided" ? 3 : 2;
+  const totalSteps = isTemplateMode ? 3 : 2;
 
   // Currency symbol
   const currencyInfo = CURRENCIES.find((c) => c.code === watchCurrency);
@@ -427,9 +527,36 @@ export function CreateBudgetDialog({
     }
   }, [open, reset, detectedCurrency]);
 
+  // Helper: get sections for a given template mode.
+  const getSectionsForMode = (m: string) => {
+    switch (m) {
+      case "aggressive":
+        return AGGRESSIVE_SECTIONS;
+      case "debt-payoff":
+        return DEBT_PAYOFF_SECTIONS;
+      default:
+        return GUIDED_SECTIONS;
+    }
+  };
+
   // Handlers
-  const selectMode = (m: "guided" | "manual") => {
+  const selectMode = (m: "guided" | "aggressive" | "debt-payoff" | "manual") => {
     setMode(m);
+    if (m !== "manual") {
+      const sections = getSectionsForMode(m);
+      setGuidedCategories(
+        sections.map((c) => ({
+          name: c.name,
+          allocation_percent: c.allocation_percent,
+          icon: c.icon,
+          categories: c.categories.map((s) => ({
+            name: s.name,
+            allocation_percent: s.allocation_percent,
+            icon: s.icon,
+          })),
+        }))
+      );
+    }
     setStep(2);
   };
 
@@ -445,8 +572,8 @@ export function CreateBudgetDialog({
   const onSubmit = async (values: BudgetFormValues) => {
     if (!mode) return;
 
-    // If guided mode and on step 2, go to review first
-    if (mode === "guided" && step === 2) {
+    // If template mode and on step 2, go to review first
+    if (isTemplateMode && step === 2) {
       setStep(3);
       return;
     }
@@ -523,6 +650,100 @@ export function CreateBudgetDialog({
                   className="h-full bg-amber-500 transition-all"
                   style={{ width: "20%" }}
                 />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
+                {tCat("ahorro")} 20%
+              </span>
+            </div>
+          </div>
+        </button>
+
+        {/* Aggressive card */}
+        <button
+          type="button"
+          onClick={() => selectMode("aggressive")}
+          className={cn(
+            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
+            "hover:border-emerald-500",
+            mode === "aggressive"
+              ? "border-emerald-500 bg-emerald-500/5"
+              : "border-foreground/20"
+          )}
+        >
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-orange-500/30 bg-orange-500/10 text-orange-600">
+            <TrendingUp className="size-5" />
+          </div>
+          <h3 className="font-medium text-sm sm:text-base mb-1">{t("aggressiveMode")}</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            {t("aggressiveDescription")}
+          </p>
+          <div className="w-full space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 bg-emerald-500/20">
+                <div className="h-full bg-emerald-500 transition-all" style={{ width: "70%" }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
+                {tCat("necesidades")} 70%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 bg-amber-500/20">
+                <div className="h-full bg-amber-500 transition-all" style={{ width: "20%" }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
+                {tCat("ahorro")} 20%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 bg-blue-500/20">
+                <div className="h-full bg-blue-500 transition-all" style={{ width: "10%" }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
+                {tCat("deseos")} 10%
+              </span>
+            </div>
+          </div>
+        </button>
+
+        {/* Debt Payoff card */}
+        <button
+          type="button"
+          onClick={() => selectMode("debt-payoff")}
+          className={cn(
+            "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
+            "hover:border-emerald-500",
+            mode === "debt-payoff"
+              ? "border-emerald-500 bg-emerald-500/5"
+              : "border-foreground/20"
+          )}
+        >
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-none border-2 border-rose-500/30 bg-rose-500/10 text-rose-600">
+            <CreditCard className="size-5" />
+          </div>
+          <h3 className="font-medium text-sm sm:text-base mb-1">{t("debtPayoffMode")}</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            {t("debtPayoffDescription")}
+          </p>
+          <div className="w-full space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 bg-emerald-500/20">
+                <div className="h-full bg-emerald-500 transition-all" style={{ width: "60%" }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
+                {tCat("necesidades")} 60%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 bg-rose-500/20">
+                <div className="h-full bg-rose-500 transition-all" style={{ width: "20%" }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
+                {tCat("deudas")} 20%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 bg-amber-500/20">
+                <div className="h-full bg-amber-500 transition-all" style={{ width: "20%" }} />
               </div>
               <span className="text-[10px] text-muted-foreground w-20 tabular-nums">
                 {tCat("ahorro")} 20%
@@ -660,6 +881,7 @@ export function CreateBudgetDialog({
           control={control}
           render={({ field }) => {
             const periodOptions = [
+              { value: 0, label: tc("oneTime") },
               { value: 1, label: tc("monthly") },
               { value: 6, label: tc("semiAnnual") },
               { value: 12, label: tc("annual") },
@@ -668,7 +890,7 @@ export function CreateBudgetDialog({
             const activeValue = customPeriod ? -1 : field.value;
             return (
               <>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-5 gap-1.5">
                   {periodOptions.map((opt) => (
                     <button
                       key={opt.value}
@@ -680,6 +902,12 @@ export function CreateBudgetDialog({
                         } else {
                           setCustomPeriod(false);
                           field.onChange(opt.value);
+                          // When selecting one-time, reset cutoff day to 0
+                          if (opt.value === 0) {
+                            setValue("billing_cutoff_day", 0);
+                          } else if (watch("billing_cutoff_day") === 0) {
+                            setValue("billing_cutoff_day", 1);
+                          }
                         }
                       }}
                       className={cn(
@@ -693,6 +921,12 @@ export function CreateBudgetDialog({
                     </button>
                   ))}
                 </div>
+
+                {field.value === 0 && !customPeriod && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("oneTimeDescription")}
+                  </p>
+                )}
 
                 {customPeriod && (
                   <div className="mt-2 flex items-center gap-2">
@@ -712,34 +946,36 @@ export function CreateBudgetDialog({
         />
       </div>
 
-      {/* Billing cutoff day */}
-      <div className="space-y-1.5">
-        <Label>{t("billingCutoffDay")}</Label>
-        <p className="text-xs text-muted-foreground">{t("billingCutoffDayDescription")}</p>
-        <Controller
-          name="billing_cutoff_day"
-          control={control}
-          render={({ field }) => (
-            <Select
-              value={String(field.value)}
-              onValueChange={(val) => field.onChange(Number(val))}
-            >
-              <SelectTrigger className="w-full">
-                <span className="flex flex-1 text-left">
-                  {t("dayOfMonth", { day: String(field.value) })}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                  <SelectItem key={day} value={String(day)}>
-                    {t("dayOfMonth", { day: String(day) })}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
+      {/* Billing cutoff day — hidden for one-time budgets */}
+      {watchBillingPeriod !== 0 && (
+        <div className="space-y-1.5">
+          <Label>{t("billingCutoffDay")}</Label>
+          <p className="text-xs text-muted-foreground">{t("billingCutoffDayDescription")}</p>
+          <Controller
+            name="billing_cutoff_day"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={String(field.value)}
+                onValueChange={(val) => field.onChange(Number(val))}
+              >
+                <SelectTrigger className="w-full">
+                  <span className="flex flex-1 text-left">
+                    {t("dayOfMonth", { day: String(field.value) })}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                    <SelectItem key={day} value={String(day)}>
+                      {t("dayOfMonth", { day: String(day) })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+      )}
     </div>
   );
 
@@ -766,7 +1002,7 @@ export function CreateBudgetDialog({
     if (step === 1) return null;
 
     const isLastStep =
-      (mode === "manual" && step === 2) || (mode === "guided" && step === 3);
+      (mode === "manual" && step === 2) || (isTemplateMode && step === 3);
 
     return (
       <div className="flex items-center justify-between pt-2">
@@ -824,7 +1060,7 @@ export function CreateBudgetDialog({
         <form onSubmit={handleSubmit(onSubmit)}>
           {step === 1 && renderModeSelection()}
           {step === 2 && renderBudgetForm()}
-          {step === 3 && mode === "guided" && renderGuidedReview()}
+          {step === 3 && isTemplateMode && renderGuidedReview()}
           {createError && (
             <p className="text-xs text-destructive px-1 pt-1">{createError}</p>
           )}

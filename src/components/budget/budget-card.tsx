@@ -12,7 +12,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Sparkles, PenLine } from "lucide-react";
+import { Sparkles, PenLine, TrendingUp, CreditCard } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
 
 interface BudgetCardProps {
@@ -23,6 +23,7 @@ interface BudgetCardProps {
 export function BudgetCard({ budget, onClick }: BudgetCardProps) {
   const t = useTranslations("budgetCard");
   const tb = useTranslations("budget");
+  const tc = useTranslations("common");
 
   const curr = CURRENCIES.find((c) => c.code === budget.currency);
   const currency = curr;
@@ -50,11 +51,19 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
                 "flex h-9 w-9 items-center justify-center border-2 border-foreground",
                 budget.mode === "guided"
                   ? "bg-emerald-500/10 text-emerald-600"
-                  : "bg-violet-500/10 text-violet-600"
+                  : budget.mode === "aggressive"
+                    ? "bg-orange-500/10 text-orange-600"
+                    : budget.mode === "debt-payoff"
+                      ? "bg-rose-500/10 text-rose-600"
+                      : "bg-violet-500/10 text-violet-600"
               )}
             >
               {budget.mode === "guided" ? (
                 <Sparkles className="size-4" />
+              ) : budget.mode === "aggressive" ? (
+                <TrendingUp className="size-4" />
+              ) : budget.mode === "debt-payoff" ? (
+                <CreditCard className="size-4" />
               ) : (
                 <PenLine className="size-4" />
               )}
@@ -82,7 +91,7 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
               {budget.currency}
             </Badge>
             <Badge variant="secondary" className="text-[10px]">
-              {period?.label || `${budget.billing_period_months}${t("perMonth")}`}
+              {period ? tc(period.labelKey) : `${budget.billing_period_months}${t("perMonth")}`}
             </Badge>
           </div>
         </div>

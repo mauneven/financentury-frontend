@@ -12,9 +12,6 @@ import type {
   TrendsResponse,
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
-interface MigratePayload {
-  budgets: Array<Record<string, unknown>>;
-}
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -118,11 +115,6 @@ export const authApi = {
       body: JSON.stringify({ code, redirect_uri: redirectUri }),
     }),
   me: () => request<AuthUser>("/auth/me"),
-  migrate: (data: MigratePayload) =>
-    request<{ budgets: Budget[] }>("/migrate", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
   register: (name: string, email: string, password: string) =>
     request<{ token: string; user: { id: string; email: string; full_name: string; avatar_url: string } }>("/auth/register", {
       method: "POST",

@@ -22,7 +22,7 @@ export default function BudgetDashboardPage() {
       if (subSummary) {
         const allCategories = summary.sections.map((c) => ({
           ...c.section,
-          subcategories: c.categories.map((s) => s.category),
+          categories: c.categories.map((s) => s.category),
         }));
 
         return (

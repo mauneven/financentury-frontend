@@ -158,9 +158,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   }
 
   const { budget, sections, total_spent } = summary;
-  const billingLabel =
-    BILLING_PERIODS.find((p) => p.value === budget.billing_period_months)
-      ?.label ?? `${budget.billing_period_months} months`;
+  const billingPeriod = BILLING_PERIODS.find((p) => p.value === budget.billing_period_months);
+  const billingLabel = billingPeriod
+    ? tc(billingPeriod.labelKey)
+    : `${budget.billing_period_months}m`;
 
   const hasAnySpending = total_spent > 0;
 
@@ -216,7 +217,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         return (
           <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Uso del presupuesto</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t("ofBudgetUsed")}</span>
               <span className={cn("font-bold tabular-nums font-mono", tc2)}>{pct}%</span>
             </div>
             <div className="h-3 w-full overflow-hidden bg-muted">

@@ -19,6 +19,7 @@ import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
 import { EditExpenseDialog } from "@/components/expenses/edit-expense-dialog";
 import { ExpenseList } from "@/components/expenses/expense-list";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { useTranslations } from "@/i18n/client";
 import type { Category, Expense } from "@/types/budget";
 
 const SpendingChart = dynamic(
@@ -42,6 +43,11 @@ export default function SectionPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const tc = useTranslations("common");
+  const t = useTranslations("expense");
+  const tDash = useTranslations("dashboard");
+  const tSection = useTranslations("section");
+  const tActions = useTranslations("dashboard.sectionActions");
 
   const sectionSummary = summary?.sections.find(
     (c) => c.section.id === params.sectionId
@@ -56,7 +62,7 @@ export default function SectionPage() {
   if (!summary || !sectionSummary) {
     return (
       <div className="flex items-center justify-center min-h-[200px] text-muted-foreground text-sm">
-        Loading...
+{tc("loading")}
       </div>
     );
   }
@@ -88,7 +94,7 @@ export default function SectionPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">{section.name}</h1>
               <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-                {section.allocation_percent}% del presupuesto
+                {section.allocation_percent}% {tDash("ofBudget")}
               </p>
             </div>
           </div>
@@ -100,7 +106,7 @@ export default function SectionPage() {
             className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
           >
             <Plus className="size-3.5" />
-            <span className="hidden sm:inline">Agregar Gasto</span>
+            <span className="hidden sm:inline">{t("addExpense")}</span>
           </button>
           <button
             type="button"
@@ -116,19 +122,19 @@ export default function SectionPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">Presupuestado</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("budgeted")}</p>
           <p className="text-lg font-bold tabular-nums font-mono">
             {formatCompact(allocated_amount, summary.budget.currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">Gastado</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("spent")}</p>
           <p className={cn("text-lg font-bold tabular-nums font-mono", textColor)}>
             {formatCompact(total_spent, summary.budget.currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">Restante</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("remaining")}</p>
           <p className={cn(
             "text-lg font-bold tabular-nums font-mono",
             remaining < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600"
@@ -141,7 +147,7 @@ export default function SectionPage() {
       {/* Progress */}
       <div className="space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Uso del presupuesto</span>
+          <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t("budgetUsage")}</span>
           <span className={cn("font-bold tabular-nums font-mono", textColor)}>
             {percentage}%
           </span>
@@ -172,12 +178,12 @@ export default function SectionPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-2">
           <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
-            Categorías
+            {tSection("subcategories")}
           </h2>
         </div>
         {categories.length === 0 ? (
           <p className="text-sm font-medium text-muted-foreground py-4 text-center">
-            Aún no hay categorías.
+            {tDash("noSubcategories")}.
           </p>
         ) : (
           <div className="space-y-4">
@@ -197,7 +203,7 @@ export default function SectionPage() {
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
                           <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                            {cat.expense_count} {cat.expense_count === 1 ? "gasto" : "gastos"}
+                            {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
                           </p>
                         </div>
                       </div>
@@ -206,14 +212,14 @@ export default function SectionPage() {
                       <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
                         <div>
                           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                            Monto asignado
+                            {tSection("allocationPercent")}
                           </p>
                           <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
                             {formatCompact(cat.allocated_amount, summary.budget.currency)}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">usado</p>
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tDash("used")}</p>
                           <p className={cn("text-2xl font-bold tabular-nums font-mono", catTextColor)}>
                             {catPct}%
                           </p>
@@ -228,7 +234,7 @@ export default function SectionPage() {
                           className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
                         >
                           <BarChart3 className="size-3.5" />
-                          Reportes
+                          {tActions("reports")}
                         </button>
                         <button
                           type="button"
@@ -236,7 +242,7 @@ export default function SectionPage() {
                           className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
                         >
                           <Settings className="size-3.5" />
-                          Ajustar
+                          {tActions("adjust")}
                         </button>
                       </div>
                     </div>
@@ -248,7 +254,7 @@ export default function SectionPage() {
                         <div>
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
                           <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                            {cat.expense_count} {cat.expense_count === 1 ? "gasto" : "gastos"}
+                            {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
                           </p>
                         </div>
                       </div>
@@ -261,7 +267,7 @@ export default function SectionPage() {
                           className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
                         >
                           <BarChart3 className="size-3.5" />
-                          Reportes
+                          {tActions("reports")}
                         </button>
                         <button
                           type="button"
@@ -269,7 +275,7 @@ export default function SectionPage() {
                           className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
                         >
                           <Settings className="size-3.5" />
-                          Ajustar
+                          {tActions("adjust")}
                         </button>
                       </div>
 
@@ -282,7 +288,7 @@ export default function SectionPage() {
                           {formatCompact(cat.allocated_amount, summary.budget.currency)}
                         </p>
                         <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>
-                          {catPct}% usado
+                          {catPct}% {tDash("used")}
                         </p>
                       </div>
                     </div>
@@ -290,13 +296,13 @@ export default function SectionPage() {
                     {/* Spent / Remaining row */}
                     <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
                       <span>
-                        Gastado:{" "}
+                        {t("spent")}:{" "}
                         <span className="font-bold font-mono tabular-nums text-foreground">
                           {formatCompact(cat.total_spent, summary.budget.currency)}
                         </span>
                       </span>
                       <span>
-                        Restante:{" "}
+                        {t("remaining")}:{" "}
                         <span className={cn(
                           "font-bold font-mono tabular-nums",
                           catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
@@ -337,7 +343,7 @@ export default function SectionPage() {
         }
         return (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold border-b border-border pb-2">Gastos</h2>
+            <h2 className="text-lg font-semibold border-b border-border pb-2">{t("expenses")}</h2>
             <ExpenseList
               expenses={sectionExpenses}
               currency={summary.budget.currency}

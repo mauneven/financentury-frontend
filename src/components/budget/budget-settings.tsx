@@ -256,7 +256,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
               const selectValue = customPeriod ? "custom" : String(field.value);
               const displayLabel = customPeriod
                 ? tc("custom")
-                : BILLING_PERIODS.find((p) => String(p.value) === selectValue)?.label;
+                : (() => { const bp = BILLING_PERIODS.find((p) => String(p.value) === selectValue); return bp ? tc(bp.labelKey) : undefined; })();
               return (
                 <>
                   <Select
@@ -281,7 +281,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
                     <SelectContent>
                       {BILLING_PERIODS.map((p) => (
                         <SelectItem key={p.value} value={String(p.value)}>
-                          {p.label}
+                          {tc(p.labelKey)}
                         </SelectItem>
                       ))}
                       <SelectItem value="custom">{tc("custom")}</SelectItem>

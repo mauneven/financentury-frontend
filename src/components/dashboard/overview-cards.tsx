@@ -1,6 +1,7 @@
 "use client";
 
 import type { BudgetSummary } from "@/types/budget";
+import { BILLING_PERIODS } from "@/types/budget";
 import { formatCurrency, getPercentage } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
@@ -32,9 +33,10 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
             {formatCurrency(total_budget, budget.currency)}
           </p>
           <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
-            {budget.billing_period_months === 1
-              ? tc("monthly")
-              : `Every ${budget.billing_period_months} months`}
+            {(() => {
+              const bp = BILLING_PERIODS.find((p) => p.value === budget.billing_period_months);
+              return bp ? tc(bp.labelKey) : `${budget.billing_period_months}m`;
+            })()}
           </p>
         </div>
       </div>

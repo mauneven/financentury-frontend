@@ -6,7 +6,7 @@ export interface Budget {
   currency: string;
   billing_period_months: number;
   billing_cutoff_day: number;
-  mode: "guided" | "manual";
+  mode: "guided" | "aggressive" | "debt-payoff" | "manual";
   created_at: string;
   updated_at: string;
 }
@@ -100,7 +100,7 @@ export interface CreateBudgetInput {
   currency: string;
   billing_period_months: number;
   billing_cutoff_day?: number;
-  mode: "guided" | "manual";
+  mode: "guided" | "aggressive" | "debt-payoff" | "manual";
 }
 
 export interface CreateSectionInput {
@@ -137,10 +137,11 @@ export const CURRENCIES = [
 ] as const;
 
 export const BILLING_PERIODS = [
-  { value: 1, label: "Monthly" },
-  { value: 3, label: "Quarterly" },
-  { value: 6, label: "Semi-annual" },
-  { value: 12, label: "Annual" },
+  { value: 0, labelKey: "oneTime" },
+  { value: 1, labelKey: "monthly" },
+  { value: 3, labelKey: "quarterly" },
+  { value: 6, labelKey: "semiAnnual" },
+  { value: 12, labelKey: "annual" },
 ] as const;
 
 export const GUIDED_SECTIONS = [
@@ -173,6 +174,71 @@ export const GUIDED_SECTIONS = [
     categories: [
       { name: "Fondo de emergencia", allocation_percent: 40, icon: "landmark" },
       { name: "Inversi\u00f3n", allocation_percent: 60, icon: "trending" },
+    ],
+  },
+] as const;
+
+export const AGGRESSIVE_SECTIONS = [
+  {
+    name: "Necesidades",
+    allocation_percent: 70,
+    icon: "home",
+    categories: [
+      { name: "Vivienda", allocation_percent: 45, icon: "home" },
+      { name: "Comida", allocation_percent: 25, icon: "utensils" },
+      { name: "Transporte", allocation_percent: 18, icon: "car" },
+      { name: "Servicios", allocation_percent: 12, icon: "lightbulb" },
+    ],
+  },
+  {
+    name: "Ahorro",
+    allocation_percent: 20,
+    icon: "coins",
+    categories: [
+      { name: "Fondo de emergencia", allocation_percent: 50, icon: "landmark" },
+      { name: "Inversi\u00f3n", allocation_percent: 50, icon: "trending" },
+    ],
+  },
+  {
+    name: "Deseos",
+    allocation_percent: 10,
+    icon: "party",
+    categories: [
+      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
+      { name: "Salidas", allocation_percent: 50, icon: "party" },
+    ],
+  },
+] as const;
+
+export const DEBT_PAYOFF_SECTIONS = [
+  {
+    name: "Necesidades",
+    allocation_percent: 60,
+    icon: "home",
+    categories: [
+      { name: "Vivienda", allocation_percent: 45, icon: "home" },
+      { name: "Comida", allocation_percent: 25, icon: "utensils" },
+      { name: "Transporte", allocation_percent: 18, icon: "car" },
+      { name: "Servicios", allocation_percent: 12, icon: "lightbulb" },
+    ],
+  },
+  {
+    name: "Deudas",
+    allocation_percent: 20,
+    icon: "credit-card",
+    categories: [
+      { name: "Tarjetas de cr\u00e9dito", allocation_percent: 50, icon: "credit-card" },
+      { name: "Pr\u00e9stamos", allocation_percent: 50, icon: "landmark" },
+    ],
+  },
+  {
+    name: "Ahorro/Deseos",
+    allocation_percent: 20,
+    icon: "coins",
+    categories: [
+      { name: "Fondo de emergencia", allocation_percent: 40, icon: "landmark" },
+      { name: "Entretenimiento", allocation_percent: 30, icon: "clapperboard" },
+      { name: "Salidas", allocation_percent: 30, icon: "party" },
     ],
   },
 ] as const;

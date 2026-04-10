@@ -44,6 +44,7 @@ export function CategoryDetail({
   categories,
 }: CategoryDetailProps) {
   const t = useTranslations("expense");
+  const tDash = useTranslations("dashboard");
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
 
   const router = useRouter();
@@ -102,7 +103,7 @@ export function CategoryDetail({
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">{detailCategory.name}</h1>
               <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-                {expense_count} {expense_count === 1 ? "gasto registrado" : "gastos registrados"}
+                {expense_count === 1 ? t("expensesRecorded", { count: expense_count }) : t("expensesRecordedPlural", { count: expense_count })}
               </p>
             </div>
           </div>
@@ -120,19 +121,19 @@ export function CategoryDetail({
       {/* Stats — 3 cards like budget + section */}
       <div className="grid grid-cols-3 gap-4">
         <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">Presupuestado</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("budgeted")}</p>
           <p className="text-lg font-bold tabular-nums font-mono">
             {formatCompact(allocated_amount, currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">Gastado</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("spent")}</p>
           <p className={cn("text-lg font-bold tabular-nums font-mono", textColor)}>
             {formatCompact(total_spent, currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">Restante</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("remaining")}</p>
           <p className={cn(
             "text-lg font-bold tabular-nums font-mono",
             overBudget ? "text-red-600 dark:text-red-400" : "text-emerald-600"
@@ -145,7 +146,7 @@ export function CategoryDetail({
       {/* Progress — same style as section */}
       <div className="space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Uso del presupuesto</span>
+          <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t("budgetUsage")}</span>
           <span className={cn("font-bold tabular-nums font-mono", textColor)}>
             {percentage}%
           </span>

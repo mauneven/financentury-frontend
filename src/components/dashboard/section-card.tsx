@@ -36,6 +36,7 @@ export function SectionCard({
   const router = useRouter();
   const t = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.sectionActions");
+  const tSection = useTranslations("section");
 
   const { section, categories: subcategories, allocated_amount, total_spent } =
     sectionSummary;
@@ -72,7 +73,7 @@ export function SectionCard({
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                Monto asignado
+                {tSection("allocationPercent")}
               </p>
               <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
                 {formatCompact(allocated_amount, currency)}
@@ -308,14 +309,14 @@ export function SectionCard({
                       </div>
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span className="font-mono tabular-nums">
-                          {formatCompact(sub.total_spent, currency)} spent
+                          {formatCompact(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
                         </span>
                         <span className={cn(
                           "font-mono tabular-nums",
                           subRemaining < 0 ? "text-red-600 dark:text-red-400" : ""
                         )}>
                           {subRemaining < 0 ? "-" : ""}
-                          {formatCompact(Math.abs(subRemaining), currency)} left
+                          {formatCompact(Math.abs(subRemaining), currency)} {t("leftLabel").toLowerCase()}
                         </span>
                       </div>
                     </button>

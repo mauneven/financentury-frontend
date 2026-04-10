@@ -25,6 +25,7 @@
     "quarterly": "Trimestral",
     "semiAnnual": "Semestral",
     "annual": "Anual",
+    "oneTime": "\u00danica vez",
     "custom": "Personalizado",
     "toggleSidebar": "Alternar barra lateral",
     "navigation": "Navegación"
@@ -93,7 +94,12 @@
     "customCategories": "Tus categorías personalizadas",
     "saveChanges": "Guardar Cambios",
     "deleteDescription": "Eliminar un presupuesto elimina todas las secciones, categorías y gastos asociados. Esta acción no se puede deshacer.",
-    "months": "meses"
+    "months": "meses",
+    "oneTimeDescription": "Sin ciclo de facturaci\u00f3n \u2014 todos los gastos cuentan hacia el total",
+    "aggressiveMode": "Agresivo (70/20/10)",
+    "aggressiveDescription": "Maximiza el ahorro limitando deseos al 10%",
+    "debtPayoffMode": "Pago de deudas (60/20/20)",
+    "debtPayoffDescription": "Enfocado en pagar deudas cubriendo lo esencial"
   },
   "budgetCard": {
     "perMonth": "/mes",
@@ -219,7 +225,8 @@
     "ropa": "Ropa",
     "viajes": "Viajes",
     "fondoEmergencia": "Fondo de Emergencia",
-    "inversion": "Inversi\u00f3n"
+    "inversion": "Inversi\u00f3n",
+    "deudas": "Deudas"
   },
   "bottomNav": {
     "budgets": "Presupuestos",
@@ -306,7 +313,17 @@
     "step4Desc": "Observa tendencias, desglose por categor\u00eda y m\u00e9tricas de uso del presupuesto en tiempo real.",
     "ctaTitle": "\u00bfListo para tomar control?",
     "ctaSubtitle": "Maneja tus finanzas correctamente, date la oportunidad de ordenar tu econom\u00eda.",
-    "used": "usado"
+    "used": "usado",
+    "catHousing": "Vivienda",
+    "catFood": "Comida",
+    "catTransport": "Transporte",
+    "catUtilities": "Servicios",
+    "catEntertainment": "Entretenimiento",
+    "catDining": "Salidas",
+    "catShopping": "Compras",
+    "catEmergencyFund": "Fondo de emergencia",
+    "catInvestment": "Inversión",
+    "catDebt": "Deuda"
   },
   "account": {
     "title": "Cuenta",
