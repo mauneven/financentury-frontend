@@ -299,7 +299,7 @@ export default function LandingPage() {
               onClick={() => setAuthOpen(true)}
               className="mt-8 inline-flex items-center gap-2 border-2 border-foreground bg-foreground px-10 py-4 font-mono text-sm font-black uppercase tracking-widest text-background transition-colors hover:bg-background hover:text-foreground"
             >
-              {t("letsBegin")}
+              {t("letsStart")}
               <ArrowRight className="size-4" />
             </button>
           </div>

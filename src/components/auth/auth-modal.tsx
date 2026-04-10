@@ -96,7 +96,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
           </div>
 
           <h2 className="font-mono text-lg font-bold uppercase tracking-wider">
-            {tLanding("letsBegin")}
+            {tLanding("letsStart")}
           </h2>
 
           <p className="text-center font-mono text-xs tracking-wider text-muted-foreground">
