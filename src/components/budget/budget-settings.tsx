@@ -151,7 +151,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
     try {
       await deleteBudget(budget.id);
       setDeleteDialogOpen(false);
-      router.push("/home");
+      router.push("/budgets");
     } catch {
       // error handling upstream
     } finally {

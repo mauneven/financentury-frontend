@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +14,7 @@ import { useTranslations } from "@/i18n/client";
 
 export default function AccountPage() {
   const t = useTranslations("account");
+  const router = useRouter();
   const { user, signOut } = useAuthStore();
 
   return (
@@ -59,7 +61,7 @@ export default function AccountPage() {
             <Button
               variant="destructive"
               className="w-full gap-2"
-              onClick={signOut}
+              onClick={() => { signOut(); router.push("/"); }}
             >
               <LogOut className="size-4" />
               {t("signOut")}

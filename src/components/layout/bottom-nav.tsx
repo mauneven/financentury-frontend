@@ -44,7 +44,7 @@ export function BottomNav({
       <div className="flex h-14 items-center justify-around px-2">
         {/* Budgets tab */}
         <button
-          onClick={() => router.push("/home")}
+          onClick={() => router.push("/budgets")}
           className={cn(
             "flex flex-1 flex-col items-center gap-0.5 py-1 transition-colors duration-200",
             isHome

@@ -107,7 +107,7 @@ export default function InviteAcceptPage() {
             <div className="text-center">
               <h1 className="text-lg font-semibold">{error}</h1>
             </div>
-            <Button variant="outline" onClick={() => router.push("/home")}>
+            <Button variant="outline" onClick={() => router.push("/budgets")}>
               {t("budgetName")}
             </Button>
           </CardContent>

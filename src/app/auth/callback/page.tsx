@@ -13,12 +13,12 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const code = searchParams.get("code");
     if (!code) {
-      router.replace("/login?error=no_code");
+      router.replace("/");
       return;
     }
     handleGoogleCallback(code)
-      .then(() => router.replace("/home"))
-      .catch(() => router.replace("/login?error=auth_failed"));
+      .then(() => router.replace("/budgets"))
+      .catch(() => router.replace("/"));
   }, [searchParams, handleGoogleCallback, router]);
 
   return (

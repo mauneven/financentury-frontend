@@ -93,8 +93,8 @@ async function request<T>(
   if (!res.ok) {
     if (res.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("financentury_token");
-      // Redirect to login
-      window.location.href = "/login";
+      // Redirect to landing page (auth is now a modal there)
+      window.location.href = "/";
     }
     const error = await res
       .json()
