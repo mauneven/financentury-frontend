@@ -178,12 +178,12 @@ export default function SectionPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-2">
           <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
-            {tSection("subcategories")}
+            {tSection("categories")}
           </h2>
         </div>
         {categories.length === 0 ? (
           <p className="text-sm font-medium text-muted-foreground py-4 text-center">
-            {tDash("noSubcategories")}.
+            {tDash("noCategories")}.
           </p>
         ) : (
           <div className="space-y-4">

@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/i18n/client";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const spaceMono = Space_Mono({
   variable: "--font-space-mono",
@@ -41,7 +42,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <I18nProvider>
             <AuthProvider>
-              <TooltipProvider>{children}</TooltipProvider>
+              <TooltipProvider><ErrorBoundary>{children}</ErrorBoundary></TooltipProvider>
             </AuthProvider>
           </I18nProvider>
         </ThemeProvider>

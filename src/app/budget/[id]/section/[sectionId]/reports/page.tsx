@@ -107,7 +107,7 @@ export default function SectionReportsPage() {
             className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
           >
             <Plus className="size-3.5" />
-            <span className="hidden sm:inline">{tSection("addSubcategory")}</span>
+            <span className="hidden sm:inline">{tSection("addCategory")}</span>
           </button>
         )}
       </div>
@@ -168,7 +168,7 @@ export default function SectionReportsPage() {
       {/* Desglose por categorías */}
       <div className="space-y-4">
         <h2 className="text-base font-bold uppercase tracking-widest border-b-2 border-foreground pb-2">
-          {tSection("subcategories")} · {categories.length}
+          {tSection("categories")} · {categories.length}
         </h2>
 
         {categories.length === 0 ? (
@@ -177,7 +177,7 @@ export default function SectionReportsPage() {
               <Plus className="h-6 w-6 text-muted-foreground" />
             </div>
             <h4 className="mb-1 text-base font-semibold text-foreground">
-              {tDash("noSubcategories")}
+              {tDash("noCategories")}
             </h4>
             <p className="mb-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
               {tDash("noCategoriesHint")}
@@ -188,7 +188,7 @@ export default function SectionReportsPage() {
               className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
             >
               <Plus className="size-3.5" />
-              {tSection("addSubcategory")}
+              {tSection("addCategory")}
             </button>
           </div>
         ) : (

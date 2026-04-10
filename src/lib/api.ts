@@ -182,7 +182,7 @@ export const sectionApi = {
     }),
 };
 
-// Categories (was Subcategories)
+// Categories
 export const categoryApi = {
   create: (
     budgetId: string,
@@ -241,37 +241,35 @@ export const collaboratorApi = {
     }),
 };
 
+const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
 /**
- * Normalizes an expense object from the API so that category_id is always
- * populated. The backend stores expenses with column name subcategory_id and
- * serializes using that JSON key. We remap it here to the canonical category_id
- * field used everywhere else in the frontend.
+ * Normalizes an expense from the API to ensure category_id is always set.
+ * Handles both old backend (subcategory_id) and new backend (category_id).
+ * Also handles the case where category_id is a zero UUID (deserialization bug).
  */
-function normalizeExpense(e: Record<string, unknown>): Expense {
-  return {
-    ...e,
-    category_id:
-      (e.category_id as string | undefined) ||
-      (e.subcategory_id as string | undefined) ||
-      "",
-  } as Expense;
+function normalizeExpense(raw: Record<string, unknown>): Expense {
+  const e = raw as Expense & { subcategory_id?: string };
+  if ((!e.category_id || e.category_id === NIL_UUID) && e.subcategory_id && e.subcategory_id !== NIL_UUID) {
+    e.category_id = e.subcategory_id;
+  }
+  return e as Expense;
 }
 
 // Expenses
 export const expenseApi = {
   list: (budgetId: string) =>
     request<Record<string, unknown>[]>(`/budgets/${budgetId}/expenses`).then(
-      (expenses) => expenses.map(normalizeExpense)
+      (expenses) => (expenses || []).map(normalizeExpense)
     ),
 
   create: (budgetId: string, data: CreateExpenseInput) =>
     request<Record<string, unknown>>(`/budgets/${budgetId}/expenses`, {
       method: "POST",
       body: JSON.stringify({
+        ...data,
+        // Send both keys for backward compatibility with old backend
         subcategory_id: data.category_id,
-        amount: data.amount,
-        description: data.description,
-        expense_date: data.expense_date,
       }),
     }).then(normalizeExpense),
 
@@ -283,10 +281,8 @@ export const expenseApi = {
     request<Record<string, unknown>>(`/budgets/${budgetId}/expenses/${expId}`, {
       method: "PUT",
       body: JSON.stringify({
+        ...data,
         ...(data.category_id && { subcategory_id: data.category_id }),
-        ...(data.amount !== undefined && { amount: data.amount }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.expense_date && { expense_date: data.expense_date }),
       }),
     }).then(normalizeExpense),
 

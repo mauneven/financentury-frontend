@@ -15,7 +15,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { AuthModal } from "@/components/auth/auth-modal";
-import { LandingCharts } from "@/components/landing/landing-charts";
+import dynamic from "next/dynamic";
+const LandingCharts = dynamic(() => import("@/components/landing/landing-charts").then(m => ({ default: m.LandingCharts })), { ssr: false });
 import { Footer } from "@/components/layout/footer";
 import { ThemeToggle } from "@/components/layout/user-controls";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
@@ -95,17 +96,20 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative border-b-2 border-foreground overflow-hidden">
+      <section className="relative overflow-hidden">
+        {/* Full-viewport brutalist grid background with downward fade */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0 w-screen left-1/2 -translate-x-1/2"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+            opacity: 0.07,
+            maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+          }}
+        />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Grid background — contained within max-w-7xl */}
-          <div
-            className="absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage:
-                "linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
-            }}
-          />
 
           <div ref={heroRef} className="relative max-w-4xl pt-16 pb-20 lg:pt-24 lg:pb-28">
             <h1 className="font-mono font-black uppercase leading-none tracking-tight text-foreground text-5xl sm:text-7xl lg:text-8xl">
@@ -169,7 +173,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Stats Bar ──────────────────────────────────────────── */}
-      <section className="border-b-2 border-foreground">
+      <section>
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-3 divide-x-2 divide-foreground">
             {/* Column 1: $0 / It's free */}
@@ -218,7 +222,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ───────────────────────────────────────────── */}
-      <section className="border-b-2 border-foreground py-16 sm:py-20">
+      <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -252,7 +256,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How It Works ───────────────────────────────────────── */}
-      <section className="border-b-2 border-foreground py-16 sm:py-20">
+      <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">

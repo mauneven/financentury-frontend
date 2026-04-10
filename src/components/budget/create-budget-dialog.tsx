@@ -17,8 +17,15 @@ import {
   PartyPopper,
 } from "lucide-react";
 
-import type { Budget } from "@/types/budget";
-import { CURRENCIES } from "@/types/budget";
+import type { Budget, BudgetMode as BudgetModeType } from "@/types/budget";
+import {
+  CURRENCIES,
+  BALANCED_SECTIONS,
+  DEBT_FREE_SECTIONS,
+  DEBT_PAYOFF_SECTIONS,
+  TRAVEL_SECTIONS,
+  EVENT_SECTIONS,
+} from "@/types/budget";
 import { detectCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
@@ -111,6 +118,81 @@ function StepIndicator({
           )}
         />
       ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Donut chart for mode cards
+// ---------------------------------------------------------------------------
+
+const DONUT_COLORS = [
+  "#10b981", // emerald-500
+  "#3b82f6", // blue-500
+  "#f43f5e", // rose-500
+  "#f59e0b", // amber-500
+  "#8b5cf6", // violet-500
+  "#06b6d4", // cyan-500
+];
+
+const MODE_SECTIONS: Record<
+  string,
+  readonly { name: string; allocation_percent: number }[]
+> = {
+  balanced: BALANCED_SECTIONS,
+  "debt-free": DEBT_FREE_SECTIONS,
+  "debt-payoff": DEBT_PAYOFF_SECTIONS,
+  travel: TRAVEL_SECTIONS,
+  event: EVENT_SECTIONS,
+};
+
+function ModeDonutChart({ mode }: { mode: string }) {
+  const sections = MODE_SECTIONS[mode];
+  if (!sections) return null;
+
+  // Build conic-gradient stops
+  let accumulated = 0;
+  const stops: string[] = [];
+  sections.forEach((section, i) => {
+    const color = DONUT_COLORS[i % DONUT_COLORS.length];
+    const start = accumulated;
+    const end = accumulated + section.allocation_percent;
+    stops.push(`${color} ${start}% ${end}%`);
+    accumulated = end;
+  });
+
+  return (
+    <div className="flex flex-col items-center gap-1.5 mt-3">
+      <div
+        className="shrink-0"
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: "50%",
+          background: `conic-gradient(${stops.join(", ")})`,
+          mask: "radial-gradient(circle at center, transparent 40%, black 41%)",
+          WebkitMask:
+            "radial-gradient(circle at center, transparent 40%, black 41%)",
+        }}
+      />
+      <div className="flex flex-wrap justify-center gap-x-2 gap-y-0.5">
+        {sections.map((section, i) => (
+          <span
+            key={section.name}
+            className="flex items-center gap-1 text-[10px] text-muted-foreground"
+          >
+            <span
+              className="inline-block shrink-0"
+              style={{
+                width: 6,
+                height: 6,
+                backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length],
+              }}
+            />
+            {section.allocation_percent}%
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -358,6 +440,7 @@ export function CreateBudgetDialog({
               </h3>
             </div>
             <p className="text-xs text-muted-foreground">{t(card.descKey)}</p>
+            <ModeDonutChart mode={card.mode} />
           </button>
         ))}
       </div>

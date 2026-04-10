@@ -341,7 +341,7 @@ export function SectionCard({
                     <Plus className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <h4 className="mb-1 text-base font-semibold text-foreground">
-                    {t("noSubcategories")}
+                    {t("noCategories")}
                   </h4>
                   <p className="mb-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
                     {t("noCategoriesHint")}
@@ -352,7 +352,7 @@ export function SectionCard({
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
                   >
                     <Plus className="size-3.5" />
-                    {tSection("addSubcategory")}
+                    {tSection("addCategory")}
                   </button>
                 </div>
               )}

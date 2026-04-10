@@ -8,7 +8,9 @@ import { Loader2, Check } from "lucide-react";
 
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
-import { IconPicker, CategoryIcon, ICON_OPTIONS } from "@/lib/icon-picker";
+import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
+import { CURRENCIES } from "@/types/budget";
+import { formatAmount, parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
 
 import {
   Dialog,
@@ -46,39 +48,6 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatAmount(value: number): string {
-  if (isNaN(value) || value === 0) return "";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function parseAmount(formatted: string): number {
-  const stripped = formatted.replace(/,/g, "");
-  return parseFloat(stripped);
-}
-
-function maskAmountInput(raw: string): string {
-  const cleaned = raw.replace(/[^0-9.]/g, "");
-  const parts = cleaned.split(".");
-  const intPart = parts[0].replace(/^0+(?=\d)/, "");
-  const decPart = parts.length > 1 ? "." + parts[1].slice(0, 2) : "";
-  if (intPart === "") return decPart ? "0" + decPart : "";
-  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return formatted + decPart;
-}
-
-function pickRandomIcon(usedIcons: string[]): string {
-  const available = ICON_OPTIONS.filter((o) => !usedIcons.includes(o.key));
-  const pool = available.length > 0 ? available : ICON_OPTIONS;
-  return pool[Math.floor(Math.random() * pool.length)].key;
-}
-
-// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -104,6 +73,7 @@ export function AddCategoryDialog({
   const addCategory = useBudgetStore((s) => s.addCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
+  const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
 
   // Category allocation_percent is relative to the parent *section* allocation,
   // not the total budget. Find the section's allocated dollar amount.
@@ -114,6 +84,7 @@ export function AddCategoryDialog({
   }, [summary, sectionId]);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
 
   // Dollar amount state
@@ -169,6 +140,7 @@ export function AddCategoryDialog({
   };
 
   const onSubmit = async (values: CategoryFormValues) => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       await addCategory(sectionId, {
@@ -179,8 +151,8 @@ export function AddCategoryDialog({
 
       await refreshSummary();
       onOpenChange(false);
-    } catch {
-      // error handling upstream
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -190,7 +162,7 @@ export function AddCategoryDialog({
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("addSubcategory")}</DialogTitle>
+          <DialogTitle>{t("addCategory")}</DialogTitle>
           <DialogDescription>
             {t("addCategoryDescription")}
           </DialogDescription>
@@ -241,7 +213,7 @@ export function AddCategoryDialog({
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
-                  $
+                  {currencySymbol}
                 </span>
                 <Input
                   id="add-cat-allocation"
@@ -272,6 +244,8 @@ export function AddCategoryDialog({
             )}
           </div>
 
+          {submitError && <p className="text-xs text-destructive">{submitError}</p>}
+
           {/* Submit */}
           <div className="flex justify-end pt-2">
             <Button
@@ -287,7 +261,7 @@ export function AddCategoryDialog({
               ) : (
                 <>
                   <Check className="size-4 mr-1" />
-                  {t("addSubcategory")}
+                  {t("addCategory")}
                 </>
               )}
             </Button>

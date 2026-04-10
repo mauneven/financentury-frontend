@@ -243,7 +243,7 @@ export function AddExpenseDialog({
 
           {/* Category Select */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">{t("subcategory")}</Label>
+            <Label className="text-sm font-medium">{t("category")}</Label>
             <Select
               value={watchedCategoryId || null}
               onValueChange={(val) => {
@@ -260,10 +260,10 @@ export function AddExpenseDialog({
                       {sub.name}
                     </span>
                   ) : (
-                    <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                    <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
                   );
                 })() : (
-                  <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                  <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
                 )}
               </SelectTrigger>
               <SelectContent>

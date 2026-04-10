@@ -1,6 +1,4 @@
 export type BudgetMode =
-  | "guided"
-  | "aggressive"
   | "balanced"
   | "debt-free"
   | "debt-payoff"
@@ -315,9 +313,3 @@ export const EVENT_SECTIONS = [
     ],
   },
 ] as const;
-
-/** @deprecated Use BALANCED_SECTIONS instead. Kept for legacy budgets using mode "guided". */
-export const GUIDED_SECTIONS = BALANCED_SECTIONS;
-
-/** @deprecated Use DEBT_FREE_SECTIONS instead. Kept for legacy budgets using mode "aggressive". */
-export const AGGRESSIVE_SECTIONS = DEBT_FREE_SECTIONS;

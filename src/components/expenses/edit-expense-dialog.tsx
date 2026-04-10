@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -102,6 +102,7 @@ export function EditExpenseDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   const currencyInfo = CURRENCIES.find((c) => c.code === currency);
   const currencySymbol = currencyInfo?.symbol || "$";
@@ -171,6 +172,7 @@ export function EditExpenseDialog({
   };
 
   const onSubmit = async (data: ExpenseFormValues) => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       await updateExpense(budgetId, expense.id, {
@@ -180,17 +182,20 @@ export function EditExpenseDialog({
         expense_date: data.expense_date,
       });
       onOpenChange(false);
-    } catch {
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
+    setSubmitError(null);
     setIsDeleting(true);
     try {
       await deleteExpense(expense.id);
       onOpenChange(false);
-    } catch {
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
       setIsDeleting(false);
     }
   };
@@ -236,7 +241,7 @@ export function EditExpenseDialog({
 
           {/* Category Select */}
           <div className="space-y-2">
-            <Label>{t("subcategory")}</Label>
+            <Label>{t("category")}</Label>
             <Select
               value={watchedCategoryId || null}
               onValueChange={(val) => {
@@ -253,10 +258,10 @@ export function EditExpenseDialog({
                       {sub.name}
                     </span>
                   ) : (
-                    <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                    <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
                   );
                 })() : (
-                  <SelectValue placeholder={selectedCategoryId ? t("selectSubcategory") : t("selectCategoryFirst")} />
+                  <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
                 )}
               </SelectTrigger>
               <SelectContent>
@@ -350,6 +355,8 @@ export function EditExpenseDialog({
               </p>
             )}
           </div>
+
+          {submitError && <p className="text-xs text-destructive">{submitError}</p>}
 
           {/* Footer */}
           <DialogFooter>

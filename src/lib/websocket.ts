@@ -9,13 +9,13 @@
 export interface WSMessage {
   type:
     | "budget_updated"
-    | "expense_added"
+    | "expense_created"
     | "expense_updated"
     | "expense_deleted"
-    | "section_added"
+    | "section_created"
     | "section_updated"
     | "section_deleted"
-    | "category_added"
+    | "category_created"
     | "category_updated"
     | "category_deleted";
   budget_id?: string;

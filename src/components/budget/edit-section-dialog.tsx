@@ -9,6 +9,7 @@ import { Loader2, Check, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
+import { formatAmount, parseAmount, maskAmountInput } from "@/lib/amount-utils";
 
 import {
   Dialog,
@@ -28,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useTranslations } from "@/i18n/client";
 import type { Section, Category } from "@/types/budget";
+import { CURRENCIES } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -46,45 +48,6 @@ const sectionSchema = z.object({
 });
 
 type SectionFormValues = z.infer<typeof sectionSchema>;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Format a raw number as a comma-separated string (no currency symbol). */
-function formatAmount(value: number): string {
-  if (isNaN(value) || value === 0) return "";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-/** Parse a formatted string back to a number. Returns NaN if invalid. */
-function parseAmount(formatted: string): number {
-  const stripped = formatted.replace(/,/g, "");
-  const num = parseFloat(stripped);
-  return num;
-}
-
-/** Handle keystrokes: strip non-numeric (except decimal), re-format. */
-function maskAmountInput(raw: string): string {
-  // Allow digits and at most one decimal point
-  const cleaned = raw.replace(/[^0-9.]/g, "");
-  const parts = cleaned.split(".");
-  const intPart = parts[0].replace(/^0+(?=\d)/, ""); // remove leading zeros
-  const decPart = parts.length > 1 ? "." + parts[1].slice(0, 2) : "";
-
-  if (intPart === "") return decPart ? "0" + decPart : "";
-
-  // Add thousands separators to integer part
-  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return formatted + decPart;
-}
-
-// ---------------------------------------------------------------------------
-// (Icon picker imported from @/lib/icon-picker)
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Impact preview — shown when category allocation changes
@@ -218,10 +181,12 @@ export function EditSectionDialog({
 
   // Use the actual monthly income for $ ↔ % conversion.
   const totalBudget = summary?.budget.monthly_income ?? 0;
+  const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   // Dollar amount state — managed independently from RHF
   const [amountInput, setAmountInput] = React.useState<string>("");
@@ -287,6 +252,7 @@ export function EditSectionDialog({
   };
 
   const onSubmit = async (values: SectionFormValues) => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       await updateSection(section.id, {
@@ -296,21 +262,22 @@ export function EditSectionDialog({
       });
       await refreshSummary();
       onOpenChange(false);
-    } catch {
-      // error handling upstream
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
+    setSubmitError(null);
     setIsDeleting(true);
     try {
       await deleteSectionAction(section.id);
       await refreshSummary();
       onOpenChange(false);
-    } catch {
-      // error handling upstream
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setIsDeleting(false);
     }
@@ -371,7 +338,7 @@ export function EditSectionDialog({
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
-                  $
+                  {currencySymbol}
                 </span>
                 <Input
                   id="edit-cat-allocation"
@@ -409,6 +376,8 @@ export function EditSectionDialog({
               newSectionPercent={watchAllocation}
             />
           )}
+
+          {submitError && <p className="text-xs text-destructive">{submitError}</p>}
 
           <Separator />
 

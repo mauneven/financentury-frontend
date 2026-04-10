@@ -9,7 +9,9 @@ import { Loader2, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
-import { IconPicker, CategoryIcon, ICON_OPTIONS } from "@/lib/icon-picker";
+import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
+import { CURRENCIES } from "@/types/budget";
+import { formatAmount, parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
 
 import {
   Dialog,
@@ -47,43 +49,6 @@ const sectionSchema = z.object({
 type SectionFormValues = z.infer<typeof sectionSchema>;
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Format a raw number as a comma-separated string (no currency symbol). */
-function formatAmount(value: number): string {
-  if (isNaN(value) || value === 0) return "";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-/** Parse a formatted string back to a number. */
-function parseAmount(formatted: string): number {
-  const stripped = formatted.replace(/,/g, "");
-  return parseFloat(stripped);
-}
-
-/** Mask input to formatted money string. */
-function maskAmountInput(raw: string): string {
-  const cleaned = raw.replace(/[^0-9.]/g, "");
-  const parts = cleaned.split(".");
-  const intPart = parts[0].replace(/^0+(?=\d)/, "");
-  const decPart = parts.length > 1 ? "." + parts[1].slice(0, 2) : "";
-  if (intPart === "") return decPart ? "0" + decPart : "";
-  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return formatted + decPart;
-}
-
-/** Pick a random icon not already used by existing sections. */
-function pickRandomIcon(usedIcons: string[]): string {
-  const available = ICON_OPTIONS.filter((o) => !usedIcons.includes(o.key));
-  const pool = available.length > 0 ? available : ICON_OPTIONS;
-  return pool[Math.floor(Math.random() * pool.length)].key;
-}
-
-// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -112,8 +77,10 @@ export function AddSectionDialog({
   // Use the actual monthly income for $ ↔ % conversion – total_budget
   // equals monthly_income but we reference the source of truth directly.
   const totalBudget = summary?.budget.monthly_income ?? 0;
+  const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
 
   // Dollar amount state
@@ -175,6 +142,7 @@ export function AddSectionDialog({
   };
 
   const onSubmit = async (values: SectionFormValues) => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       const section = await addSection({
@@ -186,8 +154,8 @@ export function AddSectionDialog({
       await refreshSummary();
       onOpenChange(false);
       router.push(`/budget/${budgetId}/section/${section.id}/reports`);
-    } catch {
-      // error handling upstream
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -248,7 +216,7 @@ export function AddSectionDialog({
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
-                  $
+                  {currencySymbol}
                 </span>
                 <Input
                   id="cat-allocation"
@@ -278,6 +246,8 @@ export function AddSectionDialog({
               </p>
             )}
           </div>
+
+          {submitError && <p className="text-xs text-destructive">{submitError}</p>}
 
           {/* Submit */}
           <div className="flex justify-end pt-2">

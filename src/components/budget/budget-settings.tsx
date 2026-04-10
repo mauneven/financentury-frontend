@@ -89,6 +89,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const isOwner = budget.user_id === user?.id;
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
   const [customPeriod, setCustomPeriod] = React.useState(() => {
@@ -134,26 +135,28 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const currencySymbol = currencyInfo?.symbol || "$";
 
   const onSubmit = async (values: SettingsFormValues) => {
+    setSubmitError(null);
     setIsSaving(true);
     try {
       await budgetApi.update(budget.id, values);
       await refreshSummary();
       onSaved?.();
-    } catch {
-      // error handling upstream
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
+    setSubmitError(null);
     setIsDeleting(true);
     try {
       await deleteBudget(budget.id);
       setDeleteDialogOpen(false);
       router.push("/budgets");
-    } catch {
-      // error handling upstream
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setIsDeleting(false);
     }
@@ -338,6 +341,8 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
             )}
           />
         </div>
+
+        {submitError && <p className="text-xs text-destructive">{submitError}</p>}
 
         {/* Save */}
         <Button

@@ -36,13 +36,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
       switch (msg.type) {
         case "budget_updated":
-        case "expense_added":
+        case "expense_created":
         case "expense_updated":
         case "expense_deleted":
-        case "section_added":
+        case "section_created":
         case "section_updated":
         case "section_deleted":
-        case "category_added":
+        case "category_created":
         case "category_updated":
         case "category_deleted":
           refreshSummaryRef.current();
