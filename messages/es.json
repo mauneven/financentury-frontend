@@ -133,6 +133,7 @@
     "subcategoriesOptional": "Categorías (opcional)",
     "add": "Agregar",
     "createDescription": "Crea una nueva sección de gastos para tu presupuesto.",
+    "addCategoryDescription": "Agrega una nueva categoría para organizar los gastos dentro de esta sección.",
     "editSection": "Ajustar Sección",
     "editSubcategory": "Editar Categoría",
     "editCategory": "Editar Categoría",

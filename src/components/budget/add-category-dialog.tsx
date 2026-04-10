@@ -6,7 +6,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Check } from "lucide-react";
 
-import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { IconPicker, CategoryIcon, ICON_OPTIONS } from "@/lib/icon-picker";
@@ -32,10 +31,10 @@ import { useTranslations } from "@/i18n/client";
 // Schema
 // ---------------------------------------------------------------------------
 
-const sectionSchema = z.object({
+const categorySchema = z.object({
   name: z
     .string()
-    .min(1, "Section name is required")
+    .min(1, "Category name is required")
     .max(60, "Name must be 60 characters or less"),
   allocation_percent: z
     .number({ message: "Allocation is required" })
@@ -44,13 +43,12 @@ const sectionSchema = z.object({
   icon: z.string().min(1, "Pick an icon"),
 });
 
-type SectionFormValues = z.infer<typeof sectionSchema>;
+type CategoryFormValues = z.infer<typeof categorySchema>;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Format a raw number as a comma-separated string (no currency symbol). */
 function formatAmount(value: number): string {
   if (isNaN(value) || value === 0) return "";
   return new Intl.NumberFormat("en-US", {
@@ -59,13 +57,11 @@ function formatAmount(value: number): string {
   }).format(value);
 }
 
-/** Parse a formatted string back to a number. */
 function parseAmount(formatted: string): number {
   const stripped = formatted.replace(/,/g, "");
   return parseFloat(stripped);
 }
 
-/** Mask input to formatted money string. */
 function maskAmountInput(raw: string): string {
   const cleaned = raw.replace(/[^0-9.]/g, "");
   const parts = cleaned.split(".");
@@ -76,7 +72,6 @@ function maskAmountInput(raw: string): string {
   return formatted + decPart;
 }
 
-/** Pick a random icon not already used by existing sections. */
 function pickRandomIcon(usedIcons: string[]): string {
   const available = ICON_OPTIONS.filter((o) => !usedIcons.includes(o.key));
   const pool = available.length > 0 ? available : ICON_OPTIONS;
@@ -87,8 +82,9 @@ function pickRandomIcon(usedIcons: string[]): string {
 // Props
 // ---------------------------------------------------------------------------
 
-interface AddSectionDialogProps {
-  budgetId: string;
+interface AddCategoryDialogProps {
+  sectionId: string;
+  existingCategoryIcons?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -97,17 +93,17 @@ interface AddSectionDialogProps {
 // Main dialog
 // ---------------------------------------------------------------------------
 
-export function AddSectionDialog({
-  budgetId,
+export function AddCategoryDialog({
+  sectionId,
+  existingCategoryIcons = [],
   open,
   onOpenChange,
-}: AddSectionDialogProps) {
+}: AddCategoryDialogProps) {
   const t = useTranslations("section");
   const tc = useTranslations("common");
-  const addSection = useBudgetStore((s) => s.addSection);
+  const addCategory = useBudgetStore((s) => s.addCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
-  const router = useRouter();
 
   const totalBudget = summary?.total_budget ?? 0;
 
@@ -118,12 +114,6 @@ export function AddSectionDialog({
   const [amountInput, setAmountInput] = React.useState<string>("");
   const [rawAmount, setRawAmount] = React.useState<number>(0);
 
-  // Compute used icons from existing sections
-  const usedIcons = React.useMemo(
-    () => (summary?.sections ?? []).map((s) => s.section.icon),
-    [summary]
-  );
-
   const {
     register,
     handleSubmit,
@@ -131,8 +121,8 @@ export function AddSectionDialog({
     watch,
     reset,
     formState: { errors },
-  } = useForm<SectionFormValues>({
-    resolver: zodResolver(sectionSchema),
+  } = useForm<CategoryFormValues>({
+    resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
       allocation_percent: 0,
@@ -150,13 +140,13 @@ export function AddSectionDialog({
   // On open: pick a random icon and reset form
   React.useEffect(() => {
     if (open) {
-      const randomIcon = pickRandomIcon(usedIcons);
+      const randomIcon = pickRandomIcon(existingCategoryIcons);
       reset({ name: "", allocation_percent: 0, icon: randomIcon });
       setAmountInput("");
       setRawAmount(0);
       setIsSubmitting(false);
     }
-  }, [open, reset, usedIcons]);
+  }, [open, reset, existingCategoryIcons]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskAmountInput(e.target.value);
@@ -172,10 +162,10 @@ export function AddSectionDialog({
     });
   };
 
-  const onSubmit = async (values: SectionFormValues) => {
+  const onSubmit = async (values: CategoryFormValues) => {
     setIsSubmitting(true);
     try {
-      const section = await addSection({
+      await addCategory(sectionId, {
         name: values.name,
         allocation_percent: values.allocation_percent,
         icon: values.icon,
@@ -183,7 +173,6 @@ export function AddSectionDialog({
 
       await refreshSummary();
       onOpenChange(false);
-      router.push(`/budget/${budgetId}/section/${section.id}/reports`);
     } catch {
       // error handling upstream
     } finally {
@@ -195,16 +184,16 @@ export function AddSectionDialog({
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("addSection")}</DialogTitle>
+          <DialogTitle>{t("addSubcategory")}</DialogTitle>
           <DialogDescription>
-            {t("createDescription")}
+            {t("addCategoryDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Name with icon button */}
           <div className="space-y-1.5">
-            <Label htmlFor="cat-name">{t("sectionName")}</Label>
+            <Label htmlFor="add-cat-name">{t("categoryName")}</Label>
             <div className="flex items-center gap-2">
               <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
                 <PopoverTrigger
@@ -224,8 +213,8 @@ export function AddSectionDialog({
                 </PopoverContent>
               </Popover>
               <Input
-                id="cat-name"
-                placeholder={t("sectionNamePlaceholder")}
+                id="add-cat-name"
+                placeholder={t("categoryName")}
                 autoFocus
                 aria-invalid={!!errors.name}
                 className="flex-1"
@@ -242,14 +231,14 @@ export function AddSectionDialog({
 
           {/* Allocation — dollar amount with live % indicator */}
           <div className="space-y-1.5">
-            <Label htmlFor="cat-allocation">{t("allocationPercent")}</Label>
+            <Label htmlFor="add-cat-allocation">{t("allocationPercent")}</Label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">
                   $
                 </span>
                 <Input
-                  id="cat-allocation"
+                  id="add-cat-allocation"
                   type="text"
                   inputMode="decimal"
                   className="pl-6"
@@ -292,7 +281,7 @@ export function AddSectionDialog({
               ) : (
                 <>
                   <Check className="size-4 mr-1" />
-                  {t("addSection")}
+                  {t("addSubcategory")}
                 </>
               )}
             </Button>

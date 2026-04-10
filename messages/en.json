@@ -133,6 +133,7 @@
     "subcategoriesOptional": "Categories (optional)",
     "add": "Add",
     "createDescription": "Create a new spending section for your budget.",
+    "addCategoryDescription": "Add a new category to organize spending within this section.",
     "editSection": "Adjust Section",
     "editSubcategory": "Edit Category",
     "editCategory": "Edit Category",

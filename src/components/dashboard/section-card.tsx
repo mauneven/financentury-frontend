@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Pencil, BarChart3, ChevronUp, Settings, Plus } from "lucide-react";
 import type { SectionSummary, Section, Category } from "@/types/budget";
 import {
-  formatCurrency,
   formatCompact,
   getPercentage,
   getProgressColor,
@@ -15,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { CategoryIcon } from "@/lib/icon-picker";
 
 interface SectionCardProps {
@@ -33,6 +33,7 @@ export function SectionCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [editSectionOpen, setEditSectionOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const router = useRouter();
   const t = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.sectionActions");
@@ -342,9 +343,17 @@ export function SectionCard({
                   <h4 className="mb-1 text-base font-semibold text-foreground">
                     {t("noSubcategories")}
                   </h4>
-                  <p className="max-w-xs text-sm text-muted-foreground leading-relaxed">
+                  <p className="mb-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
                     {t("noCategoriesHint")}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setAddCategoryOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+                  >
+                    <Plus className="size-3.5" />
+                    {tSection("addSubcategory")}
+                  </button>
                 </div>
               )}
             </div>
@@ -358,6 +367,12 @@ export function SectionCard({
         categories={sectionCategories.map((s) => s.category)}
         open={editSectionOpen}
         onOpenChange={setEditSectionOpen}
+      />
+      <AddCategoryDialog
+        sectionId={section.id}
+        existingCategoryIcons={sectionCategories.map((s) => s.category.icon)}
+        open={addCategoryOpen}
+        onOpenChange={setAddCategoryOpen}
       />
       {editingCategory && (
         <EditCategoryDialog

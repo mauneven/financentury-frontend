@@ -10,6 +10,7 @@ import { CategoryIcon } from "@/lib/icon-picker";
 import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
 import type { Category } from "@/types/budget";
 import { useTranslations } from "@/i18n/client";
@@ -36,6 +37,7 @@ export default function SectionReportsPage() {
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
 
   const sectionSummary = summary?.sections.find(
     (s) => s.section.id === params.sectionId
@@ -89,14 +91,25 @@ export default function SectionReportsPage() {
           </div>
         </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setAddExpenseOpen(true)}
-          className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
-        >
-          <Plus className="size-3.5" />
-          <span className="hidden sm:inline">{t("addExpense")}</span>
-        </button>
+        {categories.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setAddExpenseOpen(true)}
+            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+          >
+            <Plus className="size-3.5" />
+            <span className="hidden sm:inline">{t("addExpense")}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAddCategoryOpen(true)}
+            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+          >
+            <Plus className="size-3.5" />
+            <span className="hidden sm:inline">{tSection("addSubcategory")}</span>
+          </button>
+        )}
       </div>
 
       {/* Stats totales */}
@@ -159,8 +172,24 @@ export default function SectionReportsPage() {
         </h2>
 
         {categories.length === 0 ? (
-          <div className="border-2 border-foreground bg-card p-8 text-center text-muted-foreground">
-            {tDash("noSubcategories")}
+          <div className="border-2 border-foreground bg-card flex flex-col items-center justify-center py-12 text-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-foreground bg-muted">
+              <Plus className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h4 className="mb-1 text-base font-semibold text-foreground">
+              {tDash("noSubcategories")}
+            </h4>
+            <p className="mb-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
+              {tDash("noCategoriesHint")}
+            </p>
+            <button
+              type="button"
+              onClick={() => setAddCategoryOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+            >
+              <Plus className="size-3.5" />
+              {tSection("addSubcategory")}
+            </button>
           </div>
         ) : (
           categories.map((cat) => {
@@ -303,6 +332,12 @@ export default function SectionReportsPage() {
           onOpenChange={(open) => { if (!open) setEditingCategory(null); }}
         />
       )}
+      <AddCategoryDialog
+        sectionId={section.id}
+        existingCategoryIcons={categories.map((c) => c.category.icon)}
+        open={addCategoryOpen}
+        onOpenChange={setAddCategoryOpen}
+      />
       <AddExpenseDialog
         open={addExpenseOpen}
         onOpenChange={setAddExpenseOpen}
