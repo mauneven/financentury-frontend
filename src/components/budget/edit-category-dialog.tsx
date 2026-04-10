@@ -200,7 +200,13 @@ export function EditCategoryDialog({
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
 
-  const totalBudget = summary?.total_budget ?? 0;
+  // Category allocation_percent is relative to the parent *section* allocation,
+  // not the total budget. Find the section's allocated dollar amount.
+  const sectionBudget = React.useMemo(() => {
+    if (!summary) return 0;
+    const sec = summary.sections.find((s) => s.section.id === sectionId);
+    return sec?.allocated_amount ?? 0;
+  }, [summary, sectionId]);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -231,8 +237,8 @@ export function EditCategoryDialog({
 
   // Compute displayed percentage from current rawAmount
   const computedPercent =
-    totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
-  const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
+    sectionBudget > 0 ? (rawAmount / sectionBudget) * 100 : 0;
+  const percentOverBudget = rawAmount > sectionBudget && sectionBudget > 0;
 
   // Reset form and amount input when category changes or dialog opens
   React.useEffect(() => {
@@ -245,8 +251,8 @@ export function EditCategoryDialog({
 
       // Convert stored percent to dollar amount
       const initialAmount =
-        totalBudget > 0
-          ? (category.allocation_percent / 100) * totalBudget
+        sectionBudget > 0
+          ? (category.allocation_percent / 100) * sectionBudget
           : 0;
       setRawAmount(initialAmount);
       setAmountInput(formatAmount(initialAmount));
@@ -255,7 +261,7 @@ export function EditCategoryDialog({
       setIsSubmitting(false);
       setIsDeleting(false);
     }
-  }, [open, category, reset, totalBudget]);
+  }, [open, category, reset, sectionBudget]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskAmountInput(e.target.value);
@@ -265,7 +271,7 @@ export function EditCategoryDialog({
     setRawAmount(numericValue);
 
     // Keep RHF in sync
-    const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
+    const pct = sectionBudget > 0 ? (numericValue / sectionBudget) * 100 : 0;
     setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
       shouldValidate: true,
     });

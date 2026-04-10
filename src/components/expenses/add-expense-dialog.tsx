@@ -284,34 +284,24 @@ export function AddExpenseDialog({
           </div>
 
           {/* Remaining Budget Info */}
-          {categorySummary && (
-            <div className="border-2 border-foreground bg-muted/30 px-4 py-3">
-              <div className="flex items-center justify-between text-sm">
+          {categorySummary && (() => {
+            const remaining = Math.max(0, categorySummary.allocated_amount - categorySummary.total_spent);
+            const spentPct = getPercentage(categorySummary.total_spent, categorySummary.allocated_amount);
+            const remainingPct = categorySummary.allocated_amount > 0 ? 100 - spentPct : 0;
+            return (
+              <div className="flex items-center justify-between bg-muted/30 px-4 py-2.5 text-sm rounded-md">
                 <span className="text-muted-foreground">{t("remainingBudget")}</span>
                 <span
                   className={cn(
                     "font-mono font-medium",
-                    getProgressTextColor(
-                      getPercentage(categorySummary.total_spent, categorySummary.allocated_amount)
-                    )
+                    getProgressTextColor(spentPct)
                   )}
                 >
-                  {formatCurrency(
-                    Math.max(0, categorySummary.allocated_amount - categorySummary.total_spent),
-                    currency
-                  )}
+                  {formatCurrency(remaining, currency)} ({remainingPct}%)
                 </span>
               </div>
-              <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  {t("spentOf", {
-                    spent: formatCurrency(categorySummary.total_spent, currency),
-                    total: formatCurrency(categorySummary.allocated_amount, currency),
-                  })}
-                </span>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Amount Input */}
           <div className="space-y-2">

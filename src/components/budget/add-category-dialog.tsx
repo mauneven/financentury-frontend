@@ -105,7 +105,13 @@ export function AddCategoryDialog({
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
 
-  const totalBudget = summary?.total_budget ?? 0;
+  // Category allocation_percent is relative to the parent *section* allocation,
+  // not the total budget. Find the section's allocated dollar amount.
+  const sectionBudget = React.useMemo(() => {
+    if (!summary) return 0;
+    const sec = summary.sections.find((s) => s.section.id === sectionId);
+    return sec?.allocated_amount ?? 0;
+  }, [summary, sectionId]);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
@@ -134,8 +140,8 @@ export function AddCategoryDialog({
 
   // Compute displayed percentage from current rawAmount
   const computedPercent =
-    totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
-  const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
+    sectionBudget > 0 ? (rawAmount / sectionBudget) * 100 : 0;
+  const percentOverBudget = rawAmount > sectionBudget && sectionBudget > 0;
 
   // On open: pick a random icon and reset form
   React.useEffect(() => {
@@ -155,8 +161,8 @@ export function AddCategoryDialog({
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
 
-    // Keep RHF in sync — store as percent for the backend
-    const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
+    // Keep RHF in sync — store as percent of section for the backend
+    const pct = sectionBudget > 0 ? (numericValue / sectionBudget) * 100 : 0;
     setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
       shouldValidate: true,
     });

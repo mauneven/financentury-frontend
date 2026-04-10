@@ -216,7 +216,8 @@ export function EditSectionDialog({
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
 
-  const totalBudget = summary?.total_budget ?? 0;
+  // Use the actual monthly income for $ ↔ % conversion.
+  const totalBudget = summary?.budget.monthly_income ?? 0;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);

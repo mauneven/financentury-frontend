@@ -109,7 +109,9 @@ export function AddSectionDialog({
   const summary = useBudgetStore((s) => s.summary);
   const router = useRouter();
 
-  const totalBudget = summary?.total_budget ?? 0;
+  // Use the actual monthly income for $ ↔ % conversion – total_budget
+  // equals monthly_income but we reference the source of truth directly.
+  const totalBudget = summary?.budget.monthly_income ?? 0;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
