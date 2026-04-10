@@ -20,6 +20,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   // without being part of the connect/disconnect effect's dependency array.
   const activeBudgetIdRef = useRef(activeBudgetId);
   const refreshSummaryRef = useRef(refreshSummary);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { activeBudgetIdRef.current = activeBudgetId; }, [activeBudgetId]);
   useEffect(() => { refreshSummaryRef.current = refreshSummary; }, [refreshSummary]);
@@ -45,7 +46,15 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         case "category_created":
         case "category_updated":
         case "category_deleted":
-          refreshSummaryRef.current();
+          // Debounce to coalesce rapid WS events (e.g. self-echo after
+          // an optimistic update) into a single refreshSummary call.
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+          }
+          debounceTimerRef.current = setTimeout(() => {
+            debounceTimerRef.current = null;
+            refreshSummaryRef.current();
+          }, 500);
           break;
         default:
           break;
@@ -55,6 +64,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     budgetWS.connect(token, handleMessage);
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
       budgetWS.disconnect();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

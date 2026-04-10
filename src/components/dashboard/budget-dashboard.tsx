@@ -121,6 +121,33 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
+  const sections = summary?.sections ?? [];
+
+  // Memoize categoriesMap so ExpenseList doesn't get a new object every render.
+  const categoriesMap = useMemo(() => {
+    const m = new Map<string, { name: string; icon: string | null; categoryName: string }>();
+    for (const sec of sections) {
+      for (const cat of sec.categories) {
+        m.set(cat.category.id, {
+          name: cat.category.name,
+          icon: cat.category.icon,
+          categoryName: sec.section.name,
+        });
+      }
+    }
+    return m;
+  }, [sections]);
+
+  // Memoize the categories list shared by AddExpenseDialog and EditExpenseDialog.
+  const dialogCategories = useMemo(
+    () =>
+      sections.map((s) => ({
+        ...s.section,
+        categories: s.categories.map((c) => c.category),
+      })),
+    [sections]
+  );
+
   // Show loading skeleton only on initial load (no summary and loading)
   // Once summary exists, show content even if still loading (e.g., refreshing data)
   if (!summary && loading) {
@@ -157,7 +184,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     return <EmptyDashboard />;
   }
 
-  const { budget, sections, total_spent } = summary;
+  const { budget, total_spent } = summary;
   const billingPeriod = BILLING_PERIODS.find((p) => p.value === budget.billing_period_months);
   const billingLabel = billingPeriod
     ? tc(billingPeriod.labelKey)
@@ -301,19 +328,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           <ExpenseList
             expenses={expenses}
             currency={budget.currency}
-            categoriesMap={(() => {
-              const m = new Map<string, { name: string; icon: string | null; categoryName: string }>();
-              for (const sec of sections) {
-                for (const cat of sec.categories) {
-                  m.set(cat.category.id, {
-                    name: cat.category.name,
-                    icon: cat.category.icon,
-                    categoryName: sec.section.name,
-                  });
-                }
-              }
-              return m;
-            })()}
+            categoriesMap={categoriesMap}
             onEdit={(exp) => setEditingExpense(exp)}
             onDelete={(id) => deleteExpense(id)}
           />
@@ -331,10 +346,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         open={addExpenseOpen}
         onOpenChange={setAddExpenseOpen}
         budgetId={budgetId}
-        categories={sections.map((s) => ({
-          ...s.section,
-          categories: s.categories.map((c) => c.category),
-        }))}
+        categories={dialogCategories}
         currency={budget.currency}
       />
 
@@ -344,10 +356,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           onOpenChange={(open) => { if (!open) setEditingExpense(null); }}
           budgetId={budgetId}
           expense={editingExpense}
-          categories={sections.map((s) => ({
-            ...s.section,
-            categories: s.categories.map((c) => c.category),
-          }))}
+          categories={dialogCategories}
           currency={budget.currency}
         />
       )}

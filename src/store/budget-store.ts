@@ -54,7 +54,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       const budgets = await budgetApi.list();
       set({ budgets, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: e instanceof Error ? e.message : String(e), loading: false });
     }
   },
 
@@ -67,7 +67,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       ]);
       set({ summary, expenses, loading: false });
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: e instanceof Error ? e.message : String(e), loading: false });
     }
   },
 
@@ -119,7 +119,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       ]);
       set({ summary, expenses, error: null });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: e instanceof Error ? e.message : String(e) });
     }
   },
 
@@ -130,7 +130,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       const summary = await budgetApi.summary(activeBudgetId);
       set({ summary, error: null });
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: e instanceof Error ? e.message : String(e) });
     }
   },
 

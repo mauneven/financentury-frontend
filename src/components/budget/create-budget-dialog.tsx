@@ -66,7 +66,8 @@ const budgetFormSchema = z.object({
     .max(100, "Name must be 100 characters or less"),
   monthly_income: z
     .number({ message: "Income is required" })
-    .positive("Income must be greater than 0"),
+    .positive("Income must be greater than 0")
+    .max(1e15, "Amount exceeds maximum"),
   currency: z.string().min(1, "Currency is required"),
   billing_period_months: z.number().int().min(0).max(12),
   billing_cutoff_day: z.number().int().min(0).max(31),
