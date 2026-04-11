@@ -4,11 +4,41 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 
+/**
+ * Loading skeleton shown while auth is initializing.
+ * Matches the app's design system (border-2, font-mono, etc.).
+ */
+function AuthLoadingSkeleton() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Navbar placeholder */}
+      <div className="h-14 border-b-2 border-foreground/10 bg-background" />
+      {/* Content spinner */}
+      <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+            Loading...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
   const loading = useAuthStore((s) => s.loading);
+  const initialize = useAuthStore((s) => s.initialize);
   const router = useRouter();
+
+  // Ensure initialize() has been called. AuthProvider already does this in
+  // the root layout, but if the guard mounts before the provider effect runs
+  // (e.g. direct URL navigation with slow hydration), this guarantees it.
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   useEffect(() => {
     if (initialized && !loading && !user) {
@@ -16,15 +46,18 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [initialized, loading, user, router]);
 
+  // Show skeleton while auth is resolving. This covers:
+  // 1. Initial page load (initialized=false)
+  // 2. Token validation in progress (loading=true)
   if (!initialized || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="size-6 animate-spin border-2 border-foreground border-t-transparent" />
-      </div>
-    );
+    return <AuthLoadingSkeleton />;
   }
 
-  if (!user) return null;
+  // After auth resolved with no user, show skeleton until the redirect
+  // effect fires and navigation completes (prevents blank flash).
+  if (!user) {
+    return <AuthLoadingSkeleton />;
+  }
 
   return <>{children}</>;
 }

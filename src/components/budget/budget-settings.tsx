@@ -12,7 +12,7 @@ import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
 import { budgetApi } from "@/lib/api";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
-import { cn } from "@/lib/utils";
+
 
 import { CollaboratorsList } from "@/components/budget/collaborators-list";
 import { InviteDialog } from "@/components/budget/invite-dialog";

@@ -39,20 +39,31 @@ export default function SectionReportsPage() {
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
 
+  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
+
   const sectionSummary = summary?.sections.find(
     (s) => s.section.id === params.sectionId
   );
 
   useEffect(() => {
-    if (summary && !sectionSummary) {
+    // Only redirect if summary loaded but section not found
+    if (summary && !summaryLoading && !sectionSummary) {
       router.push(`/${budgetBase}/${params.id}`);
     }
-  }, [summary, sectionSummary, router, budgetBase, params.id]);
+  }, [summary, summaryLoading, sectionSummary, router, budgetBase, params.id]);
 
   if (!summary || !sectionSummary) {
+    if (summaryLoading) {
+      return null; // Layout handles skeleton
+    }
     return (
-      <div className="flex items-center justify-center min-h-[200px] text-muted-foreground text-sm">
-{tc("loading")}
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+            {tc("loading")}
+          </p>
+        </div>
       </div>
     );
   }

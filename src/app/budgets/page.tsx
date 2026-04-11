@@ -19,14 +19,20 @@ export default function HomePage() {
   const budgets = useBudgetStore((s) => s.budgets);
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
   const loading = useBudgetStore((s) => s.loading);
+  const error = useBudgetStore((s) => s.error);
   const authLoading = useAuthStore((s) => s.loading);
+  const authInitialized = useAuthStore((s) => s.initialized);
+  const user = useAuthStore((s) => s.user);
   const [showCreateBudget, setShowCreateBudget] = useState(false);
 
+  // Wait for auth to fully resolve before fetching budgets.
+  const authReady = authInitialized && !authLoading && !!user;
+
   useEffect(() => {
-    if (!authLoading) {
+    if (authReady) {
       fetchBudgets();
     }
-  }, [fetchBudgets, authLoading]);
+  }, [fetchBudgets, authReady]);
 
   return (
     <AuthGuard>
@@ -45,6 +51,26 @@ export default function HomePage() {
               <p className="text-sm text-muted-foreground">
                 {t("loadingBudgets")}
               </p>
+            </div>
+          ) : error && budgets.length === 0 ? (
+            <div className="flex max-w-md flex-col items-center gap-6 text-center">
+              <div className="flex size-16 items-center justify-center border-2 border-red-500 bg-red-50 dark:bg-red-950/30">
+                <Wallet className="size-8 text-red-500" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                  Failed to load budgets
+                </h1>
+                <p className="text-sm text-muted-foreground">{error}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => fetchBudgets()}
+                className="gap-2"
+              >
+                <Plus className="size-4" />
+                Retry
+              </Button>
             </div>
           ) : budgets.length === 0 ? (
             <div className="flex max-w-md flex-col items-center gap-8 text-center">

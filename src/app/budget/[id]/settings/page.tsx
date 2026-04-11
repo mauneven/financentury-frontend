@@ -9,13 +9,23 @@ import { useTranslations } from "@/i18n/client";
 export default function BudgetSettingsPage() {
   const params = useParams<{ id: string }>();
   const summary = useBudgetStore((s) => s.summary);
+  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
   const router = useRouter();
   const tc = useTranslations("common");
 
+  // Loading state -- parent layout shows skeleton but guard here too
   if (!summary) {
+    if (summaryLoading) {
+      return null; // Layout handles skeleton
+    }
     return (
       <div className="flex flex-1 items-center justify-center p-6">
-        <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+            {tc("loading")}
+          </p>
+        </div>
       </div>
     );
   }

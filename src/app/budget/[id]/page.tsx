@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import { useBudgetStore } from "@/store/budget-store";
 import { BudgetDashboard } from "@/components/dashboard/budget-dashboard";
 import { CategoryDetail } from "@/components/expenses/category-detail";
@@ -12,6 +11,14 @@ export default function BudgetDashboardPage() {
   const categoryId = searchParams.get("sub");
   const summary = useBudgetStore((s) => s.summary);
   const expenses = useBudgetStore((s) => s.expenses);
+  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
+
+  // The parent layout handles the loading skeleton while summary is being
+  // fetched, but guard here too in case the page renders before the layout
+  // effect triggers (e.g. fast hydration race).
+  if (!summary && summaryLoading) {
+    return null; // Layout is showing the skeleton.
+  }
 
   if (categoryId && summary) {
     // Find the category in summary

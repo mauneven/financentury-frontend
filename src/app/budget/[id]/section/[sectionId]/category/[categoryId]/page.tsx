@@ -10,6 +10,7 @@ export default function CategoryPage() {
   const router = useRouter();
   const summary = useBudgetStore((s) => s.summary);
   const expenses = useBudgetStore((s) => s.expenses);
+  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
 
   const result = (() => {
     if (!summary) return null;
@@ -31,15 +32,25 @@ export default function CategoryPage() {
   })();
 
   useEffect(() => {
-    if (result === undefined) {
+    // Only redirect if summary loaded but category not found (not during loading)
+    if (result === undefined && !summaryLoading) {
       router.back();
     }
-  }, [result, router]);
+  }, [result, summaryLoading, router]);
 
   if (!result) {
+    // Let parent layout show skeleton during loading
+    if (summaryLoading) {
+      return null;
+    }
     return (
-      <div className="flex items-center justify-center min-h-[200px] text-muted-foreground text-sm">
-        Loading...
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+            Loading...
+          </p>
+        </div>
       </div>
     );
   }

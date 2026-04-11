@@ -11,7 +11,7 @@ import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
 import { CURRENCIES } from "@/types/budget";
-import { formatAmount, parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
+import { parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
 
 import {
   Dialog,

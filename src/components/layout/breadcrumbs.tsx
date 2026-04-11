@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { usePathname, useParams } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useTranslations } from "@/i18n/client";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 interface BreadcrumbSegment {

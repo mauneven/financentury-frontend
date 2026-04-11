@@ -20,6 +20,8 @@ interface BudgetState {
   summary: BudgetSummary | null;
   expenses: Expense[];
   loading: boolean;
+  /** True only while setActiveBudget is fetching (distinct from general loading). */
+  summaryLoading: boolean;
   error: string | null;
 
   // Actions
@@ -46,6 +48,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   summary: null,
   expenses: [],
   loading: false,
+  summaryLoading: false,
   error: null,
 
   fetchBudgets: async () => {
@@ -59,15 +62,35 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   },
 
   setActiveBudget: async (id: string) => {
-    set({ activeBudgetId: id, loading: true, error: null });
+    const prev = get().activeBudgetId;
+    // Clear stale data when switching to a different budget so old content
+    // doesn't flash while the new budget loads.
+    const clearStale = prev !== id;
+    set({
+      activeBudgetId: id,
+      loading: true,
+      summaryLoading: true,
+      error: null,
+      ...(clearStale ? { summary: null, expenses: [] } : {}),
+    });
     try {
       const [summary, expenses] = await Promise.all([
         budgetApi.summary(id),
         expenseApi.list(id),
       ]);
-      set({ summary, expenses, loading: false });
+      // Only apply if this budget is still the active one (guard against
+      // rapid navigation where a slower request resolves after a newer one).
+      if (get().activeBudgetId === id) {
+        set({ summary, expenses, loading: false, summaryLoading: false });
+      }
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : String(e), loading: false });
+      if (get().activeBudgetId === id) {
+        set({
+          error: e instanceof Error ? e.message : String(e),
+          loading: false,
+          summaryLoading: false,
+        });
+      }
     }
   },
 

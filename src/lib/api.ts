@@ -249,7 +249,7 @@ const NIL_UUID = "00000000-0000-0000-0000-000000000000";
  * Also handles the case where category_id is a zero UUID (deserialization bug).
  */
 function normalizeExpense(raw: Record<string, unknown>): Expense {
-  const e = raw as Expense & { subcategory_id?: string };
+  const e = raw as unknown as Expense & { subcategory_id?: string };
   if ((!e.category_id || e.category_id === NIL_UUID) && e.subcategory_id && e.subcategory_id !== NIL_UUID) {
     e.category_id = e.subcategory_id;
   }
