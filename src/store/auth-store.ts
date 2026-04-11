@@ -24,6 +24,7 @@ interface AuthState {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
+  deleteAccount: () => Promise<void>;
 }
 
 const API_BASE =
@@ -197,6 +198,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: () => {
+    budgetWS.disconnect();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("financentury_token");
+      sessionStorage.removeItem("oauth_state");
+    }
+    set({
+      user: null,
+      token: null,
+      justLoggedIn: false,
+    });
+  },
+
+  deleteAccount: async () => {
+    await authApi.deleteAccount();
     budgetWS.disconnect();
     if (typeof window !== "undefined") {
       localStorage.removeItem("financentury_token");

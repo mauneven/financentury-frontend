@@ -278,7 +278,16 @@
   "account": {
     "noName": "Sin nombre",
     "language": "Idioma",
-    "signOut": "Cerrar Sesión"
+    "signOut": "Cerrar Sesión",
+    "dangerZone": "Zona de Peligro",
+    "deleteAccount": "Eliminar Cuenta",
+    "deleteAccountDescription": "Elimina permanentemente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.",
+    "deleteAccountConfirmTitle": "¿Eliminar tu cuenta?",
+    "deleteAccountConfirmDescription": "Esto eliminará permanentemente tu cuenta, todos tus presupuestos, secciones, categorías y gastos. Esta acción es irreversible.",
+    "deleteAccountTypePrompt": "Escribe ELIMINAR para confirmar",
+    "deleteAccountTypePlaceholder": "ELIMINAR",
+    "deleteAccountConfirmButton": "Eliminar Mi Cuenta",
+    "deleting": "Eliminando..."
   },
   "invite": {
     "title": "Invitar Colaborador",

@@ -278,7 +278,16 @@
   "account": {
     "noName": "No name set",
     "language": "Language",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDescription": "Permanently delete your account and all associated data. This action cannot be undone.",
+    "deleteAccountConfirmTitle": "Delete your account?",
+    "deleteAccountConfirmDescription": "This will permanently delete your account, all your budgets, sections, categories, and expenses. This action is irreversible.",
+    "deleteAccountTypePrompt": "Type DELETE to confirm",
+    "deleteAccountTypePlaceholder": "DELETE",
+    "deleteAccountConfirmButton": "Delete My Account",
+    "deleting": "Deleting..."
   },
   "invite": {
     "title": "Invite Collaborator",

@@ -125,6 +125,8 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
+  deleteAccount: () =>
+    request<void>("/auth/account", { method: "DELETE" }),
 };
 
 // Budgets
