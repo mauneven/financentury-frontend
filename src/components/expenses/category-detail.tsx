@@ -162,7 +162,7 @@ export function CategoryDetail({
       </div>
 
       {/* Chart — always show like budget dashboard */}
-      <SpendingChart budgetId={budgetId} currency={currency} categoryIds={[sectionId]} />
+      <SpendingChart budgetId={budgetId} currency={currency} categoryIds={[detailCategory.id]} />
 
       {/* Expense List */}
       <div className="space-y-4">

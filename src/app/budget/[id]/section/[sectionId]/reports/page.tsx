@@ -74,7 +74,7 @@ export default function SectionReportsPage() {
   const percentage = getPercentage(total_spent, allocated_amount);
   const progressColor = getProgressColor(percentage);
   const textColor = getProgressTextColor(percentage);
-  const categoryIds = [params.sectionId];
+  const categoryIds = categories.map((c) => c.category.id);
 
   return (
     <div className="space-y-6">

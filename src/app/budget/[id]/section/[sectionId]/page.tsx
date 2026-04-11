@@ -85,6 +85,9 @@ export default function SectionPage() {
   const progressColor = getProgressColor(percentage);
   const textColor = getProgressTextColor(percentage);
 
+  // Collect category IDs within this section for chart filtering
+  const sectionCategoryIds = categories.map((c) => c.category.id);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Breadcrumbs */}
@@ -176,14 +179,14 @@ export default function SectionPage() {
       {total_spent > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={[params.sectionId]} />
+            <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={sectionCategoryIds} />
           </div>
           <div>
             <BreakdownChart summary={summary} sectionId={params.sectionId} />
           </div>
         </div>
       ) : (
-        <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={[params.sectionId]} />
+        <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={sectionCategoryIds} />
       )}
 
       {/* Category cards — same layout as SectionCard */}

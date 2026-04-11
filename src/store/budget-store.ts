@@ -163,7 +163,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
     const expense = await expenseApi.create(activeBudgetId, data);
     set((state) => ({ expenses: [...state.expenses, expense] }));
-    // WS broadcast will trigger refreshSummary via ws-provider
+    get().refreshSummaryOnly();
     return expense;
   },
 
@@ -172,7 +172,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       expenses: state.expenses.map((e) => e.id === expenseId ? updated : e),
     }));
-    // WS broadcast will trigger refreshSummary via ws-provider
+    get().refreshSummaryOnly();
     return updated;
   },
 
@@ -184,7 +184,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       expenses: state.expenses.filter((e) => e.id !== expenseId),
     }));
-    // WS broadcast will trigger refreshSummary via ws-provider
+    get().refreshSummaryOnly();
   },
 
   addSection: async (data) => {
