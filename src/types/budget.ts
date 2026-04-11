@@ -10,6 +10,7 @@ export interface Budget {
   id: string;
   user_id: string;
   name: string;
+  icon: string;
   monthly_income: number;
   currency: string;
   billing_period_months: number;
@@ -104,6 +105,7 @@ export interface TrendsResponse {
 
 export interface CreateBudgetInput {
   name: string;
+  icon?: string;
   monthly_income: number;
   currency: string;
   billing_period_months: number;

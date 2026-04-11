@@ -12,14 +12,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  Scale,
-  Wallet,
-  PenLine,
-  CreditCard,
-  Plane,
-  PartyPopper,
-} from "lucide-react";
+import { CategoryIcon } from "@/lib/icon-picker";
 import { useTranslations } from "@/i18n/client";
 
 interface BudgetCardProps {
@@ -29,42 +22,36 @@ interface BudgetCardProps {
 
 const MODE_STYLES: Record<
   string,
-  { bg: string; text: string; icon: React.ReactNode; labelKey: string }
+  { bg: string; text: string; labelKey: string }
 > = {
   balanced: {
     bg: "bg-emerald-500/10",
     text: "text-emerald-600",
-    icon: <Scale className="size-4" />,
     labelKey: "balanced",
   },
   "debt-free": {
     bg: "bg-blue-500/10",
     text: "text-blue-600",
-    icon: <Wallet className="size-4" />,
     labelKey: "debtFree",
   },
   "debt-payoff": {
     bg: "bg-rose-500/10",
     text: "text-rose-600",
-    icon: <CreditCard className="size-4" />,
     labelKey: "debtPayoff",
   },
   travel: {
     bg: "bg-sky-500/10",
     text: "text-sky-600",
-    icon: <Plane className="size-4" />,
     labelKey: "travel",
   },
   event: {
     bg: "bg-amber-500/10",
     text: "text-amber-600",
-    icon: <PartyPopper className="size-4" />,
     labelKey: "event",
   },
   manual: {
     bg: "bg-violet-500/10",
     text: "text-violet-600",
-    icon: <PenLine className="size-4" />,
     labelKey: "manual",
   },
 };
@@ -109,7 +96,7 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
                 style.text
               )}
             >
-              {style.icon}
+              <CategoryIcon iconKey={budget.icon || "wallet"} className="size-4" />
             </div>
             <div>
               <CardTitle className="text-base">{budget.name}</CardTitle>

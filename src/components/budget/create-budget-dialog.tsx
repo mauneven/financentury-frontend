@@ -17,6 +17,15 @@ import {
   PartyPopper,
 } from "lucide-react";
 
+import { PieChart, Pie, Cell } from "recharts";
+import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
+import { pickRandomIcon } from "@/lib/amount-utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import type { Budget, BudgetMode as BudgetModeType } from "@/types/budget";
 import {
   CURRENCIES,
@@ -64,6 +73,7 @@ const budgetFormSchema = z.object({
     .string()
     .min(1, "Budget name is required")
     .max(100, "Name must be 100 characters or less"),
+  icon: z.string().min(1),
   monthly_income: z
     .number({ message: "Income is required" })
     .positive("Income must be greater than 0")
@@ -147,53 +157,90 @@ const MODE_SECTIONS: Record<
   event: EVENT_SECTIONS,
 };
 
-function ModeDonutChart({ mode }: { mode: string }) {
-  const sections = MODE_SECTIONS[mode];
-  if (!sections) return null;
+// Maps the Spanish hardcoded name in budget.ts constants to a budget i18n key
+const SECTION_NAME_KEYS: Record<string, string> = {
+  Necesidades: "sectionNeeds",
+  Deseos: "sectionWants",
+  Deudas: "sectionDebts",
+  Ahorro: "sectionSavings",
+  Deuda: "sectionDebt",
+  Vuelos: "sectionFlights",
+  Hospedaje: "sectionAccommodation",
+  Salidas: "sectionOutings",
+  Comida: "sectionFood",
+  Bebidas: "sectionDrinks",
+  Gestión: "sectionManagement",
+};
 
-  // Build conic-gradient stops
-  let accumulated = 0;
-  const stops: string[] = [];
-  sections.forEach((section, i) => {
-    const color = DONUT_COLORS[i % DONUT_COLORS.length];
-    const start = accumulated;
-    const end = accumulated + section.allocation_percent;
-    stops.push(`${color} ${start}% ${end}%`);
-    accumulated = end;
-  });
+function ModeDonutChart({
+  mode,
+  manualLabel,
+  nameTranslator,
+}: {
+  mode: string;
+  manualLabel?: string;
+  nameTranslator?: (name: string) => string;
+}) {
+  const isManual = mode === "manual";
+  const sections = isManual ? [] : (MODE_SECTIONS[mode] ?? []);
+  const chartData = isManual
+    ? [{ name: "manual", value: 1 }]
+    : sections.map((s) => ({ name: s.name, value: s.allocation_percent }));
 
   return (
-    <div className="flex flex-col items-center gap-1.5 mt-3">
-      <div
-        className="shrink-0"
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: "50%",
-          background: `conic-gradient(${stops.join(", ")})`,
-          mask: "radial-gradient(circle at center, transparent 40%, black 41%)",
-          WebkitMask:
-            "radial-gradient(circle at center, transparent 40%, black 41%)",
-        }}
-      />
-      <div className="flex flex-wrap justify-center gap-x-2 gap-y-0.5">
-        {sections.map((section, i) => (
-          <span
-            key={section.name}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground"
+    <div className="flex items-center gap-2 mt-3 w-full">
+      {/* Recharts donut — pointer-events-none prevents selection; extra margin prevents arc clipping */}
+      <div className="shrink-0 pointer-events-none select-none" style={{ width: 72, height: 72 }}>
+        <PieChart width={72} height={72} style={{ overflow: "visible" }}>
+          <Pie
+            data={chartData}
+            cx={36}
+            cy={36}
+            innerRadius={20}
+            outerRadius={30}
+            dataKey="value"
+            strokeWidth={2}
+            stroke="var(--background)"
+            startAngle={90}
+            endAngle={-270}
+            isAnimationActive={false}
           >
-            <span
-              className="inline-block shrink-0"
-              style={{
-                width: 6,
-                height: 6,
-                backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length],
-              }}
-            />
-            {section.allocation_percent}%
-          </span>
-        ))}
+            {chartData.map((_, i) => (
+              <Cell
+                key={i}
+                fill={isManual ? "#9ca3af" : DONUT_COLORS[i % DONUT_COLORS.length]}
+              />
+            ))}
+          </Pie>
+        </PieChart>
       </div>
+
+      {/* Legend to the right */}
+      {isManual ? (
+        <p className="text-[10px] text-muted-foreground leading-tight">
+          {manualLabel}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-[3px] flex-1 min-w-0 overflow-hidden">
+          {sections.map((section, i) => (
+            <span
+              key={section.name}
+              className="flex items-center gap-1 text-[9px] leading-tight text-muted-foreground"
+            >
+              <span
+                className="inline-block shrink-0"
+                style={{
+                  width: 6,
+                  height: 6,
+                  backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length],
+                }}
+              />
+              <span className="truncate">{nameTranslator ? nameTranslator(section.name) : section.name}</span>
+              <span className="shrink-0 font-mono tabular-nums">({section.allocation_percent}%)</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -219,6 +266,7 @@ export function CreateBudgetDialog({
   const [createError, setCreateError] = React.useState<string | null>(null);
   const [customPeriod, setCustomPeriod] = React.useState(false);
   const [incomeDisplay, setIncomeDisplay] = React.useState("");
+  const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
 
   // Detect currency on mount
   const detectedCurrency = (() => {
@@ -247,6 +295,7 @@ export function CreateBudgetDialog({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
       name: "",
+      icon: "wallet",
       monthly_income: undefined as unknown as number,
       currency: detectedCurrency,
       billing_period_months: 1,
@@ -256,6 +305,7 @@ export function CreateBudgetDialog({
 
   const watchCurrency = watch("currency");
   const watchBillingPeriod = watch("billing_period_months");
+  const watchIcon = watch("icon");
 
   // Always 2 steps for all modes (mode selection -> details)
   const totalSteps = 2;
@@ -276,6 +326,7 @@ export function CreateBudgetDialog({
         setIncomeDisplay("");
         reset({
           name: "",
+          icon: pickRandomIcon([]),
           monthly_income: undefined as unknown as number,
           currency: detectedCurrency,
           billing_period_months: 1,
@@ -289,10 +340,16 @@ export function CreateBudgetDialog({
   // Handlers
   const selectMode = (m: BudgetMode) => {
     setMode(m);
-    // For travel and event, default to one-time
     if (m === "travel" || m === "event") {
+      // One-time billing for trip/event budgets
       setValue("billing_period_months", 0);
       setValue("billing_cutoff_day", 0);
+      setCustomPeriod(false);
+    } else {
+      // Always reset to monthly when selecting non-one-time modes
+      setValue("billing_period_months", 1);
+      setValue("billing_cutoff_day", 1);
+      setCustomPeriod(false);
     }
     setStep(2);
   };
@@ -411,7 +468,7 @@ export function CreateBudgetDialog({
       <p className="text-xs text-muted-foreground mb-3">
         {t("canChangeLater")}
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {modeCards.map((card) => (
           <button
             key={card.mode}
@@ -441,7 +498,11 @@ export function CreateBudgetDialog({
               </h3>
             </div>
             <p className="text-xs text-muted-foreground">{t(card.descKey)}</p>
-            <ModeDonutChart mode={card.mode} />
+            <ModeDonutChart
+              mode={card.mode}
+              manualLabel={t("manualChartLabel")}
+              nameTranslator={(name) => t((SECTION_NAME_KEYS[name] ?? name) as any)}
+            />
           </button>
         ))}
       </div>
@@ -454,16 +515,36 @@ export function CreateBudgetDialog({
 
   const renderBudgetForm = () => (
     <div className="animate-in fade-in-0 slide-in-from-right-4 duration-300 space-y-4">
-      {/* Name */}
+      {/* Name with icon picker */}
       <div className="space-y-1.5">
         <Label htmlFor="budget-name">{t("budgetName")}</Label>
-        <Input
-          id="budget-name"
-          placeholder={t("budgetNamePlaceholder")}
-          autoFocus
-          aria-invalid={!!errors.name}
-          {...register("name")}
-        />
+        <div className="flex items-center gap-2">
+          <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
+            <PopoverTrigger
+              className="flex size-10 shrink-0 items-center justify-center border-2 border-foreground bg-background transition-colors hover:bg-muted"
+              aria-label="Pick icon"
+            >
+              <CategoryIcon iconKey={watchIcon} className="size-5" />
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3" align="start">
+              <IconPicker
+                value={watchIcon}
+                onChange={(iconKey) => {
+                  setValue("icon", iconKey);
+                  setIconPickerOpen(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+          <Input
+            id="budget-name"
+            placeholder={t("budgetNamePlaceholder")}
+            autoFocus
+            aria-invalid={!!errors.name}
+            className="flex-1"
+            {...register("name")}
+          />
+        </div>
         {errors.name && (
           <p className="text-xs text-destructive">{errors.name.message}</p>
         )}
@@ -565,8 +646,8 @@ export function CreateBudgetDialog({
             const activeValue = customPeriod ? -1 : field.value;
             return (
               <>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {periodOptions.map((opt) => (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                  {periodOptions.map((opt, idx) => (
                     <button
                       key={opt.value}
                       type="button"
@@ -585,7 +666,8 @@ export function CreateBudgetDialog({
                         }
                       }}
                       className={cn(
-                        "rounded-none border-2 px-2 py-2 text-sm font-bold uppercase tracking-wide transition-all duration-150",
+                        "rounded-none border-2 px-2 py-2 text-[10px] font-bold uppercase tracking-wide leading-tight transition-all duration-150",
+                        idx === periodOptions.length - 1 ? "col-span-2 sm:col-span-1" : "",
                         activeValue === opt.value
                           ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                           : "border-foreground/20 text-muted-foreground hover:border-foreground hover:text-foreground"

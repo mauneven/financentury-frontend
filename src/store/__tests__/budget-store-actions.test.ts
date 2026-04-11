@@ -49,6 +49,7 @@ const mockBudget: Budget = {
   id: "budget-1",
   user_id: "user-1",
   name: "Test Budget",
+  icon: "wallet",
   monthly_income: 5000,
   currency: "USD",
   billing_period_months: 1,
