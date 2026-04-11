@@ -85,8 +85,9 @@ export default function SectionPage() {
   const progressColor = getProgressColor(percentage);
   const textColor = getProgressTextColor(percentage);
 
-  // Collect category IDs within this section for chart filtering
-  const sectionCategoryIds = categories.map((c) => c.category.id);
+  // Filter expenses to only those belonging to this section's categories.
+  const sectionCatIds = new Set(categories.map((c) => c.category.id));
+  const sectionExpenses = expenses.filter((e) => sectionCatIds.has(e.category_id));
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -179,14 +180,14 @@ export default function SectionPage() {
       {total_spent > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={sectionCategoryIds} />
+            <SpendingChart expenses={sectionExpenses} currency={summary.budget.currency} />
           </div>
           <div>
             <BreakdownChart summary={summary} sectionId={params.sectionId} />
           </div>
         </div>
       ) : (
-        <SpendingChart budgetId={params.id} currency={summary.budget.currency} categoryIds={sectionCategoryIds} />
+        <SpendingChart expenses={sectionExpenses} currency={summary.budget.currency} />
       )}
 
       {/* Category cards — same layout as SectionCard */}
@@ -346,10 +347,7 @@ export default function SectionPage() {
       </div>
 
       {/* Expense list for this section */}
-      {(() => {
-        const catIds = new Set(categories.map(s => s.category.id));
-        const sectionExpenses = expenses.filter(e => catIds.has(e.category_id));
-        if (sectionExpenses.length === 0) return null;
+      {sectionExpenses.length > 0 && (() => {
         const categoryMap = new Map<string, { name: string; icon: string | null; categoryName: string }>();
         for (const sec of summary.sections) {
           for (const cat of sec.categories) {

@@ -258,14 +258,14 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       {hasAnySpending ? (
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SpendingChart budgetId={budgetId} currency={budget.currency} />
+            <SpendingChart expenses={expenses} currency={budget.currency} />
           </div>
           <div>
             <BreakdownChart summary={summary} />
           </div>
         </div>
       ) : (
-        <SpendingChart budgetId={budgetId} currency={budget.currency} />
+        <SpendingChart expenses={expenses} currency={budget.currency} />
       )}
 
       {/* Section breakdown */}

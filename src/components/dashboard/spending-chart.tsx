@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -10,16 +10,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Loader2 } from "lucide-react";
-import { budgetApi } from "@/lib/api";
-import type { TrendsResponse } from "@/types/budget";
+import type { Expense } from "@/types/budget";
 import { formatCompact } from "@/lib/format";
 import { useTranslations } from "@/i18n/client";
 
 interface SpendingChartProps {
-  budgetId: string;
+  expenses: Expense[];
   currency: string;
-  categoryIds?: string[];
 }
 
 function formatDayLabel(dateStr: string): string {
@@ -31,60 +28,25 @@ function formatDayLabel(dateStr: string): string {
   }
 }
 
-export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChartProps) {
-  const [trendsData, setTrendsData] = useState<TrendsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function SpendingChart({ expenses, currency }: SpendingChartProps) {
   const [range, setRange] = useState<"1M" | "3M" | "6M" | "1Y">("6M");
   const t = useTranslations("dashboard");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchTrends() {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await budgetApi.trends(budgetId);
-        if (!cancelled) {
-          setTrendsData(data);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError((e as Error).message);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchTrends();
-    return () => {
-      cancelled = true;
-    };
-  }, [budgetId]);
-
-  // Transform nested TrendsResponse into recharts-friendly flat rows — single total line.
-  const chartData: { date: string; total: number }[] = [];
-
-  if (trendsData && trendsData.categories.length > 0) {
-    const categoryIdSet = categoryIds ? new Set(categoryIds) : null;
-    const dateTotals = new Map<string, number>();
-    for (const cat of trendsData.categories) {
-      if (categoryIdSet && !categoryIdSet.has(cat.category_id)) continue;
-      for (const m of cat.months) {
-        dateTotals.set(m.month, (dateTotals.get(m.month) || 0) + m.total_spent);
-      }
-    }
-    const sortedDates = Array.from(dateTotals.keys()).sort();
-    for (const date of sortedDates) {
-      chartData.push({ date, total: dateTotals.get(date) || 0 });
+  // Group expenses by date and sum amounts.
+  const dateTotals = new Map<string, number>();
+  for (const exp of expenses) {
+    if (exp.expense_date) {
+      dateTotals.set(
+        exp.expense_date,
+        (dateTotals.get(exp.expense_date) || 0) + exp.amount
+      );
     }
   }
+  const chartData = Array.from(dateTotals.keys())
+    .sort()
+    .map((date) => ({ date, total: dateTotals.get(date) || 0 }));
 
-  // Filter chartData by selected time range
+  // Filter by selected time range.
   const rangeMonths = { "1M": 1, "3M": 3, "6M": 6, "1Y": 12 } as const;
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - rangeMonths[range]);
@@ -115,28 +77,6 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
       <div className="p-6">{children}</div>
     </div>
   );
-
-  if (loading) {
-    return (
-      <ChartWrapper>
-        <div className="flex h-72 items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      </ChartWrapper>
-    );
-  }
-
-  if (error) {
-    return (
-      <ChartWrapper>
-        <div className="flex h-72 flex-col items-center justify-center gap-2">
-          <p className="text-sm font-medium text-muted-foreground">
-            {t("errorLoading")}
-          </p>
-        </div>
-      </ChartWrapper>
-    );
-  }
 
   if (filteredData.length === 0) {
     return (
@@ -183,9 +123,7 @@ export function SpendingChart({ budgetId, currency, categoryIds }: SpendingChart
               tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "monospace" }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value: number) =>
-                formatCompact(value, currency)
-              }
+              tickFormatter={(value: number) => formatCompact(value, currency)}
               width={50}
             />
             <Tooltip

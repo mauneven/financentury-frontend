@@ -28,6 +28,7 @@ export default function SectionReportsPage() {
   const params = useParams<{ id: string; sectionId: string }>();
   const router = useRouter();
   const summary = useBudgetStore((s) => s.summary);
+  const expenses = useBudgetStore((s) => s.expenses);
   const budgetBase = "budget";
   const tc = useTranslations("common");
   const t = useTranslations("expense");
@@ -74,7 +75,10 @@ export default function SectionReportsPage() {
   const percentage = getPercentage(total_spent, allocated_amount);
   const progressColor = getProgressColor(percentage);
   const textColor = getProgressTextColor(percentage);
-  const categoryIds = categories.map((c) => c.category.id);
+
+  // Filter expenses for this section only.
+  const sectionCatIds = new Set(categories.map((c) => c.category.id));
+  const sectionExpenses = expenses.filter((e) => sectionCatIds.has(e.category_id));
 
   return (
     <div className="space-y-6">
@@ -166,14 +170,14 @@ export default function SectionReportsPage() {
       {total_spent > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SpendingChart budgetId={params.id} currency={currency} categoryIds={categoryIds} />
+            <SpendingChart expenses={sectionExpenses} currency={currency} />
           </div>
           <div>
             <BreakdownChart summary={summary} sectionId={params.sectionId} />
           </div>
         </div>
       ) : (
-        <SpendingChart budgetId={params.id} currency={currency} categoryIds={categoryIds} />
+        <SpendingChart expenses={sectionExpenses} currency={currency} />
       )}
 
       {/* Desglose por categorías */}
