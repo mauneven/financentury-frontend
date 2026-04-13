@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
+import { es as dateFnsEs } from "date-fns/locale";
 import {
   MoreHorizontal,
   Pencil,
@@ -13,6 +14,7 @@ import type { Expense } from "@/types/budget";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { useLocaleStore } from "@/i18n/locale";
 import { CategoryIcon } from "@/lib/icon-picker";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -72,6 +74,8 @@ export function ExpenseList({
 }: ExpenseListProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
+  const { locale } = useLocaleStore();
+  const dateFnsLocale = locale === "es" ? dateFnsEs : undefined;
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
 
   const grouped = ((): GroupedExpenses[] => {
@@ -90,7 +94,11 @@ export function ExpenseList({
 
     return Array.from(groups.entries()).map(([date, exps]) => ({
       date,
-      label: format(parseISO(date), "EEEE, MMMM d, yyyy"),
+      label: format(
+        parseISO(date),
+        locale === "es" ? "EEEE, d 'de' MMMM 'de' yyyy" : "EEEE, MMMM d, yyyy",
+        { locale: dateFnsLocale }
+      ),
       expenses: exps,
     }));
   })();
@@ -198,6 +206,7 @@ function ExpenseRow({
 }: ExpenseRowProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
+  const { locale } = useLocaleStore();
 
   // Resolve creator info
   const createdByOther =
@@ -244,7 +253,7 @@ function ExpenseRow({
           {formatCurrency(expense.amount, currency)}
         </p>
         <p className="text-xs text-muted-foreground font-mono">
-          {new Date(expense.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+          {new Date(expense.created_at).toLocaleTimeString(locale === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" })}
           {expense.updated_at && new Date(expense.updated_at).getTime() - new Date(expense.created_at).getTime() > 60000 && (
             <span className="ml-1 text-muted-foreground/60">· {t("edited")}</span>
           )}

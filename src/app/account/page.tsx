@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
+import { useLocaleStore } from "@/i18n/locale";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,18 +15,122 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { AppShell } from "@/components/layout/app-shell";
-import { LogOut, Globe, Trash2, TriangleAlert } from "lucide-react";
+import { LogOut, Trash2, TriangleAlert, ChevronDown } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
+import { cn } from "@/lib/utils";
+
+// ── Geometric avatar ──────────────────────────────────────────────────────────
+
+const AVATAR_PALETTES = [
+  { bg: "#6366f1", fg: "#fff" },
+  { bg: "#f43f5e", fg: "#fff" },
+  { bg: "#f97316", fg: "#fff" },
+  { bg: "#14b8a6", fg: "#fff" },
+  { bg: "#eab308", fg: "#1a1a1a" },
+  { bg: "#ec4899", fg: "#fff" },
+  { bg: "#3b82f6", fg: "#fff" },
+  { bg: "#22c55e", fg: "#fff" },
+  { bg: "#a855f7", fg: "#fff" },
+  { bg: "#06b6d4", fg: "#fff" },
+  { bg: "#e11d48", fg: "#fff" },
+  { bg: "#84cc16", fg: "#1a1a1a" },
+];
+
+type Shape = "circle" | "diamond" | "triangle" | "hexagon" | "rounded-square" | "cross";
+const SHAPES: Shape[] = ["circle", "diamond", "triangle", "hexagon", "rounded-square", "cross"];
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = Math.imul(31, h) + s.charCodeAt(i);
+  }
+  return Math.abs(h);
+}
+
+function GeometricAvatar({ seed, size = 56 }: { seed: string; size?: number }) {
+  const hash = hashString(seed);
+  const palette = AVATAR_PALETTES[hash % AVATAR_PALETTES.length];
+  const shape = SHAPES[Math.floor(hash / AVATAR_PALETTES.length) % SHAPES.length];
+  const s = size;
+  const c = s / 2;
+  const r = s * 0.3;
+
+  let inner: React.ReactNode;
+
+  if (shape === "circle") {
+    inner = <circle cx={c} cy={c} r={r} fill={palette.fg} />;
+  } else if (shape === "diamond") {
+    const d = r * 0.9;
+    inner = (
+      <polygon
+        points={`${c},${c - d} ${c + d},${c} ${c},${c + d} ${c - d},${c}`}
+        fill={palette.fg}
+      />
+    );
+  } else if (shape === "triangle") {
+    const h2 = r * 0.95;
+    inner = (
+      <polygon
+        points={`${c},${c - h2} ${c + h2 * 0.87},${c + h2 * 0.5} ${c - h2 * 0.87},${c + h2 * 0.5}`}
+        fill={palette.fg}
+      />
+    );
+  } else if (shape === "hexagon") {
+    const pts = Array.from({ length: 6 }, (_, i) => {
+      const angle = (Math.PI / 3) * i - Math.PI / 6;
+      return `${c + r * Math.cos(angle)},${c + r * Math.sin(angle)}`;
+    }).join(" ");
+    inner = <polygon points={pts} fill={palette.fg} />;
+  } else if (shape === "rounded-square") {
+    const sq = r * 0.78;
+    inner = (
+      <rect
+        x={c - sq}
+        y={c - sq}
+        width={sq * 2}
+        height={sq * 2}
+        rx={sq * 0.22}
+        fill={palette.fg}
+      />
+    );
+  } else {
+    // cross
+    const arm = r * 0.28;
+    const len = r * 0.85;
+    inner = (
+      <path
+        d={`M${c - arm},${c - len} h${arm * 2} v${len - arm} h${len - arm} v${arm * 2} h${-(len - arm)} v${len - arm} h${-arm * 2} v${-(len - arm)} h${-(len - arm)} v${-arm * 2} h${len - arm} z`}
+        fill={palette.fg}
+      />
+    );
+  }
+
+  return (
+    <svg
+      width={s}
+      height={s}
+      viewBox={`0 0 ${s} ${s}`}
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <rect width={s} height={s} rx={s * 0.22} fill={palette.bg} />
+      {inner}
+    </svg>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AccountPage() {
   const t = useTranslations("account");
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { user, signOut, deleteAccount } = useAuthStore();
+  const { locale, setLocale } = useLocaleStore();
 
+  const [dangerOpen, setDangerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -34,15 +138,6 @@ export default function AccountPage() {
 
   const confirmWord = t("deleteAccountTypePlaceholder");
   const canConfirm = confirmText === confirmWord;
-
-  function getInitials(name: string | undefined, email: string | undefined) {
-    return (name || email || "U")
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }
 
   async function handleDeleteAccount() {
     if (!canConfirm) return;
@@ -63,21 +158,18 @@ export default function AccountPage() {
     setDeleteDialogOpen(true);
   }
 
+  const avatarSeed = user?.email || user?.full_name || "user";
+
   return (
     <AuthGuard>
       <AppShell>
         <div className="mx-auto max-w-md p-4 pt-8 space-y-4">
 
-          {/* Profile card */}
+          {/* Profile */}
           <Card>
             <CardContent className="pt-6 pb-6">
               <div className="flex items-center gap-4">
-                <Avatar className="size-14 shrink-0">
-                  {user?.avatar_url && <AvatarImage src={user.avatar_url} />}
-                  <AvatarFallback className="text-base font-medium">
-                    {getInitials(user?.full_name, user?.email)}
-                  </AvatarFallback>
-                </Avatar>
+                <GeometricAvatar seed={avatarSeed} size={52} />
                 <div className="min-w-0">
                   <p className="font-semibold truncate">
                     {user?.full_name || t("noName")}
@@ -90,24 +182,44 @@ export default function AccountPage() {
             </CardContent>
           </Card>
 
-          {/* Settings card */}
+          {/* Settings */}
           <Card>
-            <CardContent className="pt-4 pb-4 space-y-1">
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-3">
-                  <Globe className="size-4 text-muted-foreground" />
-                  <span className="text-sm">{t("language")}</span>
-                </div>
-                <LanguageSwitcher />
+            <CardContent className="pt-4 pb-4 space-y-3">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t("language")}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setLocale("en")}
+                  className={cn(
+                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider border-2 transition-colors",
+                    locale === "en"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  )}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => setLocale("es")}
+                  className={cn(
+                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider border-2 transition-colors",
+                    locale === "es"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  )}
+                >
+                  Español
+                </button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Actions card */}
+          {/* Sign out */}
           <Card>
             <CardContent className="pt-4 pb-4">
               <button
-                className="flex items-center gap-3 w-full py-2 text-sm text-left hover:text-foreground transition-colors text-muted-foreground"
+                className="flex items-center gap-3 w-full py-2 text-sm text-left text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => { signOut(); router.push("/"); }}
               >
                 <LogOut className="size-4" />
@@ -116,13 +228,27 @@ export default function AccountPage() {
             </CardContent>
           </Card>
 
-          {/* Danger zone */}
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1 mb-2">
-              {t("dangerZone")}
-            </p>
-            <Card className="border-destructive/40">
-              <CardContent className="pt-4 pb-4">
+          {/* Danger zone — accordion */}
+          <Card className={cn("border-2 transition-colors", dangerOpen ? "border-destructive/60" : "border-destructive/30")}>
+            <button
+              type="button"
+              onClick={() => setDangerOpen((v) => !v)}
+              className="flex items-center justify-between w-full px-4 py-4 text-left"
+            >
+              <span className="text-xs font-bold uppercase tracking-wider text-destructive">
+                {t("dangerZone")}
+              </span>
+              <ChevronDown
+                className={cn(
+                  "size-4 text-destructive transition-transform duration-200",
+                  dangerOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {dangerOpen && (
+              <CardContent className="pt-0 pb-4">
+                <div className="h-px bg-destructive/20 mb-4" />
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-sm font-medium">{t("deleteAccount")}</p>
@@ -140,12 +266,12 @@ export default function AccountPage() {
                   </Button>
                 </div>
               </CardContent>
-            </Card>
-          </div>
+            )}
+          </Card>
 
         </div>
 
-        {/* Delete account confirmation dialog */}
+        {/* Delete confirmation dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
