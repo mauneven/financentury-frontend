@@ -211,7 +211,10 @@
     "emailPlaceholder": "tu@ejemplo.com",
     "passwordPlaceholder": "Mín. 8 caracteres",
     "continueWithEmail": "Continuar con correo",
-    "back": "Volver"
+    "back": "Volver",
+    "signedIn": "Sesión iniciada!",
+    "authFailed": "Error de autenticación. Intenta de nuevo.",
+    "tryAgain": "Intentar de nuevo"
   },
   "landing": {
     "letsStart": "Comencemos",

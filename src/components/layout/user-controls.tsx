@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 
 export function ThemeToggle() {
@@ -40,9 +40,8 @@ export function UserIndicator() {
       href="/account"
       className="flex items-center gap-2 transition-colors hover:opacity-80"
     >
-      <Avatar size="sm">
-        {user?.avatar_url && <AvatarImage src={user.avatar_url} />}
-        <AvatarFallback>{initials}</AvatarFallback>
+      <Avatar size="sm" className="overflow-hidden">
+        <AvatarFallback className="bg-foreground text-background font-mono text-[10px] font-bold">{initials}</AvatarFallback>
       </Avatar>
     </Link>
   );

@@ -40,16 +40,33 @@ const HOW_IT_WORKS = [
 
 export default function LandingPage() {
   const router = useRouter();
-  const { user, initialized } = useAuthStore();
+  const { user, initialized, loading } = useAuthStore();
   const [authOpen, setAuthOpen] = useState(false);
   const t = useTranslations("landing");
+
+  // Read auth callback state from URL on mount (safe in client component)
+  const [authParam, setAuthParam] = useState<"loading" | "error" | null>(null);
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const a = params.get("auth") as "loading" | "error" | null;
+    const m = params.get("message");
+    if (a) {
+      setAuthParam(a);
+      setAuthMessage(m);
+      setAuthOpen(true);
+    }
+  }, []);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroVisible, setHeroVisible] = useState(false);
 
+  // Redirect authenticated users — but NOT when handling auth callback (modal handles it)
   useEffect(() => {
-    if (initialized && user) router.replace("/budgets");
-  }, [initialized, user, router]);
+    if (authParam) return;
+    if (initialized && !loading && user) router.replace("/budgets");
+  }, [initialized, loading, user, router, authParam]);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -314,7 +331,12 @@ export default function LandingPage() {
       <Footer />
 
       {/* ── Auth Modal ─────────────────────────────────────────── */}
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+      <AuthModal
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        callbackState={authParam}
+        callbackError={authMessage}
+      />
     </div>
   );
 }
