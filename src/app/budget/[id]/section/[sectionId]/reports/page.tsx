@@ -90,7 +90,7 @@ export default function SectionReportsPage() {
           <button
             type="button"
             onClick={() => router.push(`/${budgetBase}/${params.id}`)}
-            className="mt-1 flex size-8 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground transition-colors border border-border"
+            className="mt-1 flex size-8 shrink-0 items-center justify-center text-foreground transition-colors hover:bg-foreground hover:text-background border-2 border-foreground"
           >
             <ArrowLeft className="size-4" />
           </button>

@@ -104,9 +104,9 @@ export default function LandingPage() {
             <LanguageSwitcher />
             <button
               onClick={() => setAuthOpen(true)}
-              className="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+              className="btn-liquid px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background hover:text-foreground"
             >
-              {t("letsStart")}
+              <span>{t("letsStart")}</span>
             </button>
           </div>
         </div>
@@ -169,10 +169,10 @@ export default function LandingPage() {
             <div className="mt-10 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => setAuthOpen(true)}
-                className="inline-flex items-center justify-center gap-2 border-2 border-foreground bg-foreground px-8 py-4 font-mono text-sm font-black uppercase tracking-widest text-background transition-colors hover:bg-background hover:text-foreground"
+                className="btn-liquid inline-flex items-center justify-center gap-2 border-2 border-foreground bg-foreground px-8 py-4 font-mono text-sm font-black uppercase tracking-widest text-background hover:text-foreground"
               >
-                {t("letsStart")}
-                <ArrowRight className="size-4" />
+                <span>{t("letsStart")}</span>
+                <ArrowRight className="relative z-[1] size-4" />
               </button>
               <button
                 onClick={() =>
@@ -318,10 +318,10 @@ export default function LandingPage() {
             </p>
             <button
               onClick={() => setAuthOpen(true)}
-              className="mt-8 inline-flex items-center gap-2 border-2 border-foreground bg-foreground px-10 py-4 font-mono text-sm font-black uppercase tracking-widest text-background transition-colors hover:bg-background hover:text-foreground"
+              className="btn-liquid mt-8 inline-flex items-center gap-2 border-2 border-foreground bg-foreground px-10 py-4 font-mono text-sm font-black uppercase tracking-widest text-background hover:text-foreground"
             >
-              {t("letsStart")}
-              <ArrowRight className="size-4" />
+              <span>{t("letsStart")}</span>
+              <ArrowRight className="relative z-[1] size-4" />
             </button>
           </div>
         </div>

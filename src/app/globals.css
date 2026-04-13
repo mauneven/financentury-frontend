@@ -181,6 +181,22 @@
     border-radius: 0 !important;
   }
 
+  /* All interactive elements get pointer cursor */
+  button,
+  [role="button"],
+  a,
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  label[for] {
+    cursor: pointer;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea {
+    cursor: text;
+  }
+
   html {
     font-family: var(--font-space-mono), "Space Mono", "Courier New", monospace;
     font-size: 14px;
@@ -230,4 +246,66 @@
 
 .font-mono {
   font-family: var(--font-space-mono), "Space Mono", "Courier New", monospace;
+}
+
+/* =========================================
+   BRUTALIST CTA BUTTON — sweep + grain
+   ========================================= */
+
+.btn-liquid {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.3s ease;
+}
+
+/* Sweep layer — slides up from bottom */
+.btn-liquid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--background);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+/* Grain overlay */
+.btn-liquid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: repeating-conic-gradient(
+    var(--foreground) 0% 25%, transparent 0% 50%
+  ) 0 0 / 3px 3px;
+  mix-blend-mode: overlay;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.btn-liquid:hover::before {
+  transform: scaleY(1);
+}
+
+.btn-liquid:hover::after {
+  opacity: 0.12;
+}
+
+.btn-liquid:hover {
+  color: var(--foreground);
+}
+
+.btn-liquid > * {
+  position: relative;
+  z-index: 1;
+}
+
+:is(.dark) .btn-liquid::before {
+  background: var(--foreground);
+}
+
+:is(.dark) .btn-liquid:hover {
+  color: var(--background);
 }

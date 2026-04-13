@@ -17,117 +17,15 @@ import {
 } from "@/components/ui/dialog";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { AppShell } from "@/components/layout/app-shell";
-import { LogOut, Trash2, TriangleAlert, ChevronDown } from "lucide-react";
+import { LogOut, Trash2, TriangleAlert, ChevronDown, Pencil, Check, X } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
 import { cn } from "@/lib/utils";
-
-// ── Geometric avatar ──────────────────────────────────────────────────────────
-
-const AVATAR_PALETTES = [
-  { bg: "#6366f1", fg: "#fff" },
-  { bg: "#f43f5e", fg: "#fff" },
-  { bg: "#f97316", fg: "#fff" },
-  { bg: "#14b8a6", fg: "#fff" },
-  { bg: "#eab308", fg: "#1a1a1a" },
-  { bg: "#ec4899", fg: "#fff" },
-  { bg: "#3b82f6", fg: "#fff" },
-  { bg: "#22c55e", fg: "#fff" },
-  { bg: "#a855f7", fg: "#fff" },
-  { bg: "#06b6d4", fg: "#fff" },
-  { bg: "#e11d48", fg: "#fff" },
-  { bg: "#84cc16", fg: "#1a1a1a" },
-];
-
-type Shape = "circle" | "diamond" | "triangle" | "hexagon" | "rounded-square" | "cross";
-const SHAPES: Shape[] = ["circle", "diamond", "triangle", "hexagon", "rounded-square", "cross"];
-
-function hashString(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = Math.imul(31, h) + s.charCodeAt(i);
-  }
-  return Math.abs(h);
-}
-
-function GeometricAvatar({ seed, size = 56 }: { seed: string; size?: number }) {
-  const hash = hashString(seed);
-  const palette = AVATAR_PALETTES[hash % AVATAR_PALETTES.length];
-  const shape = SHAPES[Math.floor(hash / AVATAR_PALETTES.length) % SHAPES.length];
-  const s = size;
-  const c = s / 2;
-  const r = s * 0.3;
-
-  let inner: React.ReactNode;
-
-  if (shape === "circle") {
-    inner = <circle cx={c} cy={c} r={r} fill={palette.fg} />;
-  } else if (shape === "diamond") {
-    const d = r * 0.9;
-    inner = (
-      <polygon
-        points={`${c},${c - d} ${c + d},${c} ${c},${c + d} ${c - d},${c}`}
-        fill={palette.fg}
-      />
-    );
-  } else if (shape === "triangle") {
-    const h2 = r * 0.95;
-    inner = (
-      <polygon
-        points={`${c},${c - h2} ${c + h2 * 0.87},${c + h2 * 0.5} ${c - h2 * 0.87},${c + h2 * 0.5}`}
-        fill={palette.fg}
-      />
-    );
-  } else if (shape === "hexagon") {
-    const pts = Array.from({ length: 6 }, (_, i) => {
-      const angle = (Math.PI / 3) * i - Math.PI / 6;
-      return `${c + r * Math.cos(angle)},${c + r * Math.sin(angle)}`;
-    }).join(" ");
-    inner = <polygon points={pts} fill={palette.fg} />;
-  } else if (shape === "rounded-square") {
-    const sq = r * 0.78;
-    inner = (
-      <rect
-        x={c - sq}
-        y={c - sq}
-        width={sq * 2}
-        height={sq * 2}
-        rx={sq * 0.22}
-        fill={palette.fg}
-      />
-    );
-  } else {
-    // cross
-    const arm = r * 0.28;
-    const len = r * 0.85;
-    inner = (
-      <path
-        d={`M${c - arm},${c - len} h${arm * 2} v${len - arm} h${len - arm} v${arm * 2} h${-(len - arm)} v${len - arm} h${-arm * 2} v${-(len - arm)} h${-(len - arm)} v${-arm * 2} h${len - arm} z`}
-        fill={palette.fg}
-      />
-    );
-  }
-
-  return (
-    <svg
-      width={s}
-      height={s}
-      viewBox={`0 0 ${s} ${s}`}
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <rect width={s} height={s} rx={s * 0.22} fill={palette.bg} />
-      {inner}
-    </svg>
-  );
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AccountPage() {
   const t = useTranslations("account");
   const tCommon = useTranslations("common");
   const router = useRouter();
-  const { user, signOut, deleteAccount } = useAuthStore();
+  const { user, signOut, deleteAccount, updateName } = useAuthStore();
   const { locale, setLocale } = useLocaleStore();
 
   const [dangerOpen, setDangerOpen] = useState(false);
@@ -135,6 +33,12 @@ export default function AccountPage() {
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Editable name
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(user?.full_name || "");
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const confirmWord = t("deleteAccountTypePlaceholder");
   const canConfirm = confirmText === confirmWord;
@@ -158,7 +62,31 @@ export default function AccountPage() {
     setDeleteDialogOpen(true);
   }
 
-  const avatarSeed = user?.email || user?.full_name || "user";
+  async function handleSaveName() {
+    const trimmed = nameValue.trim();
+    if (!trimmed) return;
+    if (trimmed === user?.full_name) {
+      setEditingName(false);
+      return;
+    }
+    setNameSaving(true);
+    setNameError(null);
+    try {
+      await updateName(trimmed);
+      setEditingName(false);
+    } catch (err) {
+      setNameError(err instanceof Error ? err.message : "Failed to update name");
+    } finally {
+      setNameSaving(false);
+    }
+  }
+
+  const initials = (user?.full_name || user?.email || "U")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <AuthGuard>
@@ -169,11 +97,39 @@ export default function AccountPage() {
           <Card>
             <CardContent className="pt-6 pb-6">
               <div className="flex items-center gap-4">
-                <GeometricAvatar seed={avatarSeed} size={52} />
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">
-                    {user?.full_name || t("noName")}
-                  </p>
+                <div className="flex size-13 shrink-0 items-center justify-center rounded-full bg-foreground text-background font-mono text-sm font-bold">
+                  {initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  {editingName ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={nameValue}
+                        onChange={(e) => setNameValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") { setEditingName(false); setNameValue(user?.full_name || ""); } }}
+                        disabled={nameSaving}
+                        maxLength={100}
+                        className="h-8 text-sm"
+                        autoFocus
+                      />
+                      <button onClick={handleSaveName} disabled={nameSaving || !nameValue.trim()} className="shrink-0 text-foreground hover:opacity-70 disabled:opacity-30">
+                        <Check className="size-4" />
+                      </button>
+                      <button onClick={() => { setEditingName(false); setNameValue(user?.full_name || ""); setNameError(null); }} disabled={nameSaving} className="shrink-0 text-muted-foreground hover:text-foreground">
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold truncate">
+                        {user?.full_name || t("noName")}
+                      </p>
+                      <button onClick={() => { setNameValue(user?.full_name || ""); setEditingName(true); }} className="shrink-0 text-muted-foreground hover:text-foreground">
+                        <Pencil className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  {nameError && <p className="text-xs text-destructive mt-1">{nameError}</p>}
                   <p className="text-sm text-muted-foreground truncate">
                     {user?.email}
                   </p>

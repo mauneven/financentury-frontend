@@ -95,7 +95,7 @@ export function CategoryDetail({
           <button
             type="button"
             onClick={() => router.back()}
-            className="mt-1 flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border border-border"
+            className="mt-1 flex size-8 shrink-0 items-center justify-center text-foreground transition-colors duration-200 hover:bg-foreground hover:text-background border-2 border-foreground"
             aria-label="Go back"
           >
             <ArrowLeft className="size-4" />

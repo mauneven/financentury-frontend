@@ -25,6 +25,7 @@ interface AuthState {
   registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
   deleteAccount: () => Promise<void>;
+  updateName: (name: string) => Promise<void>;
 }
 
 const API_BASE =
@@ -222,5 +223,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       token: null,
       justLoggedIn: false,
     });
+  },
+
+  updateName: async (name: string) => {
+    const updated = await authApi.updateProfile({ full_name: name });
+    set({ user: updated });
   },
 }));

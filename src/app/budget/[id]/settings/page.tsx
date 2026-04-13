@@ -35,7 +35,7 @@ export default function BudgetSettingsPage() {
       <button
         type="button"
         onClick={() => router.push(`/budget/${params.id}`)}
-        className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="mb-4 flex items-center gap-1.5 text-sm text-foreground hover:opacity-70 transition-opacity"
       >
         <ArrowLeft className="size-4" />
         <span className="text-xs uppercase tracking-wider font-bold">{tc("back")}</span>

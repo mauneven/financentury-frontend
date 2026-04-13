@@ -24,11 +24,23 @@ export function ThemeToggle() {
   );
 }
 
+/** Truncate name to fit max chars, cutting at word boundary when possible. */
+function truncateName(name: string, max: number): string {
+  if (name.length <= max) return name;
+  // Try to cut at last space within the limit.
+  const sliced = name.slice(0, max);
+  const lastSpace = sliced.lastIndexOf(" ");
+  if (lastSpace > 0) return sliced.slice(0, lastSpace);
+  // Single long word — hard cut with ellipsis.
+  return name.slice(0, max - 1) + "\u2026";
+}
+
 export function UserIndicator() {
   const { user } = useAuthStore();
 
-  const displayName = user?.full_name || user?.email || "User";
-  const initials = displayName
+  const fullName = user?.full_name || "";
+  const displayName = fullName ? truncateName(fullName, 15) : (user?.email?.split("@")[0] || "User");
+  const initials = (fullName || user?.email || "U")
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -43,6 +55,9 @@ export function UserIndicator() {
       <Avatar size="sm" className="overflow-hidden">
         <AvatarFallback className="bg-foreground text-background font-mono text-[10px] font-bold">{initials}</AvatarFallback>
       </Avatar>
+      <span className="hidden sm:block font-mono text-xs font-bold text-foreground">
+        {displayName}
+      </span>
     </Link>
   );
 }

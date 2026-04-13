@@ -127,6 +127,11 @@ export const authApi = {
     }),
   deleteAccount: () =>
     request<void>("/auth/account", { method: "DELETE" }),
+  updateProfile: (data: { full_name: string }) =>
+    request<AuthUser>("/auth/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 };
 
 // Budgets
