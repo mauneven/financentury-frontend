@@ -120,6 +120,20 @@
     "categoryCount": "{count} category",
     "categoryCountPlural": "{count} categories"
   },
+  "unallocated": {
+    "budgetTitle": "{percent}% of your budget is not allocated",
+    "budgetDescription": "{amount} is not assigned to any section. Redirect it or create a new section.",
+    "sectionTitle": "{percent}% of this section is not allocated",
+    "sectionDescription": "{amount} is not assigned to any category. Redirect it or create a new category.",
+    "redirectToSection": "Add to existing section",
+    "redirectToCategory": "Add to existing category",
+    "createSection": "Create section",
+    "createCategory": "Create category",
+    "selectTarget": "Select where to redirect",
+    "redirecting": "Redirecting...",
+    "redirect": "Redirect",
+    "cancel": "Cancel"
+  },
   "dashboard": {
     "totalBudget": "Total Budget",
     "totalSpent": "Total Spent",

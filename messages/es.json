@@ -120,6 +120,20 @@
     "categoryCount": "{count} categoría",
     "categoryCountPlural": "{count} categorías"
   },
+  "unallocated": {
+    "budgetTitle": "{percent}% de tu presupuesto no está asignado",
+    "budgetDescription": "{amount} no está asignado a ninguna sección. Redirigelo o crea una nueva sección.",
+    "sectionTitle": "{percent}% de esta sección no está asignado",
+    "sectionDescription": "{amount} no está asignado a ninguna categoría. Redirigelo o crea una nueva categoría.",
+    "redirectToSection": "Agregar a sección existente",
+    "redirectToCategory": "Agregar a categoría existente",
+    "createSection": "Crear sección",
+    "createCategory": "Crear categoría",
+    "selectTarget": "Seleccionar a dónde redirigir",
+    "redirecting": "Redirigiendo...",
+    "redirect": "Redirigir",
+    "cancel": "Cancelar"
+  },
   "dashboard": {
     "totalBudget": "Presupuesto Total",
     "totalSpent": "Total Gastado",

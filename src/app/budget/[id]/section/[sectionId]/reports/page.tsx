@@ -14,6 +14,7 @@ import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
 import type { Category } from "@/types/budget";
 import { SpendingByUser } from "@/components/dashboard/spending-by-user";
+import { SectionUnallocatedBanner } from "@/components/dashboard/unallocated-banner";
 import { useTranslations } from "@/i18n/client";
 
 const SpendingChart = dynamic(
@@ -166,6 +167,30 @@ export default function SectionReportsPage() {
           />
         </div>
       </div>
+
+      {/* Unallocated section notification */}
+      {categories.length > 0 && (() => {
+        const totalCatPct = categories.reduce((sum, c) => sum + c.category.allocation_percent, 0);
+        const unallocPct = parseFloat((100 - totalCatPct).toFixed(2));
+        if (unallocPct <= 0) return null;
+        const unallocAmt = (unallocPct / 100) * allocated_amount;
+        return (
+          <SectionUnallocatedBanner
+            unallocatedPercent={unallocPct}
+            unallocatedAmount={unallocAmt}
+            currency={currency}
+            sectionId={section.id}
+            categories={categories.map((c) => ({
+              id: c.category.id,
+              name: c.category.name,
+              icon: c.category.icon,
+              allocation_percent: c.category.allocation_percent,
+              sectionId: section.id,
+            }))}
+            onCreateCategory={() => setAddCategoryOpen(true)}
+          />
+        );
+      })()}
 
       {/* Per-person spending (section level) */}
       {sectionSummary.spending_by_user && sectionSummary.spending_by_user.length > 0 && (

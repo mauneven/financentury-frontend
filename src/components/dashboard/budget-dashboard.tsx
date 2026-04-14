@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
 import { SpendingByUser } from "./spending-by-user";
+import { BudgetUnallocatedBanner } from "./unallocated-banner";
 import { EmptyDashboard } from "./empty-dashboard";
 import { BILLING_PERIODS } from "@/types/budget";
 import type { Expense } from "@/types/budget";
@@ -250,6 +251,28 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
               <div className={cn("h-full transition-all duration-300", pc)} style={{ width: `${Math.min(pct, 100)}%` }} />
             </div>
           </div>
+        );
+      })()}
+
+      {/* Unallocated budget notification */}
+      {(() => {
+        const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_percent, 0);
+        const unallocatedPct = parseFloat((100 - totalAllocated).toFixed(2));
+        if (unallocatedPct <= 0) return null;
+        const unallocatedAmt = (unallocatedPct / 100) * budget.monthly_income;
+        return (
+          <BudgetUnallocatedBanner
+            unallocatedPercent={unallocatedPct}
+            unallocatedAmount={unallocatedAmt}
+            currency={budget.currency}
+            sections={sections.map((s) => ({
+              id: s.section.id,
+              name: s.section.name,
+              icon: s.section.icon,
+              allocation_percent: s.section.allocation_percent,
+            }))}
+            onCreateSection={() => setAddSectionOpen(true)}
+          />
         );
       })()}
 

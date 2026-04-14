@@ -17,6 +17,7 @@ import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { SpendingByUser } from "./spending-by-user";
+import { SectionUnallocatedBanner } from "./unallocated-banner";
 
 interface SectionCardProps {
   sectionSummary: SectionSummary;
@@ -363,6 +364,31 @@ export function SectionCard({
                   </div>
                 );
               })}
+              {/* Unallocated section notification */}
+              {sectionCategories.length > 0 && (() => {
+                const totalCatPct = sectionCategories.reduce((sum, c) => sum + c.category.allocation_percent, 0);
+                const unallocPct = parseFloat((100 - totalCatPct).toFixed(2));
+                if (unallocPct <= 0) return null;
+                const unallocAmt = (unallocPct / 100) * allocated_amount;
+                return (
+                  <div className="mt-3">
+                    <SectionUnallocatedBanner
+                      unallocatedPercent={unallocPct}
+                      unallocatedAmount={unallocAmt}
+                      currency={currency}
+                      sectionId={section.id}
+                      categories={sectionCategories.map((c) => ({
+                        id: c.category.id,
+                        name: c.category.name,
+                        icon: c.category.icon,
+                        allocation_percent: c.category.allocation_percent,
+                        sectionId: section.id,
+                      }))}
+                      onCreateCategory={() => setAddCategoryOpen(true)}
+                    />
+                  </div>
+                );
+              })()}
               {sectionCategories.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-foreground bg-muted">
