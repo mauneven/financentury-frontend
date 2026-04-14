@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Pencil, BarChart3, ChevronUp, Settings, Plus } from "lucide-react";
 import type { SectionSummary, Section, Category } from "@/types/budget";
 import {
-  formatCompact,
+  formatCurrency,
   getPercentage,
   getProgressColor,
   getProgressTextColor,
@@ -72,22 +72,22 @@ export function SectionCard({
           </div>
 
           {/* Amount row - Mobile */}
-          <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                {tSection("allocationPercent")}
-              </p>
+          <div className="mb-4 pb-4 border-b border-border space-y-2">
+            <div className="flex items-center justify-between">
               <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
-                {formatCompact(allocated_amount, currency)}
+                {formatCurrency(allocated_amount, currency)}
               </p>
+              <span className="text-sm font-bold font-mono text-muted-foreground">
+                {section.allocation_percent}% {t("ofBudget")}
+              </span>
             </div>
-            <div className="text-right">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                {t("used")}
+            <div className="flex items-center justify-between">
+              <p className="text-base font-mono tabular-nums text-muted-foreground">
+                {formatCurrency(total_spent, currency)} {t("spentLabel").toLowerCase()}
               </p>
-              <p className={cn("text-2xl font-bold tabular-nums font-mono", textColor)}>
-                {percentage}%
-              </p>
+              <span className={cn("text-sm font-bold font-mono tabular-nums", textColor)}>
+                {percentage}% {t("used")}
+              </span>
             </div>
           </div>
 
@@ -194,26 +194,22 @@ export function SectionCard({
 
           {/* Amount display - right side */}
           <div className="text-right">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-              {tSection("allocationPercent")}
-            </p>
-            <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
-              {formatCompact(allocated_amount, currency)}
-            </p>
+            <div className="flex items-baseline justify-end gap-2">
+              <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+                {formatCurrency(allocated_amount, currency)}
+              </p>
+              <span className="text-sm font-bold font-mono text-muted-foreground">
+                {section.allocation_percent}%
+              </span>
+            </div>
             <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", textColor)}>
-              {percentage}% {t("used")}
+              {formatCurrency(total_spent, currency)} · {percentage}% {t("used")}
             </p>
           </div>
         </div>
 
-        {/* Budget / Spent / Left summary */}
+        {/* Left summary */}
         <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
-          <span>
-            {t("spentLabel")}:{" "}
-            <span className="font-bold font-mono tabular-nums text-foreground">
-              {formatCompact(total_spent, currency)}
-            </span>
-          </span>
           <span>
             {t("leftLabel")}:{" "}
             <span
@@ -225,7 +221,7 @@ export function SectionCard({
               )}
             >
               {remaining < 0 ? "-" : ""}
-              {formatCompact(Math.abs(remaining), currency)}
+              {formatCurrency(Math.abs(remaining), currency)}
             </span>
           </span>
         </div>
@@ -293,17 +289,12 @@ export function SectionCard({
                             {sub.category.name}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold tabular-nums font-mono text-foreground">
-                            {formatCompact(sub.allocated_amount, currency)}
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold tabular-nums font-mono text-foreground">
+                            {formatCurrency(sub.allocated_amount, currency)}
                           </span>
-                          <span
-                            className={cn(
-                              "min-w-[2.5rem] text-right text-sm font-bold tabular-nums font-mono",
-                              subTextColor
-                            )}
-                          >
-                            {subPercentage}%
+                          <span className="text-xs font-bold font-mono text-muted-foreground">
+                            {sub.category.allocation_percent}%
                           </span>
                         </div>
                       </div>
@@ -321,14 +312,13 @@ export function SectionCard({
                       </div>
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span className="font-mono tabular-nums">
-                          {formatCompact(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
+                          {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
                         </span>
                         <span className={cn(
-                          "font-mono tabular-nums",
-                          subRemaining < 0 ? "text-red-600 dark:text-red-400" : ""
+                          "font-mono tabular-nums font-bold",
+                          subTextColor
                         )}>
-                          {subRemaining < 0 ? "-" : ""}
-                          {formatCompact(Math.abs(subRemaining), currency)} {t("leftLabel").toLowerCase()}
+                          {subPercentage}% {t("used")}
                         </span>
                       </div>
                       {/* Per-person spending (category level) */}

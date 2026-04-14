@@ -13,7 +13,6 @@ const SpendingChart = dynamic(
 import type { Expense, Section, CategorySummary } from "@/types/budget";
 import {
   formatCurrency,
-  formatCompact,
   getPercentage,
   getProgressColor,
   getProgressTextColor,
@@ -126,13 +125,13 @@ export function CategoryDetail({
         <div className="border-2 border-foreground bg-card p-4 text-center">
           <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("budgeted")}</p>
           <p className="text-lg font-bold tabular-nums font-mono">
-            {formatCompact(allocated_amount, currency)}
+            {formatCurrency(allocated_amount, currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
           <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("spent")}</p>
           <p className={cn("text-lg font-bold tabular-nums font-mono", textColor)}>
-            {formatCompact(total_spent, currency)}
+            {formatCurrency(total_spent, currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
@@ -141,7 +140,7 @@ export function CategoryDetail({
             "text-lg font-bold tabular-nums font-mono",
             overBudget ? "text-red-600 dark:text-red-400" : "text-emerald-600"
           )}>
-            {overBudget ? "-" : ""}{formatCompact(Math.abs(remaining), currency)}
+            {overBudget ? "-" : ""}{formatCurrency(Math.abs(remaining), currency)}
           </p>
         </div>
       </div>

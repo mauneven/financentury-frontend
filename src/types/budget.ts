@@ -171,7 +171,7 @@ export const BALANCED_SECTIONS = [
   {
     name: "Necesidades",
     allocation_percent: 50,
-    icon: "home",
+    icon: "sprout",
     categories: [
       { name: "Vivienda", allocation_percent: 45, icon: "home" },
       { name: "Comida", allocation_percent: 25, icon: "utensils" },
@@ -212,7 +212,7 @@ export const DEBT_FREE_SECTIONS = [
   {
     name: "Necesidades",
     allocation_percent: 50,
-    icon: "home",
+    icon: "sprout",
     categories: [
       { name: "Vivienda", allocation_percent: 45, icon: "home" },
       { name: "Comida", allocation_percent: 25, icon: "utensils" },
@@ -244,7 +244,7 @@ export const DEBT_PAYOFF_SECTIONS = [
   {
     name: "Necesidades",
     allocation_percent: 50,
-    icon: "home",
+    icon: "sprout",
     categories: [
       { name: "Vivienda", allocation_percent: 45, icon: "home" },
       { name: "Comida", allocation_percent: 25, icon: "utensils" },

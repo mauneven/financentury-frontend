@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useBudgetStore } from "@/store/budget-store";
 import { ArrowLeft, BarChart3, Settings, Plus } from "lucide-react";
-import { formatCompact, getPercentage, getProgressColor, getProgressTextColor } from "@/lib/format";
+import { formatCurrency, getPercentage, getProgressColor, getProgressTextColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { useEffect, useState } from "react";
@@ -133,13 +133,13 @@ export default function SectionReportsPage() {
         <div className="border-2 border-foreground bg-card p-4 text-center">
           <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("budgeted")}</p>
           <p className="text-xl font-bold tabular-nums font-mono">
-            {formatCompact(allocated_amount, currency)}
+            {formatCurrency(allocated_amount, currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
           <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("spent")}</p>
           <p className={cn("text-xl font-bold tabular-nums font-mono", textColor)}>
-            {formatCompact(total_spent, currency)}
+            {formatCurrency(total_spent, currency)}
           </p>
         </div>
         <div className="border-2 border-foreground bg-card p-4 text-center">
@@ -148,7 +148,7 @@ export default function SectionReportsPage() {
             "text-xl font-bold tabular-nums font-mono",
             remaining < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600"
           )}>
-            {remaining < 0 ? "-" : ""}{formatCompact(Math.abs(remaining), currency)}
+            {remaining < 0 ? "-" : ""}{formatCurrency(Math.abs(remaining), currency)}
           </p>
         </div>
       </div>
@@ -239,16 +239,22 @@ export default function SectionReportsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-                      <div>
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
+                    <div className="mb-4 pb-4 border-b border-border space-y-2">
+                      <div className="flex items-center justify-between">
                         <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
-                          {formatCompact(cat.allocated_amount, currency)}
+                          {formatCurrency(cat.allocated_amount, currency)}
                         </p>
+                        <span className="text-sm font-bold font-mono text-muted-foreground">
+                          {cat.category.allocation_percent}%
+                        </span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tDash("used")}</p>
-                        <p className={cn("text-2xl font-bold tabular-nums font-mono", catTextColor)}>{catPct}%</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-base font-mono tabular-nums text-muted-foreground">
+                          {formatCurrency(cat.total_spent, currency)} {t("spent").toLowerCase()}
+                        </p>
+                        <span className={cn("text-sm font-bold font-mono tabular-nums", catTextColor)}>
+                          {catPct}% {tDash("used")}
+                        </span>
                       </div>
                     </div>
                     <div className="flex gap-2 mb-4">
@@ -301,24 +307,22 @@ export default function SectionReportsPage() {
                       </button>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
-                      <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
-                        {formatCompact(cat.allocated_amount, currency)}
-                      </p>
+                      <div className="flex items-baseline justify-end gap-2">
+                        <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+                          {formatCurrency(cat.allocated_amount, currency)}
+                        </p>
+                        <span className="text-sm font-bold font-mono text-muted-foreground">
+                          {cat.category.allocation_percent}%
+                        </span>
+                      </div>
                       <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>
-                        {catPct}% {tDash("used")}
+                        {formatCurrency(cat.total_spent, currency)} · {catPct}% {tDash("used")}
                       </p>
                     </div>
                   </div>
 
-                  {/* Spent / Remaining row */}
+                  {/* Remaining row */}
                   <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
-                    <span>
-                      {t("spent")}:{" "}
-                      <span className="font-bold font-mono tabular-nums text-foreground">
-                        {formatCompact(cat.total_spent, currency)}
-                      </span>
-                    </span>
                     <span>
                       {t("remaining")}:{" "}
                       <span className={cn(
@@ -326,7 +330,7 @@ export default function SectionReportsPage() {
                         catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
                       )}>
                         {catRemaining < 0 ? "-" : ""}
-                        {formatCompact(Math.abs(catRemaining), currency)}
+                        {formatCurrency(Math.abs(catRemaining), currency)}
                       </span>
                     </span>
                   </div>
