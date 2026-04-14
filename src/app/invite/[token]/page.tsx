@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, Users, AlertCircle, CheckCircle2, Wallet } from "lucide-react";
 
@@ -31,12 +31,25 @@ export default function InviteAcceptPage() {
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
-  const [acceptedBudgetId, setAcceptedBudgetId] = useState<string | null>(null);
+
+  const handleAccept = useCallback(async () => {
+    setAccepting(true);
+    setError(null);
+    try {
+      const budget = await inviteApi.accept(params.token);
+      setAccepted(true);
+      setTimeout(() => {
+        router.push(`/budget/${budget.id}`);
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("invalidLink"));
+      setAccepting(false);
+    }
+  }, [params.token, router, t]);
 
   // Fetch invite info (no auth needed)
   useEffect(() => {
     if (!params.token) return;
-    setLoading(true);
     inviteApi
       .getInfo(params.token)
       .then((data) => {
@@ -47,35 +60,27 @@ export default function InviteAcceptPage() {
         setError(t("invalidLink"));
         setLoading(false);
       });
-  }, [params.token]);
+  }, [params.token, t]);
 
   // Auto-accept if user just logged in and we have a valid invite
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     if (initialized && user && info && !info.is_expired && !info.is_used && !accepted && !accepting) {
       // Check if we were redirected back after login
       const pending = typeof window !== "undefined" && sessionStorage.getItem("pending_invite");
       if (pending === params.token) {
         sessionStorage.removeItem("pending_invite");
-        handleAccept();
+        timeoutId = setTimeout(() => {
+          void handleAccept();
+        }, 0);
       }
     }
-  }, [initialized, user, info, accepted, accepting]);
-
-  const handleAccept = async () => {
-    setAccepting(true);
-    setError(null);
-    try {
-      const budget = await inviteApi.accept(params.token);
-      setAccepted(true);
-      setAcceptedBudgetId(budget.id);
-      setTimeout(() => {
-        router.push(`/budget/${budget.id}`);
-      }, 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("invalidLink"));
-      setAccepting(false);
-    }
-  };
+    return () => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [initialized, user, info, accepted, accepting, params.token, handleAccept]);
 
   const handleSignInAndAccept = () => {
     if (typeof window !== "undefined") {
@@ -193,7 +198,7 @@ export default function InviteAcceptPage() {
               size="lg"
               className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
               disabled={accepting}
-              onClick={handleAccept}
+              onClick={() => void handleAccept()}
             >
               {accepting ? (
                 <>

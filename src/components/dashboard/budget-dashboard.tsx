@@ -184,13 +184,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     return <EmptyDashboard />;
   }
 
-  const { budget, total_spent } = summary;
+  const { budget } = summary;
   const billingPeriod = BILLING_PERIODS.find((p) => p.value === budget.billing_period_months);
   const billingLabel = billingPeriod
     ? tc(billingPeriod.labelKey)
     : `${budget.billing_period_months}m`;
-
-  const hasAnySpending = total_spent > 0;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -255,18 +253,14 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       })()}
 
       {/* Charts row */}
-      {hasAnySpending ? (
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <SpendingChart expenses={expenses} currency={budget.currency} />
-          </div>
-          <div>
-            <BreakdownChart summary={summary} />
-          </div>
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <SpendingChart expenses={expenses} currency={budget.currency} />
         </div>
-      ) : (
-        <SpendingChart expenses={expenses} currency={budget.currency} />
-      )}
+        <div>
+          <BreakdownChart summary={summary} />
+        </div>
+      </div>
 
       {/* Section breakdown */}
       {sections.length > 0 ? (

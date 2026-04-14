@@ -79,6 +79,7 @@ async function request<T>(
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
+        "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },

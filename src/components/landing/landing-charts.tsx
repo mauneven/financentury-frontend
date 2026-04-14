@@ -938,6 +938,7 @@ export function LandingCharts() {
               <div className="relative h-44 sm:h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
+                    {/* Background muted ring — no tooltip */}
                     <Pie
                       data={[{ value: 1 }]}
                       cx="50%"
@@ -947,9 +948,14 @@ export function LandingCharts() {
                       dataKey="value"
                       strokeWidth={0}
                       isAnimationActive={false}
+                      cursor="default"
+                      activeShape={undefined}
+                      // @ts-expect-error recharts internal prop to suppress tooltip
+                      tooltipType="none"
                     >
                       <Cell fill="var(--muted)" />
                     </Pie>
+                    {/* Category slices */}
                     <Pie
                       data={categoryData}
                       cx="50%"
@@ -958,6 +964,7 @@ export function LandingCharts() {
                       outerRadius="80%"
                       paddingAngle={1}
                       dataKey="spent"
+                      nameKey="translationKey"
                       strokeWidth={2}
                       stroke="var(--background)"
                       startAngle={90}
