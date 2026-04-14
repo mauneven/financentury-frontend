@@ -220,10 +220,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Charts ─────────────────────────────────────────────── */}
+      {/* ── Interactive Demo ──────────────────────────────────── */}
       <section id="charts" className="py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12">
+          <div className="mb-8">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
               {t("chartsLabel")}
             </p>
@@ -231,7 +231,7 @@ export default function LandingPage() {
               {t("chartsTitle")}
             </h2>
             <p className="mt-3 max-w-lg font-mono text-sm text-muted-foreground">
-              {t("chartsDescription")}
+              {t("demoTryIt")}
             </p>
           </div>
           <LandingCharts />

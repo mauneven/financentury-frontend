@@ -13,7 +13,22 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import {
+  ChevronDown,
+  ChevronUp,
+  Home,
+  UtensilsCrossed,
+  Car,
+  Lightbulb,
+  PartyPopper,
+  Coffee,
+  ShoppingCart,
+  TrendingUp,
+  Landmark,
+  Coins,
+} from "lucide-react";
 import { useTranslations } from "@/i18n/client";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,8 +57,20 @@ interface DayExpense {
 
 interface CategorySlice {
   name: string;
+  translationKey: string;
   value: number;
+  spent: number;
   color: string;
+  icon: React.ReactNode;
+}
+
+interface DemoSection {
+  name: string;
+  translationKey: string;
+  icon: React.ReactNode;
+  categories: CategorySlice[];
+  allocated: number;
+  spent: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +144,26 @@ const CATEGORY_COLORS: Record<string, string> = {
   catDebt: "#f43f5e",
 };
 
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  catHousing: <Home className="size-4" />,
+  catFood: <UtensilsCrossed className="size-4" />,
+  catTransport: <Car className="size-4" />,
+  catUtilities: <Lightbulb className="size-4" />,
+  catEntertainment: <PartyPopper className="size-4" />,
+  catDining: <Coffee className="size-4" />,
+  catShopping: <ShoppingCart className="size-4" />,
+  catEmergencyFund: <Landmark className="size-4" />,
+  catInvestment: <TrendingUp className="size-4" />,
+  catDebt: <Coins className="size-4" />,
+};
+
+const SECTION_ICONS: Record<string, React.ReactNode> = {
+  sectionNeeds: <Home className="size-5" />,
+  sectionWants: <PartyPopper className="size-5" />,
+  sectionSavings: <Landmark className="size-5" />,
+  sectionDebt: <Coins className="size-5" />,
+};
+
 const TOOLTIP_STYLE: React.CSSProperties = {
   backgroundColor: "var(--card)",
   border: "2px solid var(--foreground)",
@@ -141,8 +188,20 @@ function formatAmount(value: number, currency: string): string {
   };
   const sym = symbols[currency] || "$";
   if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `${sym}${Math.round(value / 1000)}K`;
+  if (value >= 1000) return `${sym}${(value / 1000).toFixed(0)}K`;
   return `${sym}${Math.round(value)}`;
+}
+
+function formatFull(value: number, currency: string): string {
+  const symbols: Record<string, string> = {
+    USD: "$",
+    EUR: "\u20AC",
+    COP: "$",
+    MXN: "$",
+    BRL: "R$",
+  };
+  const sym = symbols[currency] || "$";
+  return `${sym}${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
 function formatAxisValue(value: number, currency: string): string {
@@ -168,18 +227,27 @@ function seededRandom(seed: number): () => number {
   };
 }
 
+function getProgressColor(pct: number): string {
+  if (pct >= 100) return "bg-red-500";
+  if (pct >= 90) return "bg-amber-500";
+  return "bg-emerald-500";
+}
+
+function getProgressTextColor(pct: number): string {
+  if (pct >= 100) return "text-red-600 dark:text-red-400";
+  if (pct >= 90) return "text-amber-600 dark:text-amber-400";
+  return "text-emerald-600 dark:text-emerald-400";
+}
+
 function generateAreaChartData(
   income: number,
   profile: FinancialProfile
 ): DayExpense[] {
-  const totalBudget =
-    income * ((profile.needs + profile.wants) / 100);
+  const totalBudget = income * ((profile.needs + profile.wants) / 100);
   const rand = seededRandom(income + profile.needs * 100 + profile.debt * 10);
 
-  // Pick 17 days out of 30 that have expenses
   const allDays = Array.from({ length: 30 }, (_, i) => i + 1);
   const expenseDays = new Set<number>();
-  // Always include day 1 (rent), and a few fixed anchor days
   expenseDays.add(1);
   expenseDays.add(5);
   expenseDays.add(10);
@@ -192,99 +260,159 @@ function generateAreaChartData(
     expenseDays.add(allDays[idx]);
   }
 
-  // Distribute budget across expense days with variety
   const dayAmounts = new Map<number, number>();
   let remaining = totalBudget;
 
-  // Day 1: rent is the biggest single expense (~30-40% of needs)
   const rent = income * (profile.needs / 100) * (0.3 + rand() * 0.1);
   dayAmounts.set(1, rent);
   remaining -= rent;
 
-  // Spread remaining across other expense days
   const otherDays = Array.from(expenseDays).filter((d) => d !== 1);
   const weights = otherDays.map(() => 0.3 + rand() * 0.7);
   const totalWeight = weights.reduce((a, b) => a + b, 0);
 
   otherDays.forEach((day, i) => {
     const amount = (remaining * weights[i]) / totalWeight;
-    // Add some variance
     const varied = amount * (0.6 + rand() * 0.8);
     dayAmounts.set(day, Math.max(varied, 0));
   });
 
-  // Build the full 30-day dataset
   let cumulative = 0;
   const data: DayExpense[] = [];
   for (let day = 1; day <= 30; day++) {
     const amount = dayAmounts.get(day) || 0;
     cumulative += amount;
-    data.push({ day, amount: Math.round(amount), cumulative: Math.round(cumulative) });
+    data.push({
+      day,
+      amount: Math.round(amount),
+      cumulative: Math.round(cumulative),
+    });
   }
 
   return data;
 }
 
-function generateCategoryData(
+function generateSections(
   income: number,
   profile: FinancialProfile
-): CategorySlice[] {
+): DemoSection[] {
   const rand = seededRandom(income * 3 + profile.debt * 7);
-  const slices: CategorySlice[] = [];
+  const sections: DemoSection[] = [];
 
-  // Needs breakdown (housing, food, transport, utilities)
+  // Needs section
   const needsTotal = income * (profile.needs / 100);
-  const needsSplit = [0.4, 0.25, 0.2, 0.15]; // housing, food, transport, utilities
-  const needsLabels = ["catHousing", "catFood", "catTransport", "catUtilities"];
-  needsSplit.forEach((pct, i) => {
-    const val = needsTotal * pct * (0.9 + rand() * 0.2);
-    slices.push({
-      name: needsLabels[i],
-      value: Math.round(val),
-      color: CATEGORY_COLORS[needsLabels[i]],
-    });
+  const needsSplit = [0.4, 0.25, 0.2, 0.15];
+  const needsKeys = ["catHousing", "catFood", "catTransport", "catUtilities"];
+  const needsCats: CategorySlice[] = needsSplit.map((pct, i) => {
+    const allocated = Math.round(needsTotal * pct);
+    const spentRatio = 0.55 + rand() * 0.4; // 55-95% spent
+    const spent = Math.round(allocated * spentRatio);
+    return {
+      name: needsKeys[i],
+      translationKey: needsKeys[i],
+      value: allocated,
+      spent,
+      color: CATEGORY_COLORS[needsKeys[i]],
+      icon: CATEGORY_ICONS[needsKeys[i]],
+    };
+  });
+  const needsSpent = needsCats.reduce((s, c) => s + c.spent, 0);
+  sections.push({
+    name: "sectionNeeds",
+    translationKey: "sectionNeeds",
+    icon: SECTION_ICONS["sectionNeeds"],
+    categories: needsCats,
+    allocated: Math.round(needsTotal),
+    spent: needsSpent,
   });
 
-  // Wants breakdown (entertainment, dining, shopping)
+  // Wants section
   const wantsTotal = income * (profile.wants / 100);
   const wantsSplit = [0.35, 0.35, 0.3];
-  const wantsLabels = ["catEntertainment", "catDining", "catShopping"];
-  wantsSplit.forEach((pct, i) => {
-    const val = wantsTotal * pct * (0.85 + rand() * 0.3);
-    slices.push({
-      name: wantsLabels[i],
-      value: Math.round(val),
-      color: CATEGORY_COLORS[wantsLabels[i]],
-    });
+  const wantsKeys = ["catEntertainment", "catDining", "catShopping"];
+  const wantsCats: CategorySlice[] = wantsSplit.map((pct, i) => {
+    const allocated = Math.round(wantsTotal * pct);
+    const spentRatio = 0.4 + rand() * 0.5; // 40-90% spent
+    const spent = Math.round(allocated * spentRatio);
+    return {
+      name: wantsKeys[i],
+      translationKey: wantsKeys[i],
+      value: allocated,
+      spent,
+      color: CATEGORY_COLORS[wantsKeys[i]],
+      icon: CATEGORY_ICONS[wantsKeys[i]],
+    };
+  });
+  const wantsSpent = wantsCats.reduce((s, c) => s + c.spent, 0);
+  sections.push({
+    name: "sectionWants",
+    translationKey: "sectionWants",
+    icon: SECTION_ICONS["sectionWants"],
+    categories: wantsCats,
+    allocated: Math.round(wantsTotal),
+    spent: wantsSpent,
   });
 
-  // Savings
+  // Savings section
   if (profile.savings > 0) {
     const savingsTotal = income * (profile.savings / 100);
-    const savingsSplit = profile.savings >= 20 ? [0.5, 0.5] : [1];
-    const savingsLabels =
+    const savingsKeys =
       profile.savings >= 20
         ? ["catEmergencyFund", "catInvestment"]
         : ["catEmergencyFund"];
-    savingsSplit.forEach((pct, i) => {
-      slices.push({
-        name: savingsLabels[i],
-        value: Math.round(savingsTotal * pct),
-        color: CATEGORY_COLORS[savingsLabels[i]],
-      });
+    const savingsSplit =
+      profile.savings >= 20 ? [0.5, 0.5] : [1];
+    const savingsCats: CategorySlice[] = savingsSplit.map((pct, i) => {
+      const allocated = Math.round(savingsTotal * pct);
+      const spentRatio = 0.3 + rand() * 0.4; // 30-70% "spent" (saved)
+      const spent = Math.round(allocated * spentRatio);
+      return {
+        name: savingsKeys[i],
+        translationKey: savingsKeys[i],
+        value: allocated,
+        spent,
+        color: CATEGORY_COLORS[savingsKeys[i]],
+        icon: CATEGORY_ICONS[savingsKeys[i]],
+      };
+    });
+    const savingsSpent = savingsCats.reduce((s, c) => s + c.spent, 0);
+    sections.push({
+      name: "sectionSavings",
+      translationKey: "sectionSavings",
+      icon: SECTION_ICONS["sectionSavings"],
+      categories: savingsCats,
+      allocated: Math.round(savingsTotal),
+      spent: savingsSpent,
     });
   }
 
-  // Debt
+  // Debt section
   if (profile.debt > 0) {
-    slices.push({
-      name: "catDebt",
-      value: Math.round(income * (profile.debt / 100)),
-      color: CATEGORY_COLORS["catDebt"],
+    const debtTotal = income * (profile.debt / 100);
+    const allocated = Math.round(debtTotal);
+    const spentRatio = 0.6 + rand() * 0.35;
+    const spent = Math.round(allocated * spentRatio);
+    const debtCats: CategorySlice[] = [
+      {
+        name: "catDebt",
+        translationKey: "catDebt",
+        value: allocated,
+        spent,
+        color: CATEGORY_COLORS["catDebt"],
+        icon: CATEGORY_ICONS["catDebt"],
+      },
+    ];
+    sections.push({
+      name: "sectionDebt",
+      translationKey: "sectionDebt",
+      icon: SECTION_ICONS["sectionDebt"],
+      categories: debtCats,
+      allocated,
+      spent,
     });
   }
 
-  return slices;
+  return sections;
 }
 
 // ---------------------------------------------------------------------------
@@ -315,12 +443,265 @@ function SelectorButton({
   );
 }
 
+function DemoOverviewCards({
+  totalBudget,
+  totalSpent,
+  currency,
+  t,
+}: {
+  totalBudget: number;
+  totalSpent: number;
+  currency: string;
+  t: (key: string) => string;
+}) {
+  const remaining = totalBudget - totalSpent;
+  const spentPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+  const isOver = remaining < 0;
+  const remainingPct = totalBudget > 0 ? Math.round(((totalBudget - totalSpent) / totalBudget) * 100) : 0;
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* Total Budget */}
+      <div className="border-2 border-foreground bg-card p-4 sm:p-5">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+          {t("demoTotalBudget")}
+        </p>
+        <p className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums tracking-tight font-mono text-foreground">
+          {formatFull(totalBudget, currency)}
+        </p>
+        <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+          {t("demoMonthly")}
+        </p>
+      </div>
+
+      {/* Total Spent */}
+      <div className="border-2 border-foreground bg-card p-4 sm:p-5">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+          {t("demoTotalSpent")}
+        </p>
+        <p className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums tracking-tight font-mono text-foreground">
+          {formatFull(totalSpent, currency)}
+        </p>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="inline-block h-2 w-2 bg-foreground/40" />
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-mono">
+            {spentPct}% {t("used")}
+          </p>
+        </div>
+      </div>
+
+      {/* Remaining */}
+      <div
+        className={cn(
+          "border-2 border-foreground bg-card p-4 sm:p-5",
+          isOver ? "border-l-4 border-l-red-500" : "border-l-4 border-l-emerald-500"
+        )}
+      >
+        <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+          {t("demoRemaining")}
+        </p>
+        <p
+          className={cn(
+            "mt-2 text-2xl sm:text-3xl font-bold tabular-nums tracking-tight font-mono",
+            isOver ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
+          )}
+        >
+          {isOver ? "-" : ""}
+          {formatFull(Math.abs(remaining), currency)}
+        </p>
+        <div className="mt-1 flex items-center gap-2">
+          <span
+            className={cn(
+              "inline-block h-2 w-2",
+              isOver ? "bg-red-500" : "bg-emerald-500"
+            )}
+          />
+          <p
+            className={cn(
+              "text-xs uppercase tracking-wider font-mono",
+              isOver ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"
+            )}
+          >
+            {remainingPct}% {t("demoRemainingLabel")}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DemoSectionCard({
+  section,
+  currency,
+  t,
+}: {
+  section: DemoSection;
+  currency: string;
+  t: (key: string) => string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const pct = section.allocated > 0 ? Math.round((section.spent / section.allocated) * 100) : 0;
+  const remaining = section.allocated - section.spent;
+  const progressColor = getProgressColor(pct);
+  const textColor = getProgressTextColor(pct);
+
+  return (
+    <div className="border-2 border-foreground bg-card">
+      <div className="p-4 sm:p-5">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-foreground">{section.icon}</span>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">
+                {t(section.translationKey)}
+              </h3>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                {section.categories.length} {section.categories.length === 1 ? t("demoCategory") : t("demoCategories")}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsExpanded((p) => !p)}
+              className="px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="size-3" />
+                  <span className="hidden sm:inline">{t("demoCollapse")}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="size-3" />
+                  <span className="hidden sm:inline">{t("demoBreakdown")}</span>
+                </>
+              )}
+            </button>
+            <div className="text-right">
+              <p className="text-lg sm:text-xl font-bold tabular-nums font-mono text-foreground">
+                {formatAmount(section.allocated, currency)}
+              </p>
+              <p className={cn("text-xs font-bold tabular-nums font-mono", textColor)}>
+                {pct}% {t("used")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Spent / Left */}
+        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+          <span>
+            {t("demoSpent")}:{" "}
+            <span className="font-bold font-mono tabular-nums text-foreground">
+              {formatAmount(section.spent, currency)}
+            </span>
+          </span>
+          <span>
+            {t("demoLeft")}:{" "}
+            <span
+              className={cn(
+                "font-bold font-mono tabular-nums",
+                remaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
+              )}
+            >
+              {remaining < 0 ? "-" : ""}
+              {formatAmount(Math.abs(remaining), currency)}
+            </span>
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-2.5 w-full overflow-hidden bg-muted">
+          <div
+            className={cn("h-full transition-all duration-300", progressColor)}
+            style={{ width: `${Math.min(pct, 100)}%` }}
+          />
+        </div>
+
+        {/* Expandable categories */}
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows] duration-200 ease-in-out",
+            isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="mt-4 border-t border-border pt-4 space-y-0">
+              {section.categories.map((cat, idx) => {
+                const catPct = cat.value > 0 ? Math.round((cat.spent / cat.value) * 100) : 0;
+                const catProgress = getProgressColor(catPct);
+                const catText = getProgressTextColor(catPct);
+                const catRemaining = cat.value - cat.spent;
+
+                return (
+                  <div
+                    key={cat.name}
+                    className={cn(
+                      "flex flex-col gap-1.5 px-2 py-2.5",
+                      idx !== 0 && "border-t border-foreground/10"
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">{cat.icon}</span>
+                        <span className="text-sm font-bold text-foreground">
+                          {t(cat.translationKey)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sm font-bold tabular-nums font-mono text-foreground">
+                          {formatAmount(cat.value, currency)}
+                        </span>
+                        <span
+                          className={cn(
+                            "min-w-[2rem] text-right text-xs font-bold tabular-nums font-mono",
+                            catText
+                          )}
+                        >
+                          {catPct}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden bg-muted">
+                      <div
+                        className={cn("h-full transition-all duration-300", catProgress)}
+                        style={{ width: `${Math.min(catPct, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="font-mono tabular-nums">
+                        {formatAmount(cat.spent, currency)} {t("demoSpent").toLowerCase()}
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono tabular-nums",
+                          catRemaining < 0 ? "text-red-600 dark:text-red-400" : ""
+                        )}
+                      >
+                        {catRemaining < 0 ? "-" : ""}
+                        {formatAmount(Math.abs(catRemaining), currency)} {t("demoLeft").toLowerCase()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 
 export function LandingCharts() {
-  const tLanding = useTranslations("landing");
+  const t = useTranslations("landing");
 
   const [currency, setCurrency] = useState<Currency>("USD");
   const [incomeIndex, setIncomeIndex] = useState<number>(
@@ -332,269 +713,323 @@ export function LandingCharts() {
   const income = presets[incomeIndex].value;
   const profile = PROFILES[profileIndex];
 
-  // Reset income index when currency changes
   const handleCurrencyChange = (c: Currency) => {
     setCurrency(c);
     setIncomeIndex(DEFAULT_INCOME_INDEX[c]);
   };
 
-  // Generate chart data
+  // Generate data
   const areaData = useMemo(
     () => generateAreaChartData(income, profile),
     [income, profile]
   );
 
-  const categoryData = useMemo(
-    () => generateCategoryData(income, profile),
+  const sections = useMemo(
+    () => generateSections(income, profile),
     [income, profile]
   );
 
-  const totalSpent = categoryData.reduce((sum, c) => sum + c.value, 0);
-  const spentPercentage = Math.round((totalSpent / income) * 100);
+  const totalBudget = income;
+  const totalSpent = sections.reduce((s, sec) => s + sec.spent, 0);
+  const budgetPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+  const budgetProgressColor = budgetPct >= 100 ? "bg-red-600" : budgetPct >= 75 ? "bg-yellow-500" : "bg-emerald-600";
+  const budgetTextColor = budgetPct >= 100 ? "text-red-600 dark:text-red-400" : budgetPct >= 75 ? "text-yellow-600 dark:text-yellow-400" : "text-emerald-600";
+
+  // Flatten for pie chart
+  const categoryData = sections.flatMap((sec) => sec.categories);
+  const spentPercentage = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
 
   return (
-    <div className="w-full space-y-6">
-      {/* Currency Selector */}
-      <div className="space-y-2">
-        <p className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
-          {tLanding("currency")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {CURRENCIES.map((c) => (
-            <SelectorButton
-              key={c}
-              label={c}
-              selected={currency === c}
-              onClick={() => handleCurrencyChange(c)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Income Presets */}
-      <div className="space-y-2">
-        <p className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
-          {tLanding("monthlyIncome")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {presets.map((p, i) => (
-            <SelectorButton
-              key={p.label}
-              label={p.label}
-              selected={incomeIndex === i}
-              onClick={() => setIncomeIndex(i)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Financial Profile Presets */}
-      <div className="space-y-2">
-        <p className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
-          {tLanding("financialProfile")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {PROFILES.map((p, i) => (
-            <SelectorButton
-              key={p.key}
-              label={tLanding(p.key)}
-              selected={profileIndex === i}
-              onClick={() => setProfileIndex(i)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Area Chart */}
-        <div className="lg:col-span-2 border-2 border-foreground bg-card">
-          <div className="border-b-2 border-foreground px-6 py-4">
-            <h3 className="text-xs font-bold font-mono uppercase tracking-widest text-foreground">
-              {tLanding("spendingTrends")}
-            </h3>
-          </div>
-          <div className="p-6">
-            <div
-              className="h-64 w-full [&_.recharts-surface]:outline-none [&_.recharts-surface:focus]:outline-none"
-              style={{ outline: "none" }}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={areaData}
-                  margin={{ top: 5, right: 5, left: -10, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient
-                      id="landing-area-gradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="var(--foreground)"
-                        stopOpacity={0.15}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--foreground)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="none"
-                    stroke="var(--border)"
-                    strokeOpacity={0.3}
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="day"
-                    ticks={[1, 5, 10, 15, 20, 25, 30]}
-                    tick={{
-                      fontSize: 10,
-                      fill: "var(--muted-foreground)",
-                      fontFamily: "monospace",
-                    }}
-                    tickLine={false}
-                    axisLine={{
-                      stroke: "var(--foreground)",
-                      strokeWidth: 2,
-                    }}
-                  />
-                  <YAxis
-                    tick={{
-                      fontSize: 10,
-                      fill: "var(--muted-foreground)",
-                      fontFamily: "monospace",
-                    }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value: number) =>
-                      formatAxisValue(value, currency)
-                    }
-                    width={50}
-                  />
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    labelStyle={{
-                      fontWeight: 700,
-                      marginBottom: 4,
-                      textTransform: "uppercase" as const,
-                      color: "var(--foreground)",
-                    }}
-                    labelFormatter={(label) => `${tLanding("day")} ${label}`}
-                    itemStyle={{ color: "var(--foreground)" }}
-                    formatter={(value) => [
-                      formatAmount(Number(value), currency),
-                      tLanding("cumulative"),
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="cumulative"
-                    stroke="var(--foreground)"
-                    fill="url(#landing-area-gradient)"
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Donut Chart */}
-        <div className="border-2 border-foreground bg-card">
-          <div className="border-b-2 border-foreground px-6 py-4">
-            <h3 className="text-xs font-bold font-mono uppercase tracking-widest text-foreground">
-              {tLanding("breakdown")}
-            </h3>
-          </div>
-          <div className="px-3 sm:px-6 py-6">
-            <div className="relative h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  {/* Background muted ring */}
-                  <Pie
-                    data={[{ value: 1 }]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="55%"
-                    outerRadius="80%"
-                    dataKey="value"
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                  >
-                    <Cell fill="var(--muted)" />
-                  </Pie>
-                  {/* Category slices */}
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="55%"
-                    outerRadius="80%"
-                    paddingAngle={1}
-                    dataKey="value"
-                    strokeWidth={2}
-                    stroke="var(--background)"
-                    startAngle={90}
-                    endAngle={90 - (spentPercentage / 100) * 360}
-                    isAnimationActive={false}
-                    activeShape={undefined}
-                    cursor="pointer"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    wrapperStyle={{ zIndex: 50 }}
-                    itemStyle={{ color: "var(--foreground)" }}
-                    formatter={(value, name) => [
-                      formatAmount(Number(value), currency),
-                      tLanding(String(name)),
-                    ]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Center text */}
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-xl font-bold font-mono tabular-nums text-foreground">
-                  {formatAmount(totalSpent, currency)}
-                </p>
-                <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-                  {spentPercentage}% {tLanding("used")}
-                </p>
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {categoryData.map((entry) => (
-                <div
-                  key={entry.name}
-                  className="flex items-center gap-2 min-h-[28px]"
-                >
-                  <div
-                    className="h-3 w-3 shrink-0"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="truncate text-xs text-muted-foreground">
-                    {tLanding(entry.name)}
-                  </span>
-                  <span className="ml-auto text-xs font-semibold font-mono tabular-nums text-foreground">
-                    {formatAmount(entry.value, currency)}
-                  </span>
-                </div>
+    <div className="w-full">
+      {/* ── Controls bar ─────────────────────────────────────── */}
+      <div className="border-2 border-foreground bg-card p-4 sm:p-5 space-y-4 mb-4">
+        <div className="flex flex-wrap gap-6">
+          {/* Currency */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
+              {t("currency")}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {CURRENCIES.map((c) => (
+                <SelectorButton
+                  key={c}
+                  label={c}
+                  selected={currency === c}
+                  onClick={() => handleCurrencyChange(c)}
+                />
               ))}
             </div>
           </div>
+
+          {/* Income */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
+              {t("monthlyIncome")}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {presets.map((p, i) => (
+                <SelectorButton
+                  key={p.label}
+                  label={p.label}
+                  selected={incomeIndex === i}
+                  onClick={() => setIncomeIndex(i)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Profile */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
+              {t("financialProfile")}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {PROFILES.map((p, i) => (
+                <SelectorButton
+                  key={p.key}
+                  label={t(p.key)}
+                  selected={profileIndex === i}
+                  onClick={() => setProfileIndex(i)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Dashboard mock ───────────────────────────────────── */}
+      <div className="space-y-4">
+        {/* Overview Cards */}
+        <DemoOverviewCards
+          totalBudget={totalBudget}
+          totalSpent={totalSpent}
+          currency={currency}
+          t={t}
+        />
+
+        {/* Budget usage bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-sm">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+              {t("demoOfBudgetUsed")}
+            </span>
+            <span className={cn("font-bold tabular-nums font-mono", budgetTextColor)}>
+              {budgetPct}%
+            </span>
+          </div>
+          <div className="h-3 w-full overflow-hidden bg-muted border-2 border-foreground">
+            <div
+              className={cn("h-full transition-all duration-300", budgetProgressColor)}
+              style={{ width: `${Math.min(budgetPct, 100)}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* Area Chart */}
+          <div className="lg:col-span-2 border-2 border-foreground bg-card">
+            <div className="border-b-2 border-foreground px-5 py-3">
+              <h3 className="text-xs font-bold font-mono uppercase tracking-widest text-foreground">
+                {t("spendingTrends")}
+              </h3>
+            </div>
+            <div className="p-4 sm:p-5">
+              <div
+                className="h-56 sm:h-64 w-full [&_.recharts-surface]:outline-none [&_.recharts-surface:focus]:outline-none"
+                style={{ outline: "none" }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={areaData}
+                    margin={{ top: 5, right: 5, left: -10, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="landing-area-gradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="var(--foreground)"
+                          stopOpacity={0.15}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="var(--foreground)"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="none"
+                      stroke="var(--border)"
+                      strokeOpacity={0.3}
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="day"
+                      ticks={[1, 5, 10, 15, 20, 25, 30]}
+                      tick={{
+                        fontSize: 10,
+                        fill: "var(--muted-foreground)",
+                        fontFamily: "monospace",
+                      }}
+                      tickLine={false}
+                      axisLine={{
+                        stroke: "var(--foreground)",
+                        strokeWidth: 2,
+                      }}
+                    />
+                    <YAxis
+                      tick={{
+                        fontSize: 10,
+                        fill: "var(--muted-foreground)",
+                        fontFamily: "monospace",
+                      }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value: number) =>
+                        formatAxisValue(value, currency)
+                      }
+                      width={50}
+                    />
+                    <Tooltip
+                      contentStyle={TOOLTIP_STYLE}
+                      labelStyle={{
+                        fontWeight: 700,
+                        marginBottom: 4,
+                        textTransform: "uppercase" as const,
+                        color: "var(--foreground)",
+                      }}
+                      labelFormatter={(label) => `${t("day")} ${label}`}
+                      itemStyle={{ color: "var(--foreground)" }}
+                      formatter={(value) => [
+                        formatAmount(Number(value), currency),
+                        t("cumulative"),
+                      ]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="cumulative"
+                      stroke="var(--foreground)"
+                      fill="url(#landing-area-gradient)"
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Donut Chart */}
+          <div className="border-2 border-foreground bg-card">
+            <div className="border-b-2 border-foreground px-5 py-3">
+              <h3 className="text-xs font-bold font-mono uppercase tracking-widest text-foreground">
+                {t("breakdown")}
+              </h3>
+            </div>
+            <div className="px-3 sm:px-5 py-5">
+              <div className="relative h-44 sm:h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[{ value: 1 }]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="55%"
+                      outerRadius="80%"
+                      dataKey="value"
+                      strokeWidth={0}
+                      isAnimationActive={false}
+                    >
+                      <Cell fill="var(--muted)" />
+                    </Pie>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="55%"
+                      outerRadius="80%"
+                      paddingAngle={1}
+                      dataKey="spent"
+                      strokeWidth={2}
+                      stroke="var(--background)"
+                      startAngle={90}
+                      endAngle={90 - (spentPercentage / 100) * 360}
+                      isAnimationActive={false}
+                      activeShape={undefined}
+                      cursor="pointer"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={TOOLTIP_STYLE}
+                      wrapperStyle={{ zIndex: 50 }}
+                      itemStyle={{ color: "var(--foreground)" }}
+                      formatter={(value, name) => [
+                        formatAmount(Number(value), currency),
+                        t(String(name)),
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <p className="text-xl font-bold font-mono tabular-nums text-foreground">
+                    {formatAmount(totalSpent, currency)}
+                  </p>
+                  <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+                    {spentPercentage}% {t("used")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="mt-3 grid grid-cols-2 gap-1.5">
+                {categoryData.map((entry) => (
+                  <div
+                    key={entry.name}
+                    className="flex items-center gap-1.5 min-h-[24px]"
+                  >
+                    <div
+                      className="h-2.5 w-2.5 shrink-0"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="truncate text-xs text-muted-foreground">
+                      {t(entry.translationKey)}
+                    </span>
+                    <span className="ml-auto text-xs font-semibold font-mono tabular-nums text-foreground">
+                      {formatAmount(entry.spent, currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section Breakdown */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <h2 className="text-base font-semibold text-foreground">
+              {t("demoSectionBreakdown")}
+            </h2>
+          </div>
+          {sections.map((sec) => (
+            <DemoSectionCard
+              key={sec.name}
+              section={sec}
+              currency={currency}
+              t={t}
+            />
+          ))}
         </div>
       </div>
     </div>
