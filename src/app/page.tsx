@@ -192,10 +192,10 @@ export default function LandingPage() {
       {/* ── Stats Bar ──────────────────────────────────────────── */}
       <section>
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-3 divide-x-2 divide-foreground">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x-2 divide-foreground">
             {/* Column 1: $0 / It's free */}
-            <div className="px-4 py-8 text-center sm:px-8">
-              <p className="font-mono text-3xl sm:text-4xl font-black tabular-nums text-foreground">
+            <div className="px-4 py-8 text-center sm:px-6">
+              <p className="font-mono text-2xl sm:text-3xl font-black tabular-nums text-foreground">
                 {t("statFree")}
               </p>
               <p className="mt-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -203,17 +203,33 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Column 2: Easy to use */}
-            <div className="px-4 py-8 text-center sm:px-8">
-              <p className="font-mono text-xl sm:text-2xl font-black uppercase tracking-tight text-foreground">
-                {t("statEasy")}
+            {/* Column 2: 3,000 expenses per budget */}
+            <div className="px-4 py-8 text-center sm:px-6">
+              <p className="font-mono text-2xl sm:text-3xl font-black tabular-nums text-foreground">
+                {t("statExpenses")}
+              </p>
+              <p className="mt-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                {t("statExpensesLabel")}
               </p>
             </div>
 
-            {/* Column 3: Guided systems */}
-            <div className="px-4 py-8 text-center sm:px-8">
-              <p className="font-mono text-xl sm:text-2xl font-black uppercase tracking-tight text-foreground">
-                {t("statGuided")}
+            {/* Column 3: Up to 7 budgets + collaborate */}
+            <div className="px-4 py-8 text-center sm:px-6 border-t-2 sm:border-t-0 border-foreground">
+              <p className="font-mono text-2xl sm:text-3xl font-black uppercase tracking-tight text-foreground">
+                {t("statBudgets")}
+              </p>
+              <p className="mt-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                {t("statBudgetsLabel")}
+              </p>
+            </div>
+
+            {/* Column 4: 12 months of history */}
+            <div className="px-4 py-8 text-center sm:px-6 border-t-2 sm:border-t-0 border-foreground">
+              <p className="font-mono text-2xl sm:text-3xl font-black tabular-nums text-foreground">
+                {t("statHistory")}
+              </p>
+              <p className="mt-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                {t("statHistoryLabel")}
               </p>
             </div>
           </div>

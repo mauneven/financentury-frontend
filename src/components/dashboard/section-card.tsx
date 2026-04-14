@@ -22,14 +22,12 @@ interface SectionCardProps {
   sectionSummary: SectionSummary;
   currency: string;
   budgetId: string;
-  onCategoryClick?: (categoryId: string) => void;
 }
 
 export function SectionCard({
   sectionSummary,
   currency,
   budgetId,
-  onCategoryClick,
 }: SectionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [editSectionOpen, setEditSectionOpen] = useState(false);
@@ -72,22 +70,28 @@ export function SectionCard({
           </div>
 
           {/* Amount row - Mobile */}
-          <div className="mb-4 pb-4 border-b border-border space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+          <div className="mb-4 pb-4 border-b border-border space-y-3">
+            <div className="flex items-baseline justify-between">
+              <p className="text-xl font-bold tabular-nums font-mono text-foreground">
                 {formatCurrency(allocated_amount, currency)}
               </p>
-              <span className="text-sm font-bold font-mono text-muted-foreground">
-                {section.allocation_percent}% {t("ofBudget")}
-              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="h-4 w-px bg-border" />
+                <span className="text-sm font-bold font-mono text-muted-foreground">
+                  {section.allocation_percent}% {t("ofBudget")}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-baseline justify-between">
               <p className="text-base font-mono tabular-nums text-muted-foreground">
                 {formatCurrency(total_spent, currency)} {t("spentLabel").toLowerCase()}
               </p>
-              <span className={cn("text-sm font-bold font-mono tabular-nums", textColor)}>
-                {percentage}% {t("used")}
-              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="h-4 w-px bg-border" />
+                <span className={cn("text-sm font-bold font-mono tabular-nums", textColor)}>
+                  {percentage}% {t("used")}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -150,7 +154,7 @@ export function SectionCard({
             </div>
           </div>
 
-          {/* Desktop action buttons - left side of amount */}
+          {/* Desktop action buttons */}
           <div className="flex items-center gap-2 mr-6">
             <button
               type="button"
@@ -194,17 +198,24 @@ export function SectionCard({
 
           {/* Amount display - right side */}
           <div className="text-right">
-            <div className="flex items-baseline justify-end gap-2">
+            <div className="flex items-baseline justify-end gap-3">
               <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
                 {formatCurrency(allocated_amount, currency)}
               </p>
-              <span className="text-sm font-bold font-mono text-muted-foreground">
+              <span className="h-5 w-px bg-border" />
+              <span className="text-lg font-bold font-mono text-muted-foreground">
                 {section.allocation_percent}%
               </span>
             </div>
-            <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", textColor)}>
-              {formatCurrency(total_spent, currency)} · {percentage}% {t("used")}
-            </p>
+            <div className="flex items-baseline justify-end gap-3 mt-1">
+              <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                {formatCurrency(total_spent, currency)} {t("spentLabel").toLowerCase()}
+              </span>
+              <span className="h-4 w-px bg-border" />
+              <span className={cn("text-sm font-bold font-mono tabular-nums", textColor)}>
+                {percentage}% {t("used")}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -257,7 +268,7 @@ export function SectionCard({
           )}
         >
           <div className="overflow-hidden">
-            <div className="mt-5 border-t border-border pt-5 space-y-0">
+            <div className="mt-5 border-t-2 border-foreground/10 pt-5 space-y-0">
               {sectionCategories.map((sub, idx) => {
                 const subPercentage = getPercentage(
                   sub.total_spent,
@@ -265,83 +276,90 @@ export function SectionCard({
                 );
                 const subProgressColor = getProgressColor(subPercentage);
                 const subTextColor = getProgressTextColor(subPercentage);
-                const subRemaining = sub.allocated_amount - sub.total_spent;
 
                 return (
                   <div
                     key={sub.category.id}
                     className={cn(
-                      "group/sub flex items-start gap-1.5 px-3 py-3 transition-colors duration-200 hover:bg-muted/50 min-h-[44px]",
+                      "group/sub px-3 py-3 transition-colors duration-200 hover:bg-muted/50 min-h-[44px] cursor-pointer",
                       idx !== 0 && "border-t border-foreground/10"
                     )}
+                    onClick={() => {
+                      const sectionId = sub.category.section_id || section.id;
+                      router.push(`/budget/${budgetId}/section/${sectionId}/category/${sub.category.id}`);
+                    }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => onCategoryClick?.(sub.category.id)}
-                      className="flex w-full flex-col gap-2 text-left"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base" role="img" aria-label={sub.category.name}>
-                            <CategoryIcon iconKey={sub.category.icon} className="size-4" />
-                          </span>
-                          <span className="text-base font-bold text-foreground">
-                            {sub.category.name}
-                          </span>
+                    <div className="flex items-start gap-1.5">
+                      <div className="flex w-full flex-col gap-2">
+                        {/* Category name + allocated amount */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base" role="img" aria-label={sub.category.name}>
+                              <CategoryIcon iconKey={sub.category.icon} className="size-4" />
+                            </span>
+                            <span className="text-base font-bold text-foreground">
+                              {sub.category.name}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-base font-bold tabular-nums font-mono text-foreground">
+                              {formatCurrency(sub.allocated_amount, currency)}
+                            </span>
+                            <span className="h-4 w-px bg-border" />
+                            <span className="text-sm font-bold font-mono text-muted-foreground">
+                              {sub.category.allocation_percent}% {t("ofSection")}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-bold tabular-nums font-mono text-foreground">
-                            {formatCurrency(sub.allocated_amount, currency)}
-                          </span>
-                          <span className="text-xs font-bold font-mono text-muted-foreground">
-                            {sub.category.allocation_percent}%
-                          </span>
+                        {/* Mini progress bar */}
+                        <div className="h-2 w-full overflow-hidden bg-muted">
+                          <div
+                            className={cn(
+                              "h-full transition-all duration-300",
+                              subProgressColor
+                            )}
+                            style={{
+                              width: `${Math.min(subPercentage, 100)}%`,
+                            }}
+                          />
                         </div>
+                        {/* Spent + used % */}
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span className="font-mono tabular-nums">
+                            {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="h-3.5 w-px bg-border" />
+                            <span className={cn(
+                              "font-mono tabular-nums font-bold",
+                              subTextColor
+                            )}>
+                              {subPercentage}% {t("used")}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Per-person spending (category level) */}
+                        {sub.spending_by_user && sub.spending_by_user.length > 0 && (
+                          <SpendingByUser
+                            spendingByUser={sub.spending_by_user}
+                            totalSpent={sub.total_spent}
+                            currency={currency}
+                            compact
+                          />
+                        )}
                       </div>
-                      {/* Mini progress bar */}
-                      <div className="h-2 w-full overflow-hidden bg-muted">
-                        <div
-                          className={cn(
-                            "h-full transition-all duration-300",
-                            subProgressColor
-                          )}
-                          style={{
-                            width: `${Math.min(subPercentage, 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span className="font-mono tabular-nums">
-                          {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
-                        </span>
-                        <span className={cn(
-                          "font-mono tabular-nums font-bold",
-                          subTextColor
-                        )}>
-                          {subPercentage}% {t("used")}
-                        </span>
-                      </div>
-                      {/* Per-person spending (category level) */}
-                      {sub.spending_by_user && sub.spending_by_user.length > 0 && (
-                        <SpendingByUser
-                          spendingByUser={sub.spending_by_user}
-                          totalSpent={sub.total_spent}
-                          currency={currency}
-                          compact
-                        />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingCategory(sub.category);
-                      }}
-                      className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
-                      aria-label={`Edit ${sub.category.name}`}
-                    >
-                      <Pencil className="size-3" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingCategory(sub.category);
+                        }}
+                        className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
+                        aria-label={`Edit ${sub.category.name}`}
+                      >
+                        <Pencil className="size-3" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
