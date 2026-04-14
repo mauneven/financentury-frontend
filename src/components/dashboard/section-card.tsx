@@ -16,6 +16,7 @@ import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { CategoryIcon } from "@/lib/icon-picker";
+import { SpendingByUser } from "./spending-by-user";
 
 interface SectionCardProps {
   sectionSummary: SectionSummary;
@@ -242,6 +243,16 @@ export function SectionCard({
           </div>
         </div>
 
+        {/* Per-person spending (section level) */}
+        {sectionSummary.spending_by_user && sectionSummary.spending_by_user.length > 0 && (
+          <SpendingByUser
+            spendingByUser={sectionSummary.spending_by_user}
+            totalSpent={total_spent}
+            currency={currency}
+            compact
+          />
+        )}
+
         {/* Expandable category list */}
         <div
           className={cn(
@@ -320,6 +331,15 @@ export function SectionCard({
                           {formatCompact(Math.abs(subRemaining), currency)} {t("leftLabel").toLowerCase()}
                         </span>
                       </div>
+                      {/* Per-person spending (category level) */}
+                      {sub.spending_by_user && sub.spending_by_user.length > 0 && (
+                        <SpendingByUser
+                          spendingByUser={sub.spending_by_user}
+                          totalSpent={sub.total_spent}
+                          currency={currency}
+                          compact
+                        />
+                      )}
                     </button>
                     <button
                       type="button"

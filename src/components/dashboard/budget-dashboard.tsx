@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
+import { SpendingByUser } from "./spending-by-user";
 import { EmptyDashboard } from "./empty-dashboard";
 import { BILLING_PERIODS } from "@/types/budget";
 import type { Expense } from "@/types/budget";
@@ -251,6 +252,17 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           </div>
         );
       })()}
+
+      {/* Per-person spending (shared budgets only) */}
+      {summary.spending_by_user && summary.spending_by_user.length > 0 && (
+        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+          <SpendingByUser
+            spendingByUser={summary.spending_by_user}
+            totalSpent={summary.total_spent}
+            currency={budget.currency}
+          />
+        </div>
+      )}
 
       {/* Charts row */}
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">

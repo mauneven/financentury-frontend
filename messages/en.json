@@ -147,6 +147,8 @@
     "noSectionsHint": "Create your first section to start organizing your budget.",
     "addFirstSection": "Add Section",
     "recentExpenses": "Recent Expenses",
+    "spendingByPerson": "Spending by person",
+    "unknownUser": "Unknown user",
     "sectionActions": {
       "reports": "Reports",
       "breakdown": "Breakdown",
@@ -160,6 +162,8 @@
     "addExpenseDescription": "Record a new expense to track your spending.",
     "editExpenseDescription": "Update the details of this expense.",
     "category": "Category",
+    "section": "Section",
+    "selectSection": "Select a section",
     "selectSectionFirst": "Select a section first",
     "selectCategory": "Select a category",
     "amount": "Amount",

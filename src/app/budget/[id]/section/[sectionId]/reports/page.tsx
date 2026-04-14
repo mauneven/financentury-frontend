@@ -13,6 +13,7 @@ import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
 import type { Category } from "@/types/budget";
+import { SpendingByUser } from "@/components/dashboard/spending-by-user";
 import { useTranslations } from "@/i18n/client";
 
 const SpendingChart = dynamic(
@@ -165,6 +166,17 @@ export default function SectionReportsPage() {
           />
         </div>
       </div>
+
+      {/* Per-person spending (section level) */}
+      {sectionSummary.spending_by_user && sectionSummary.spending_by_user.length > 0 && (
+        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+          <SpendingByUser
+            spendingByUser={sectionSummary.spending_by_user}
+            totalSpent={total_spent}
+            currency={currency}
+          />
+        </div>
+      )}
 
       {/* Charts — always show SpendingChart */}
       {total_spent > 0 ? (
@@ -328,6 +340,16 @@ export default function SectionReportsPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Per-person spending (category level) */}
+                  {cat.spending_by_user && cat.spending_by_user.length > 0 && (
+                    <SpendingByUser
+                      spendingByUser={cat.spending_by_user}
+                      totalSpent={cat.total_spent}
+                      currency={currency}
+                      compact
+                    />
+                  )}
                 </div>
               </div>
             );

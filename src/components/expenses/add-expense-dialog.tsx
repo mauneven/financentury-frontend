@@ -213,9 +213,9 @@ export function AddExpenseDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Category Select */}
+          {/* Section Select */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">{t("category")}</Label>
+            <Label className="text-sm font-medium">{t("section")}</Label>
             <Select
               value={selectedCategoryId}
               onValueChange={handleCategoryChange}
@@ -227,7 +227,7 @@ export function AddExpenseDialog({
                     {categories.find((c) => c.id === selectedCategoryId)?.name}
                   </span>
                 ) : (
-                  <SelectValue placeholder={t("selectCategory")} />
+                  <SelectValue placeholder={t("selectSection")} />
                 )}
               </SelectTrigger>
               <SelectContent>

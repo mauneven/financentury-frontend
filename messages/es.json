@@ -147,6 +147,8 @@
     "noSectionsHint": "Crea tu primera seccion para empezar a organizar tu presupuesto.",
     "addFirstSection": "Agregar Seccion",
     "recentExpenses": "Gastos Recientes",
+    "spendingByPerson": "Gasto por persona",
+    "unknownUser": "Usuario desconocido",
     "sectionActions": {
       "reports": "Informes",
       "breakdown": "Desglose",
@@ -160,6 +162,8 @@
     "addExpenseDescription": "Registra un nuevo gasto para controlar tus gastos.",
     "editExpenseDescription": "Actualiza los detalles de este gasto.",
     "category": "Categoría",
+    "section": "Sección",
+    "selectSection": "Seleccionar sección",
     "selectSectionFirst": "Selecciona una sección primero",
     "selectCategory": "Seleccionar categoría",
     "amount": "Monto",

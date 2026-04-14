@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Copy, Check, Link2, Loader2 } from "lucide-react";
 
 import { inviteApi } from "@/lib/api";
@@ -29,6 +29,14 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearCopyTimer = useCallback(() => {
+    if (copyTimerRef.current) {
+      clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = null;
+    }
+  }, []);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -46,10 +54,9 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
 
   const handleCopy = async () => {
     if (!inviteUrl) return;
+    clearCopyTimer();
     try {
       await navigator.clipboard.writeText(inviteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback for older browsers
       const input = document.createElement("input");
@@ -58,14 +65,15 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
       input.select();
       document.execCommand("copy");
       document.body.removeChild(input);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
   const handleOpenChange = (val: boolean) => {
     if (!val) {
-      // Reset state when closing
+      // Reset state and clear timers when closing
+      clearCopyTimer();
       setInviteUrl(null);
       setExpiresAt(null);
       setCopied(false);

@@ -66,11 +66,22 @@ export interface Collaborator {
   };
 }
 
+export interface UserSpending {
+  user_id: string;
+  profile?: {
+    email: string;
+    full_name: string;
+    avatar_url: string;
+  };
+  amount: number;
+}
+
 export interface BudgetSummary {
   budget: Budget;
   sections: SectionSummary[];
   total_budget: number;
   total_spent: number;
+  spending_by_user?: UserSpending[];
 }
 
 export interface SectionSummary {
@@ -78,6 +89,7 @@ export interface SectionSummary {
   categories: CategorySummary[];
   allocated_amount: number;
   total_spent: number;
+  spending_by_user?: UserSpending[];
 }
 
 export interface CategorySummary {
@@ -85,6 +97,7 @@ export interface CategorySummary {
   allocated_amount: number;
   total_spent: number;
   expense_count: number;
+  spending_by_user?: UserSpending[];
 }
 
 export interface MonthlyTrend {

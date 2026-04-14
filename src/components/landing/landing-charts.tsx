@@ -950,7 +950,6 @@ export function LandingCharts() {
                       isAnimationActive={false}
                       cursor="default"
                       activeShape={undefined}
-                      // @ts-expect-error recharts internal prop to suppress tooltip
                       tooltipType="none"
                     >
                       <Cell fill="var(--muted)" />

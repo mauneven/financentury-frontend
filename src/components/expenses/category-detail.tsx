@@ -24,6 +24,7 @@ import { useTranslations } from "@/i18n/client";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
+import { SpendingByUser } from "@/components/dashboard/spending-by-user";
 import { ExpenseList } from "./expense-list";
 import { AddExpenseDialog } from "./add-expense-dialog";
 import { EditExpenseDialog } from "./edit-expense-dialog";
@@ -160,6 +161,17 @@ export function CategoryDetail({
           />
         </div>
       </div>
+
+      {/* Per-person spending (category level) */}
+      {categorySummary.spending_by_user && categorySummary.spending_by_user.length > 0 && (
+        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+          <SpendingByUser
+            spendingByUser={categorySummary.spending_by_user}
+            totalSpent={total_spent}
+            currency={currency}
+          />
+        </div>
+      )}
 
       {/* Chart — shows only this category's spending */}
       <SpendingChart expenses={filteredExpenses} currency={currency} />
