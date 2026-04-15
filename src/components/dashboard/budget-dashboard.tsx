@@ -282,27 +282,41 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   );
 
   const [dragSectionId, setDragSectionId] = useState<string | null>(null);
-  const [dragOverSectionIdx, setDragOverSectionIdx] = useState<number | null>(null);
+  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
+
+  const displaySections = useMemo(() => {
+    if (!dragSectionId || !dragOverSectionId || dragSectionId === dragOverSectionId) return orderedSections;
+    const items = [...orderedSections];
+    const fromIdx = items.findIndex(m => getMergedSectionId(m) === dragSectionId);
+    const toIdx = items.findIndex(m => getMergedSectionId(m) === dragOverSectionId);
+    if (fromIdx < 0 || toIdx < 0) return orderedSections;
+    const [removed] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, removed);
+    return items;
+  }, [orderedSections, dragSectionId, dragOverSectionId, getMergedSectionId]);
 
   const handleSectionDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
     setDragSectionId(id);
   }, []);
-  const handleSectionDragOver = useCallback((e: React.DragEvent, idx: number) => {
+  const handleSectionDragOver = useCallback((e: React.DragEvent, itemId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverSectionIdx(idx);
+    setDragOverSectionId(itemId);
   }, []);
-  const handleSectionDrop = useCallback((e: React.DragEvent, targetIdx: number) => {
+  const handleSectionDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (dragSectionId) moveSectionTo(dragSectionId, targetIdx);
+    if (dragSectionId && dragOverSectionId && dragSectionId !== dragOverSectionId) {
+      const toIdx = orderedSections.findIndex(m => getMergedSectionId(m) === dragOverSectionId);
+      if (toIdx >= 0) moveSectionTo(dragSectionId, toIdx);
+    }
     setDragSectionId(null);
-    setDragOverSectionIdx(null);
-  }, [dragSectionId, moveSectionTo]);
+    setDragOverSectionId(null);
+  }, [dragSectionId, dragOverSectionId, orderedSections, getMergedSectionId, moveSectionTo]);
   const handleSectionDragEnd = useCallback(() => {
     setDragSectionId(null);
-    setDragOverSectionIdx(null);
+    setDragOverSectionId(null);
   }, []);
 
   const handleAddLinkedExpense = (sourceBudgetId: string, preselectedCategoryId?: string) => {
@@ -496,21 +510,18 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             </div>
           </div>
           <div className="space-y-4 sm:space-y-5">
-            {orderedSections.map((merged, idx) => {
+            {displaySections.map((merged, idx) => {
               const sectionKey = getMergedSectionId(merged);
               return (
                 <div
                   key={sectionKey}
-                  draggable={orderedSections.length > 1}
+                  draggable={displaySections.length > 1}
                   onDragStart={(e) => handleSectionDragStart(e, sectionKey)}
-                  onDragOver={(e) => handleSectionDragOver(e, idx)}
-                  onDrop={(e) => handleSectionDrop(e, idx)}
+                  onDragOver={(e) => handleSectionDragOver(e, sectionKey)}
+                  onDrop={(e) => handleSectionDrop(e)}
                   onDragEnd={handleSectionDragEnd}
                   className={cn("transition-opacity", dragSectionId === sectionKey && "opacity-50")}
                 >
-                  {dragOverSectionIdx === idx && dragSectionId !== sectionKey && (
-                    <div className="h-1 bg-foreground mb-1" />
-                  )}
                   <SectionCard
                     sectionSummary={merged.sectionSummary}
                     currency={budget.currency}
@@ -518,8 +529,8 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
                     linkedInfo={merged.linkedInfo}
                     linkedCategories={merged.linkedCategories}
                     onAddLinkedExpense={handleAddLinkedExpense}
-                    onMoveUp={orderedSections.length > 1 && idx > 0 ? () => {} : undefined}
-                    onMoveDown={orderedSections.length > 1 && idx < orderedSections.length - 1 ? () => {} : undefined}
+                    onMoveUp={displaySections.length > 1 && idx > 0 ? () => {} : undefined}
+                    onMoveDown={displaySections.length > 1 && idx < displaySections.length - 1 ? () => {} : undefined}
                   />
                 </div>
               );

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Pencil, BarChart3, GripVertical, Settings, Plus, Link2 } from "lucide-react";
+import { ChevronDown, BarChart3, GripVertical, Settings, Plus, Link2 } from "lucide-react";
 import type { SectionSummary, Category, CategorySummary, BudgetLink, Budget } from "@/types/budget";
 import {
   formatCurrency,
@@ -20,6 +20,7 @@ import { ManageLinkDialog } from "@/components/budget/manage-link-dialog";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { SpendingByUser } from "./spending-by-user";
 import { SectionUnallocatedBanner } from "./unallocated-banner";
+import { useDisplayOrder } from "@/hooks/use-display-order";
 
 // Linked category info passed from parent
 export interface LinkedCategoryItem {
@@ -88,6 +89,65 @@ export function SectionCard({
   };
 
   const filterLabel = linkedInfo ? (linkedInfo.link.filter_mode === "mine" ? tl("filterMine") : tl("filterAll")) : "";
+
+  // Unified orderable category list for drag-and-drop
+  type OrderableCat =
+    | { id: string; type: "own"; sub: (typeof sectionCategories)[number] }
+    | { id: string; type: "linked"; lc: LinkedCategoryItem };
+
+  const allCats = useMemo((): OrderableCat[] => [
+    ...sectionCategories.map((sub): OrderableCat => ({ id: sub.category.id, type: "own", sub })),
+    ...linkedCategories.map((lc): OrderableCat => ({
+      id: `linked-${lc.link.id}-${lc.categorySummary.category.id}`,
+      type: "linked",
+      lc,
+    })),
+  ], [sectionCategories, linkedCategories]);
+
+  const getCatId = useCallback((c: OrderableCat) => c.id, []);
+  const { ordered: orderedCats, moveTo: moveCatTo } = useDisplayOrder(
+    `budget-${budgetId}-section-${section.id}-categories`,
+    allCats,
+    getCatId
+  );
+
+  const [dragCatId, setDragCatId] = useState<string | null>(null);
+  const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
+
+  const displayCats = useMemo(() => {
+    if (!dragCatId || !dragOverCatId || dragCatId === dragOverCatId) return orderedCats;
+    const items = [...orderedCats];
+    const fromIdx = items.findIndex(i => i.id === dragCatId);
+    const toIdx = items.findIndex(i => i.id === dragOverCatId);
+    if (fromIdx < 0 || toIdx < 0) return orderedCats;
+    const [removed] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, removed);
+    return items;
+  }, [orderedCats, dragCatId, dragOverCatId]);
+
+  const handleCatDragStart = useCallback((e: React.DragEvent, id: string) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+    setDragCatId(id);
+  }, []);
+  const handleCatDragOver = useCallback((e: React.DragEvent, itemId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverCatId(itemId);
+  }, []);
+  const handleCatDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragCatId && dragOverCatId && dragCatId !== dragOverCatId) {
+      const toIdx = orderedCats.findIndex(i => i.id === dragOverCatId);
+      if (toIdx >= 0) moveCatTo(dragCatId, toIdx);
+    }
+    setDragCatId(null);
+    setDragOverCatId(null);
+  }, [dragCatId, dragOverCatId, orderedCats, moveCatTo]);
+  const handleCatDragEnd = useCallback(() => {
+    setDragCatId(null);
+    setDragOverCatId(null);
+  }, []);
 
   return (
     <div className={cn(
@@ -414,205 +474,161 @@ export function SectionCard({
         >
           <div className="overflow-hidden">
             <div className="mt-5 border-t-2 border-foreground/10 pt-5 space-y-0">
-              {/* Regular categories */}
-              {sectionCategories.map((sub, idx) => {
-                const subPercentage = getPercentage(
-                  sub.total_spent,
-                  sub.allocated_amount
-                );
-                const subProgressColor = getProgressColor(subPercentage);
-                const subTextColor = getProgressTextColor(subPercentage);
-
-                return (
-                  <div
-                    key={sub.category.id}
-                    className={cn(
-                      "group/sub px-3 py-3 transition-colors duration-200 hover:bg-muted/50 min-h-[44px] cursor-pointer",
-                      idx !== 0 && "border-t border-foreground/10"
-                    )}
-                    onClick={() => {
-                      if (isLinkedSection && onAddLinkedExpense) {
-                        onAddLinkedExpense(linkedInfo!.link.source_budget_id, sub.category.id);
-                      } else {
-                        const sectionId = sub.category.section_id || section.id;
-                        router.push(`/budget/${budgetId}/section/${sectionId}/category/${sub.category.id}`);
-                      }
-                    }}
-                  >
-                    <div className="flex items-start gap-1.5">
-                      <div className="flex w-full flex-col gap-2">
-                        {/* Category name + allocated amount */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="shrink-0 text-base" role="img" aria-label={sub.category.name}>
-                              <CategoryIcon iconKey={sub.category.icon} className="size-4" />
-                            </span>
-                            <span className="text-sm sm:text-base font-bold text-foreground truncate">
-                              {sub.category.name}
-                            </span>
-                          </div>
-                          <div className="flex items-baseline gap-2 shrink-0">
-                            <span className="text-sm sm:text-base font-bold tabular-nums font-mono text-foreground">
-                              {formatCurrency(sub.allocated_amount, currency)}
-                            </span>
-                            <>
-                              <span className="hidden sm:block h-4 w-px bg-border" />
-                              <span className="hidden sm:block text-sm font-bold font-mono text-muted-foreground">
-                                {section.allocation_value > 0 ? Math.round((sub.category.allocation_value / section.allocation_value) * 100) : 0}% {t("ofSection")}
-                              </span>
-                            </>
-                          </div>
-                        </div>
-                        {/* Mini progress bar */}
-                        <div className="h-2 w-full overflow-hidden bg-muted">
-                          <div
-                            className={cn(
-                              "h-full transition-all duration-300",
-                              subProgressColor
-                            )}
-                            style={{
-                              width: `${Math.min(subPercentage, 100)}%`,
-                            }}
-                          />
-                        </div>
-                        {/* Spent + used % */}
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span className="font-mono tabular-nums">
-                            {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="h-3.5 w-px bg-border" />
-                            <span className={cn(
-                              "font-mono tabular-nums font-bold",
-                              subTextColor
-                            )}>
-                              {subPercentage}% {t("used")}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Per-person spending (category level) */}
-                        {sub.spending_by_user && sub.spending_by_user.length > 0 && (
-                          <SpendingByUser
-                            spendingByUser={sub.spending_by_user}
-                            totalSpent={sub.total_spent}
-                            currency={currency}
-                            compact
-                          />
-                        )}
-                      </div>
-                      {!isLinkedSection ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingCategory(sub.category);
-                          }}
-                          className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
-                          aria-label={`Edit ${sub.category.name}`}
-                        >
-                          <Pencil className="size-3" />
-                        </button>
-                      ) : onAddLinkedExpense ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAddLinkedExpense(linkedInfo!.link.source_budget_id, sub.category.id);
-                          }}
-                          className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
-                          aria-label={`Add expense to ${sub.category.name}`}
-                        >
-                          <Plus className="size-3" />
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Linked categories (from other budgets targeting this section) */}
-              {linkedCategories.map((lc, idx) => {
-                const sub = lc.categorySummary;
+              {/* Categories (own + linked, unified and reorderable) */}
+              {displayCats.map((item, idx) => {
+                const sub = item.type === "own" ? item.sub : item.lc.categorySummary;
                 const subPercentage = getPercentage(sub.total_spent, sub.allocated_amount);
                 const subProgressColor = getProgressColor(subPercentage);
                 const subTextColor = getProgressTextColor(subPercentage);
-                const isFirst = idx === 0 && sectionCategories.length === 0;
+                const isLinkedCat = item.type === "linked";
+                const catSectionPct = section.allocation_value > 0 ? Math.round((sub.category.allocation_value / section.allocation_value) * 100) : 0;
+
+                const reportsHref = isLinkedCat
+                  ? `/budget/${item.lc.link.source_budget_id}/section/${item.lc.link.source_section_id}/category/${item.lc.link.source_category_id}`
+                  : isLinkedSection && linkedInfo
+                    ? `/budget/${linkedInfo.link.source_budget_id}/section/${linkedInfo.link.source_section_id}/category/${sub.category.id}`
+                    : `/budget/${budgetId}/section/${section.id}/category/${sub.category.id}`;
 
                 return (
                   <div
-                    key={`linked-${lc.link.id}-${sub.category.id}`}
+                    key={item.id}
+                    draggable={displayCats.length > 1}
+                    onDragStart={(e) => handleCatDragStart(e, item.id)}
+                    onDragOver={(e) => handleCatDragOver(e, item.id)}
+                    onDrop={(e) => handleCatDrop(e)}
+                    onDragEnd={handleCatDragEnd}
                     className={cn(
-                      "group/sub px-3 py-3 transition-colors duration-200 hover:bg-muted/50 min-h-[44px]",
-                      !isFirst && "border-t border-foreground/10"
+                      "group/sub px-3 py-3 transition-all duration-200 hover:bg-muted/50 min-h-[44px]",
+                      idx !== 0 && "border-t border-foreground/10",
+                      dragCatId === item.id && "opacity-50"
                     )}
                   >
-                    <div className="flex items-start gap-1.5">
-                      <div className="flex w-full flex-col gap-2">
-                        {/* Category name + linked badge */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="shrink-0 text-base" role="img" aria-label={sub.category.name}>
-                              <CategoryIcon iconKey={sub.category.icon} className="size-4" />
-                            </span>
-                            <span className="text-sm sm:text-base font-bold text-foreground truncate">
-                              {sub.category.name}
-                            </span>
-                            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
-                              <Link2 className="size-3" />
-                              {tl("linkedBadge", { name: lc.sourceBudgetName })}
-                            </span>
+                    {/* Linked badge */}
+                    {isLinkedCat && (
+                      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+                        <Link2 className="size-3" />
+                        {tl("linkedBadge", { name: item.lc.sourceBudgetName })}
+                      </div>
+                    )}
+
+                    {/* Mobile layout */}
+                    <div className="sm:hidden">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CategoryIcon iconKey={sub.category.icon} className="size-4 shrink-0" />
+                        <span className="text-sm font-bold text-foreground truncate flex-1">{sub.category.name}</span>
+                        <span className="text-sm font-bold tabular-nums font-mono text-foreground shrink-0">
+                          {formatCurrency(sub.allocated_amount, currency)}
+                        </span>
+                        {displayCats.length > 1 && (
+                          <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40" onClick={(e) => e.stopPropagation()}>
+                            <GripVertical className="size-4" />
                           </div>
-                          <div className="flex items-baseline gap-2 shrink-0">
-                            <span className="text-sm sm:text-base font-bold tabular-nums font-mono text-foreground">
-                              {formatCurrency(sub.allocated_amount, currency)}
-                            </span>
-                            <span className="hidden sm:block h-4 w-px bg-border" />
-                            <span className="hidden sm:block text-sm font-bold font-mono text-muted-foreground">
-                              {section.allocation_value > 0 ? Math.round((sub.category.allocation_value / section.allocation_value) * 100) : 0}% {t("ofSection")}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Mini progress bar */}
-                        <div className="h-2 w-full overflow-hidden bg-muted">
-                          <div
-                            className={cn("h-full transition-all duration-300", subProgressColor)}
-                            style={{ width: `${Math.min(subPercentage, 100)}%` }}
-                          />
-                        </div>
-                        {/* Spent + used % */}
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span className="font-mono tabular-nums">
-                            {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="h-3.5 w-px bg-border" />
-                            <span className={cn("font-mono tabular-nums font-bold", subTextColor)}>
-                              {subPercentage}% {t("used")}
-                            </span>
-                          </div>
-                        </div>
-                        {sub.spending_by_user && sub.spending_by_user.length > 0 && (
-                          <SpendingByUser
-                            spendingByUser={sub.spending_by_user}
-                            totalSpent={sub.total_spent}
-                            currency={currency}
-                            compact
-                          />
                         )}
                       </div>
-                      {/* Manage linked category */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingLinkedCat(lc);
-                        }}
-                        className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
-                        aria-label={`Manage link for ${sub.category.name}`}
-                      >
-                        <Settings className="size-3" />
-                      </button>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                        <span className="font-mono tabular-nums">
+                          {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
+                        </span>
+                        <span className={cn("font-mono tabular-nums font-bold", subTextColor)}>
+                          {subPercentage}% {t("used")}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden bg-muted mb-2">
+                        <div className={cn("h-full transition-all duration-300", subProgressColor)} style={{ width: `${Math.min(subPercentage, 100)}%` }} />
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); router.push(reportsHref); }}
+                          className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                        >
+                          <BarChart3 className="size-3" />
+                          {tActions("reports")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); isLinkedCat ? setEditingLinkedCat(item.lc) : setEditingCategory(sub.category); }}
+                          className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                        >
+                          <Settings className="size-3" />
+                          {tActions("adjust")}
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Desktop layout */}
+                    <div className="hidden sm:block">
+                      <div className="flex items-start gap-2">
+                        {/* Left: icon + name */}
+                        <div className="flex items-center gap-2 min-w-0 flex-1 mt-1">
+                          <CategoryIcon iconKey={sub.category.icon} className="size-4 shrink-0" />
+                          <span className="text-base font-bold text-foreground truncate">{sub.category.name}</span>
+                        </div>
+                        {/* Middle: buttons */}
+                        <div className="flex items-center gap-1.5 mr-4 mt-0.5">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); router.push(reportsHref); }}
+                            className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                          >
+                            <BarChart3 className="size-3" />
+                            {tActions("reports")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); isLinkedCat ? setEditingLinkedCat(item.lc) : setEditingCategory(sub.category); }}
+                            className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                          >
+                            <Settings className="size-3" />
+                            {tActions("adjust")}
+                          </button>
+                        </div>
+                        {/* Right: amount block + grip */}
+                        <div className="flex items-start gap-3 shrink-0">
+                          <div className="text-right">
+                            <div className="flex items-baseline justify-end gap-2">
+                              <span className="text-base font-bold tabular-nums font-mono text-foreground">
+                                {formatCurrency(sub.allocated_amount, currency)}
+                              </span>
+                              <span className="h-4 w-px bg-border" />
+                              <span className="text-sm font-bold font-mono text-muted-foreground">
+                                {catSectionPct}% {t("ofSection")}
+                              </span>
+                            </div>
+                            <div className="flex items-baseline justify-end gap-2 mt-0.5">
+                              <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                                {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
+                              </span>
+                              <span className="h-3.5 w-px bg-border" />
+                              <span className={cn("text-sm font-mono tabular-nums font-bold", subTextColor)}>
+                                {subPercentage}% {t("used")}
+                              </span>
+                            </div>
+                          </div>
+                          {displayCats.length > 1 && (
+                            <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors mt-1" aria-label="Drag to reorder" onClick={(e) => e.stopPropagation()}>
+                              <GripVertical className="size-5" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="h-2 w-full overflow-hidden bg-muted mt-2">
+                        <div className={cn("h-full transition-all duration-300", subProgressColor)} style={{ width: `${Math.min(subPercentage, 100)}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Per-person spending */}
+                    {sub.spending_by_user && sub.spending_by_user.length > 0 && (
+                      <div className="mt-2">
+                        <SpendingByUser
+                          spendingByUser={sub.spending_by_user}
+                          totalSpent={sub.total_spent}
+                          currency={currency}
+                          compact
+                        />
+                      </div>
+                    )}
                   </div>
                 );
               })}

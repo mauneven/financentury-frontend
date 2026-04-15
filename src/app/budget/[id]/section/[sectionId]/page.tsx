@@ -162,9 +162,20 @@ export default function SectionPage() {
     getCatId
   );
 
-  // Drag-and-drop state
+  // Drag-and-drop state (live reorder preview)
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const displayCats = useMemo(() => {
+    if (!dragId || !dragOverId || dragId === dragOverId) return orderedCats;
+    const items = [...orderedCats];
+    const fromIdx = items.findIndex(i => i.id === dragId);
+    const toIdx = items.findIndex(i => i.id === dragOverId);
+    if (fromIdx < 0 || toIdx < 0) return orderedCats;
+    const [removed] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, removed);
+    return items;
+  }, [orderedCats, dragId, dragOverId]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -172,22 +183,25 @@ export default function SectionPage() {
     setDragId(id);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent, idx: number) => {
+  const handleDragOver = useCallback((e: React.DragEvent, itemId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverIdx(idx);
+    setDragOverId(itemId);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, targetIdx: number) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (dragId) moveCatTo(dragId, targetIdx);
+    if (dragId && dragOverId && dragId !== dragOverId) {
+      const toIdx = orderedCats.findIndex(i => i.id === dragOverId);
+      if (toIdx >= 0) moveCatTo(dragId, toIdx);
+    }
     setDragId(null);
-    setDragOverIdx(null);
-  }, [dragId, moveCatTo]);
+    setDragOverId(null);
+  }, [dragId, dragOverId, orderedCats, moveCatTo]);
 
   const handleDragEnd = useCallback(() => {
     setDragId(null);
-    setDragOverIdx(null);
+    setDragOverId(null);
   }, []);
 
   return (
@@ -312,7 +326,7 @@ export default function SectionPage() {
           </p>
         ) : (
           <div className="space-y-4">
-            {orderedCats.map((item, idx) => {
+            {displayCats.map((item, idx) => {
               if (item.type === "own") {
                 const cat = item.cat;
                 const catPct = getPercentage(cat.total_spent, cat.allocated_amount);
@@ -324,15 +338,12 @@ export default function SectionPage() {
                   <div
                     key={item.id}
                     className={cn("border-2 border-foreground bg-card transition-opacity", dragId === item.id && "opacity-50")}
-                    draggable={orderedCats.length > 1}
+                    draggable={displayCats.length > 1}
                     onDragStart={(e) => handleDragStart(e, item.id)}
-                    onDragOver={(e) => handleDragOver(e, idx)}
-                    onDrop={(e) => handleDrop(e, idx)}
+                    onDragOver={(e) => handleDragOver(e, item.id)}
+                    onDrop={(e) => handleDrop(e)}
                     onDragEnd={handleDragEnd}
                   >
-                    {dragOverIdx === idx && dragId !== item.id && (
-                      <div className="h-1 bg-foreground" />
-                    )}
                     <div className="p-5 sm:p-7">
                       {/* Mobile layout */}
                       <div className="sm:hidden">
@@ -344,7 +355,7 @@ export default function SectionPage() {
                               {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
                             </p>
                           </div>
-                          {orderedCats.length > 1 && (
+                          {displayCats.length > 1 && (
                             <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40" aria-label="Drag to reorder">
                               <GripVertical className="size-5" />
                             </div>
@@ -435,7 +446,7 @@ export default function SectionPage() {
                               {catPct}% {tDash("used")}
                             </p>
                           </div>
-                          {orderedCats.length > 1 && (
+                          {displayCats.length > 1 && (
                             <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
                               <GripVertical className="size-5" />
                             </div>
@@ -489,15 +500,12 @@ export default function SectionPage() {
                 <div
                   key={item.id}
                   className={cn("border-2 border-foreground/50 border-dashed bg-card transition-opacity", dragId === item.id && "opacity-50")}
-                  draggable={orderedCats.length > 1}
+                  draggable={displayCats.length > 1}
                   onDragStart={(e) => handleDragStart(e, item.id)}
-                  onDragOver={(e) => handleDragOver(e, idx)}
-                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, item.id)}
+                  onDrop={(e) => handleDrop(e)}
                   onDragEnd={handleDragEnd}
                 >
-                  {dragOverIdx === idx && dragId !== item.id && (
-                    <div className="h-1 bg-foreground" />
-                  )}
                   <div className="p-5 sm:p-7">
                     {/* Linked badge */}
                     <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
@@ -514,7 +522,7 @@ export default function SectionPage() {
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
                         </div>
-                        {orderedCats.length > 1 && (
+                        {displayCats.length > 1 && (
                           <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40" aria-label="Drag to reorder">
                             <GripVertical className="size-5" />
                           </div>
@@ -588,7 +596,7 @@ export default function SectionPage() {
                             {catPct}% {tDash("used")}
                           </p>
                         </div>
-                        {orderedCats.length > 1 && (
+                        {displayCats.length > 1 && (
                           <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
                             <GripVertical className="size-5" />
                           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -33,27 +33,41 @@ export default function HomePage() {
   );
 
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const displayBudgets = useMemo(() => {
+    if (!dragId || !dragOverId || dragId === dragOverId) return orderedBudgets;
+    const items = [...orderedBudgets];
+    const fromIdx = items.findIndex(b => b.id === dragId);
+    const toIdx = items.findIndex(b => b.id === dragOverId);
+    if (fromIdx < 0 || toIdx < 0) return orderedBudgets;
+    const [removed] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, removed);
+    return items;
+  }, [orderedBudgets, dragId, dragOverId]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
     setDragId(id);
   }, []);
-  const handleDragOver = useCallback((e: React.DragEvent, idx: number) => {
+  const handleDragOver = useCallback((e: React.DragEvent, itemId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverIdx(idx);
+    setDragOverId(itemId);
   }, []);
-  const handleDrop = useCallback((e: React.DragEvent, targetIdx: number) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (dragId) moveTo(dragId, targetIdx);
+    if (dragId && dragOverId && dragId !== dragOverId) {
+      const toIdx = orderedBudgets.findIndex(b => b.id === dragOverId);
+      if (toIdx >= 0) moveTo(dragId, toIdx);
+    }
     setDragId(null);
-    setDragOverIdx(null);
-  }, [dragId, moveTo]);
+    setDragOverId(null);
+  }, [dragId, dragOverId, orderedBudgets, moveTo]);
   const handleDragEnd = useCallback(() => {
     setDragId(null);
-    setDragOverIdx(null);
+    setDragOverId(null);
   }, []);
 
   // Wait for auth to fully resolve before fetching budgets.
@@ -149,24 +163,21 @@ export default function HomePage() {
               </div>
 
               <div className="grid gap-4 sm:gap-6">
-                {orderedBudgets.map((budget, idx) => (
+                {displayBudgets.map((budget, idx) => (
                   <div
                     key={budget.id}
-                    draggable={orderedBudgets.length > 1}
+                    draggable={displayBudgets.length > 1}
                     onDragStart={(e) => handleDragStart(e, budget.id)}
-                    onDragOver={(e) => handleDragOver(e, idx)}
-                    onDrop={(e) => handleDrop(e, idx)}
+                    onDragOver={(e) => handleDragOver(e, budget.id)}
+                    onDrop={(e) => handleDrop(e)}
                     onDragEnd={handleDragEnd}
                     className={dragId === budget.id ? "opacity-50" : undefined}
                   >
-                    {dragOverIdx === idx && dragId !== budget.id && (
-                      <div className="h-1 bg-foreground mb-1" />
-                    )}
                     <BudgetCard
                       budget={budget}
                       onClick={() => router.push(`/budget/${budget.id}`)}
-                      onMoveUp={orderedBudgets.length > 1 && idx > 0 ? () => moveUp(budget.id) : undefined}
-                      onMoveDown={orderedBudgets.length > 1 && idx < orderedBudgets.length - 1 ? () => moveDown(budget.id) : undefined}
+                      onMoveUp={displayBudgets.length > 1 && idx > 0 ? () => {} : undefined}
+                      onMoveDown={displayBudgets.length > 1 && idx < displayBudgets.length - 1 ? () => {} : undefined}
                     />
                   </div>
                 ))}

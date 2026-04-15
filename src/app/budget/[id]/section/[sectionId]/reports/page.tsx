@@ -185,11 +185,21 @@ export default function SectionReportsPage() {
   );
 
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const displayCats = useMemo(() => {
+    if (!dragId || !dragOverId || dragId === dragOverId) return orderedCats;
+    const items = [...orderedCats];
+    const fromIdx = items.findIndex(i => i.id === dragId);
+    const toIdx = items.findIndex(i => i.id === dragOverId);
+    if (fromIdx < 0 || toIdx < 0) return orderedCats;
+    const [removed] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, removed);
+    return items;
+  }, [orderedCats, dragId, dragOverId]);
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); setDragId(id); }, []);
-  const handleDragOver = useCallback((e: React.DragEvent, idx: number) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverIdx(idx); }, []);
-  const handleDrop = useCallback((e: React.DragEvent, targetIdx: number) => { e.preventDefault(); if (dragId) moveCatTo(dragId, targetIdx); setDragId(null); setDragOverIdx(null); }, [dragId, moveCatTo]);
-  const handleDragEnd = useCallback(() => { setDragId(null); setDragOverIdx(null); }, []);
+  const handleDragOver = useCallback((e: React.DragEvent, itemId: string) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverId(itemId); }, []);
+  const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); if (dragId && dragOverId && dragId !== dragOverId) { const toIdx = orderedCats.findIndex(i => i.id === dragOverId); if (toIdx >= 0) moveCatTo(dragId, toIdx); } setDragId(null); setDragOverId(null); }, [dragId, dragOverId, orderedCats, moveCatTo]);
+  const handleDragEnd = useCallback(() => { setDragId(null); setDragOverId(null); }, []);
 
   return (
     <div className="space-y-6">
@@ -367,7 +377,7 @@ export default function SectionReportsPage() {
           </button>
         </div>
 
-        {orderedCats.length === 0 ? (
+        {displayCats.length === 0 ? (
           <div className="border-2 border-foreground bg-card flex flex-col items-center justify-center py-12 text-center">
             <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-foreground bg-muted">
               <Plus className="h-6 w-6 text-muted-foreground" />
@@ -391,7 +401,7 @@ export default function SectionReportsPage() {
             </button>
           </div>
         ) : (
-          orderedCats.map((item, idx) => {
+          displayCats.map((item, idx) => {
             if (item.type === "own") {
               const cat = item.cat;
               const catPct = getPercentage(cat.total_spent, cat.allocated_amount);
@@ -400,8 +410,7 @@ export default function SectionReportsPage() {
               const catRemaining = cat.allocated_amount - cat.total_spent;
 
               return (
-                <div key={item.id} className={cn("border-2 border-foreground bg-card transition-opacity", dragId === item.id && "opacity-50")} draggable={orderedCats.length > 1} onDragStart={(e) => handleDragStart(e, item.id)} onDragOver={(e) => handleDragOver(e, idx)} onDrop={(e) => handleDrop(e, idx)} onDragEnd={handleDragEnd}>
-                  {dragOverIdx === idx && dragId !== item.id && <div className="h-1 bg-foreground" />}
+                <div key={item.id} className={cn("border-2 border-foreground bg-card transition-opacity", dragId === item.id && "opacity-50")} draggable={displayCats.length > 1} onDragStart={(e) => handleDragStart(e, item.id)} onDragOver={(e) => handleDragOver(e, item.id)} onDrop={(e) => handleDrop(e)} onDragEnd={handleDragEnd}>
                   <div className="p-5 sm:p-7">
                     {/* Mobile layout */}
                     <div className="sm:hidden">
@@ -413,7 +422,7 @@ export default function SectionReportsPage() {
                             {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
                           </p>
                         </div>
-                        {orderedCats.length > 1 && (
+                        {displayCats.length > 1 && (
                           <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
                             <GripVertical className="size-5" />
                           </div>
@@ -499,7 +508,7 @@ export default function SectionReportsPage() {
                           {formatCurrency(cat.total_spent, currency)} · {catPct}% {tDash("used")}
                         </p>
                       </div>
-                      {orderedCats.length > 1 && (
+                      {displayCats.length > 1 && (
                         <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
                           <GripVertical className="size-5" />
                         </div>
@@ -553,8 +562,7 @@ export default function SectionReportsPage() {
             const lcRemaining = lcat.allocated_amount - lcat.total_spent;
 
             return (
-              <div key={item.id} className={cn("border-2 border-foreground/50 border-dashed bg-card transition-opacity", dragId === item.id && "opacity-50")} draggable={orderedCats.length > 1} onDragStart={(e) => handleDragStart(e, item.id)} onDragOver={(e) => handleDragOver(e, idx)} onDrop={(e) => handleDrop(e, idx)} onDragEnd={handleDragEnd}>
-                {dragOverIdx === idx && dragId !== item.id && <div className="h-1 bg-foreground" />}
+              <div key={item.id} className={cn("border-2 border-foreground/50 border-dashed bg-card transition-opacity", dragId === item.id && "opacity-50")} draggable={displayCats.length > 1} onDragStart={(e) => handleDragStart(e, item.id)} onDragOver={(e) => handleDragOver(e, item.id)} onDrop={(e) => handleDrop(e)} onDragEnd={handleDragEnd}>
                 <div className="p-5 sm:p-7">
                   {/* Linked badge */}
                   <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
@@ -571,7 +579,7 @@ export default function SectionReportsPage() {
                       <div className="flex-1">
                         <p className="text-lg font-semibold text-foreground">{lcat.category.name}</p>
                       </div>
-                      {orderedCats.length > 1 && (
+                      {displayCats.length > 1 && (
                         <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
                           <GripVertical className="size-5" />
                         </div>
@@ -654,7 +662,7 @@ export default function SectionReportsPage() {
                         {formatCurrency(lcat.total_spent, currency)} · {lcPct}% {tDash("used")}
                       </p>
                     </div>
-                    {orderedCats.length > 1 && (
+                    {displayCats.length > 1 && (
                       <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
                         <GripVertical className="size-5" />
                       </div>
