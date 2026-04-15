@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
-import { ArrowLeft, Plus, Settings, BarChart3, Link2, GripVertical } from "lucide-react";
+import { ArrowLeft, Plus, Settings, BarChart3, Link2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   formatCompact,
   getPercentage,
@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import dynamic from "next/dynamic";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
@@ -156,53 +157,13 @@ export default function SectionPage() {
   ], [categories, linkedCategories]);
 
   const getCatId = useCallback((c: OrderableCat) => c.id, []);
-  const { ordered: orderedCats, moveTo: moveCatTo } = useDisplayOrder(
+  const { ordered: orderedCats, moveUp: moveCatUp, moveDown: moveCatDown } = useDisplayOrder(
     `budget-${params.id}-section-${params.sectionId}-categories`,
     allCats,
     getCatId
   );
 
-  // Drag-and-drop state (live reorder preview)
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-
-  const displayCats = useMemo(() => {
-    if (!dragId || !dragOverId || dragId === dragOverId) return orderedCats;
-    const items = [...orderedCats];
-    const fromIdx = items.findIndex(i => i.id === dragId);
-    const toIdx = items.findIndex(i => i.id === dragOverId);
-    if (fromIdx < 0 || toIdx < 0) return orderedCats;
-    const [removed] = items.splice(fromIdx, 1);
-    items.splice(toIdx, 0, removed);
-    return items;
-  }, [orderedCats, dragId, dragOverId]);
-
-  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id);
-    setDragId(id);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent, itemId: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverId(itemId);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragId && dragOverId && dragId !== dragOverId) {
-      const toIdx = orderedCats.findIndex(i => i.id === dragOverId);
-      if (toIdx >= 0) moveCatTo(dragId, toIdx);
-    }
-    setDragId(null);
-    setDragOverId(null);
-  }, [dragId, dragOverId, orderedCats, moveCatTo]);
-
-  const handleDragEnd = useCallback(() => {
-    setDragId(null);
-    setDragOverId(null);
-  }, []);
+  const [catListRef] = useAutoAnimate<HTMLDivElement>();
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -325,195 +286,40 @@ export default function SectionPage() {
             {tDash("noCategories")}.
           </p>
         ) : (
-          <div className="space-y-4">
-            {displayCats.map((item, idx) => {
-              if (item.type === "own") {
-                const cat = item.cat;
-                const catPct = getPercentage(cat.total_spent, cat.allocated_amount);
-                const catProgressColor = getProgressColor(catPct);
-                const catTextColor = getProgressTextColor(catPct);
-                const catRemaining = cat.allocated_amount - cat.total_spent;
-
-                return (
-                  <div
-                    key={item.id}
-                    className={cn("border-2 border-foreground bg-card transition-opacity", dragId === item.id && "opacity-50")}
-                    draggable={displayCats.length > 1}
-                    onDragStart={(e) => handleDragStart(e, item.id)}
-                    onDragOver={(e) => handleDragOver(e, item.id)}
-                    onDrop={(e) => handleDrop(e)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <div className="p-5 sm:p-7">
-                      {/* Mobile layout */}
-                      <div className="sm:hidden">
-                        <div className="flex items-center gap-3 mb-4">
-                          <CategoryIcon iconKey={cat.category.icon} className="size-6" />
-                          <div className="flex-1">
-                            <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                              {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
-                            </p>
-                          </div>
-                          {displayCats.length > 1 && (
-                            <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40" aria-label="Drag to reorder">
-                              <GripVertical className="size-5" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Amount row - Mobile */}
-                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-                          <div>
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                              {tSection("allocationPercent")}
-                            </p>
-                            <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
-                              {formatCompact(cat.allocated_amount, summary.budget.currency)}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tDash("used")}</p>
-                            <p className={cn("text-2xl font-bold tabular-nums font-mono", catTextColor)}>
-                              {catPct}%
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Action buttons - Mobile */}
-                        <div className="flex gap-2 mb-4">
-                          <button
-                            type="button"
-                            onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
-                            className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                          >
-                            <BarChart3 className="size-3.5" />
-                            {tActions("reports")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingCategory(cat.category)}
-                            className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                          >
-                            <Settings className="size-3.5" />
-                            {tActions("adjust")}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Desktop layout */}
-                      <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
-                        <div className="flex items-center gap-3 flex-1">
-                          <CategoryIcon iconKey={cat.category.icon} className="size-6" />
-                          <div>
-                            <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                              {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Desktop action buttons */}
-                        <div className="flex items-center gap-2 mr-6">
-                          <button
-                            type="button"
-                            onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
-                            className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
-                          >
-                            <BarChart3 className="size-3.5" />
-                            {tActions("reports")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingCategory(cat.category)}
-                            className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
-                          >
-                            <Settings className="size-3.5" />
-                            {tActions("adjust")}
-                          </button>
-                        </div>
-
-                        {/* Amount + drag handle - right side */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                              {tSection("allocationPercent")}
-                            </p>
-                            <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
-                              {formatCompact(cat.allocated_amount, summary.budget.currency)}
-                            </p>
-                            <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>
-                              {catPct}% {tDash("used")}
-                            </p>
-                          </div>
-                          {displayCats.length > 1 && (
-                            <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
-                              <GripVertical className="size-5" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Spent / Remaining row */}
-                      <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
-                        <span>
-                          {t("spent")}:{" "}
-                          <span className="font-bold font-mono tabular-nums text-foreground">
-                            {formatCompact(cat.total_spent, summary.budget.currency)}
-                          </span>
-                        </span>
-                        <span>
-                          {t("remaining")}:{" "}
-                          <span className={cn(
-                            "font-bold font-mono tabular-nums",
-                            catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
-                          )}>
-                            {catRemaining < 0 ? "-" : ""}
-                            {formatCompact(Math.abs(catRemaining), summary.budget.currency)}
-                          </span>
-                        </span>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="mt-3">
-                        <div className="h-3 w-full overflow-hidden bg-muted">
-                          <div
-                            className={cn("h-full transition-all duration-300", catProgressColor)}
-                            style={{ width: `${Math.min(catPct, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              // Linked category
-              const lc = item.lc;
-              const cat = lc.categorySummary;
+          <div ref={catListRef} className="space-y-4">
+            {orderedCats.map((item, idx) => {
+              const isOwn = item.type === "own";
+              const cat = isOwn ? item.cat : item.lc.categorySummary;
+              const lc = isOwn ? null : item.lc;
               const catPct = getPercentage(cat.total_spent, cat.allocated_amount);
               const catProgressColor = getProgressColor(catPct);
               const catTextColor = getProgressTextColor(catPct);
               const catRemaining = cat.allocated_amount - cat.total_spent;
 
+              const moveButtons = (size: "sm" | "lg") => (
+                <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
+                  <button type="button" onClick={() => moveCatUp(item.id)} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up">
+                    <ChevronUp className={size === "sm" ? "size-4" : "size-5"} />
+                  </button>
+                  <button type="button" onClick={() => moveCatDown(item.id)} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down">
+                    <ChevronDown className={size === "sm" ? "size-4" : "size-5"} />
+                  </button>
+                </div>
+              );
+
               return (
                 <div
                   key={item.id}
-                  className={cn("border-2 border-foreground/50 border-dashed bg-card transition-opacity", dragId === item.id && "opacity-50")}
-                  draggable={displayCats.length > 1}
-                  onDragStart={(e) => handleDragStart(e, item.id)}
-                  onDragOver={(e) => handleDragOver(e, item.id)}
-                  onDrop={(e) => handleDrop(e)}
-                  onDragEnd={handleDragEnd}
+                  className={isOwn ? "border-2 border-foreground bg-card" : "border-2 border-foreground/50 border-dashed bg-card"}
                 >
                   <div className="p-5 sm:p-7">
                     {/* Linked badge */}
-                    <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                      <Link2 className="size-3.5" />
-                      <span className="font-bold">
-                        {tl("linkedFrom", { name: lc.sourceBudgetName })}
-                      </span>
-                    </div>
+                    {!isOwn && lc && (
+                      <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+                        <Link2 className="size-3.5" />
+                        <span className="font-bold">{tl("linkedFrom", { name: lc.sourceBudgetName })}</span>
+                      </div>
+                    )}
 
                     {/* Mobile layout */}
                     <div className="sm:hidden">
@@ -521,19 +327,18 @@ export default function SectionPage() {
                         <CategoryIcon iconKey={cat.category.icon} className="size-6" />
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
+                          {isOwn && (
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                              {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
+                            </p>
+                          )}
                         </div>
-                        {displayCats.length > 1 && (
-                          <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40" aria-label="Drag to reorder">
-                            <GripVertical className="size-5" />
-                          </div>
-                        )}
+                        {moveButtons("sm")}
                       </div>
                       <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
                         <div>
                           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
-                          <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
-                            {formatCompact(cat.allocated_amount, summary.budget.currency)}
-                          </p>
+                          <p className="text-2xl font-bold tabular-nums font-mono text-foreground">{formatCompact(cat.allocated_amount, summary.budget.currency)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tDash("used")}</p>
@@ -541,21 +346,11 @@ export default function SectionPage() {
                         </div>
                       </div>
                       <div className="flex gap-2 mb-4">
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
-                          className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                        >
-                          <BarChart3 className="size-3.5" />
-                          {tActions("reports")}
+                        <button type="button" onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)} className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5">
+                          <BarChart3 className="size-3.5" />{tActions("reports")}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })}
-                          className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
-                        >
-                          <Settings className="size-3.5" />
-                          {tActions("adjust")}
+                        <button type="button" onClick={() => isOwn ? setEditingCategory(cat.category) : lc && setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })} className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5">
+                          <Settings className="size-3.5" />{tActions("adjust")}
                         </button>
                       </div>
                     </div>
@@ -566,71 +361,41 @@ export default function SectionPage() {
                         <CategoryIcon iconKey={cat.category.icon} className="size-6" />
                         <div>
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
+                          {isOwn && (
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                              {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mr-6">
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)}
-                          className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
-                        >
-                          <BarChart3 className="size-3.5" />
-                          {tActions("reports")}
+                        <button type="button" onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)} className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5">
+                          <BarChart3 className="size-3.5" />{tActions("reports")}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })}
-                          className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
-                        >
-                          <Settings className="size-3.5" />
-                          {tActions("adjust")}
+                        <button type="button" onClick={() => isOwn ? setEditingCategory(cat.category) : lc && setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })} className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5">
+                          <Settings className="size-3.5" />{tActions("adjust")}
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
-                          <p className="text-3xl font-bold tabular-nums font-mono text-foreground">
-                            {formatCompact(cat.allocated_amount, summary.budget.currency)}
-                          </p>
-                          <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>
-                            {catPct}% {tDash("used")}
-                          </p>
+                          <p className="text-3xl font-bold tabular-nums font-mono text-foreground">{formatCompact(cat.allocated_amount, summary.budget.currency)}</p>
+                          <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>{catPct}% {tDash("used")}</p>
                         </div>
-                        {displayCats.length > 1 && (
-                          <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
-                            <GripVertical className="size-5" />
-                          </div>
-                        )}
+                        {moveButtons("lg")}
                       </div>
                     </div>
 
                     {/* Spent / Remaining */}
                     <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
-                      <span>
-                        {t("spent")}:{" "}
-                        <span className="font-bold font-mono tabular-nums text-foreground">
-                          {formatCompact(cat.total_spent, summary.budget.currency)}
-                        </span>
-                      </span>
-                      <span>
-                        {t("remaining")}:{" "}
-                        <span className={cn(
-                          "font-bold font-mono tabular-nums",
-                          catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
-                        )}>
-                          {catRemaining < 0 ? "-" : ""}
-                          {formatCompact(Math.abs(catRemaining), summary.budget.currency)}
-                        </span>
-                      </span>
+                      <span>{t("spent")}: <span className="font-bold font-mono tabular-nums text-foreground">{formatCompact(cat.total_spent, summary.budget.currency)}</span></span>
+                      <span>{t("remaining")}: <span className={cn("font-bold font-mono tabular-nums", catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>{catRemaining < 0 ? "-" : ""}{formatCompact(Math.abs(catRemaining), summary.budget.currency)}</span></span>
                     </div>
 
                     {/* Progress bar */}
                     <div className="mt-3">
                       <div className="h-3 w-full overflow-hidden bg-muted">
-                        <div
-                          className={cn("h-full transition-all duration-300", catProgressColor)}
-                          style={{ width: `${Math.min(catPct, 100)}%` }}
-                        />
+                        <div className={cn("h-full transition-all duration-300", catProgressColor)} style={{ width: `${Math.min(catPct, 100)}%` }} />
                       </div>
                     </div>
                   </div>

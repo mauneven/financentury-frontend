@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -26,49 +27,13 @@ export default function HomePage() {
   const authInitialized = useAuthStore((s) => s.initialized);
   const user = useAuthStore((s) => s.user);
   const [showCreateBudget, setShowCreateBudget] = useState(false);
-  const { ordered: orderedBudgets, moveUp, moveDown, moveTo } = useDisplayOrder(
+  const { ordered: orderedBudgets, moveUp, moveDown } = useDisplayOrder(
     "budgets",
     budgets,
     (b) => b.id
   );
 
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-
-  const displayBudgets = useMemo(() => {
-    if (!dragId || !dragOverId || dragId === dragOverId) return orderedBudgets;
-    const items = [...orderedBudgets];
-    const fromIdx = items.findIndex(b => b.id === dragId);
-    const toIdx = items.findIndex(b => b.id === dragOverId);
-    if (fromIdx < 0 || toIdx < 0) return orderedBudgets;
-    const [removed] = items.splice(fromIdx, 1);
-    items.splice(toIdx, 0, removed);
-    return items;
-  }, [orderedBudgets, dragId, dragOverId]);
-
-  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id);
-    setDragId(id);
-  }, []);
-  const handleDragOver = useCallback((e: React.DragEvent, itemId: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverId(itemId);
-  }, []);
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragId && dragOverId && dragId !== dragOverId) {
-      const toIdx = orderedBudgets.findIndex(b => b.id === dragOverId);
-      if (toIdx >= 0) moveTo(dragId, toIdx);
-    }
-    setDragId(null);
-    setDragOverId(null);
-  }, [dragId, dragOverId, orderedBudgets, moveTo]);
-  const handleDragEnd = useCallback(() => {
-    setDragId(null);
-    setDragOverId(null);
-  }, []);
+  const [budgetListRef] = useAutoAnimate<HTMLDivElement>();
 
   // Wait for auth to fully resolve before fetching budgets.
   const authReady = authInitialized && !authLoading && !!user;
@@ -162,24 +127,15 @@ export default function HomePage() {
                 )}
               </div>
 
-              <div className="grid gap-4 sm:gap-6">
-                {displayBudgets.map((budget, idx) => (
-                  <div
+              <div ref={budgetListRef} className="grid gap-4 sm:gap-6">
+                {orderedBudgets.map((budget, idx) => (
+                  <BudgetCard
                     key={budget.id}
-                    draggable={displayBudgets.length > 1}
-                    onDragStart={(e) => handleDragStart(e, budget.id)}
-                    onDragOver={(e) => handleDragOver(e, budget.id)}
-                    onDrop={(e) => handleDrop(e)}
-                    onDragEnd={handleDragEnd}
-                    className={dragId === budget.id ? "opacity-50" : undefined}
-                  >
-                    <BudgetCard
-                      budget={budget}
-                      onClick={() => router.push(`/budget/${budget.id}`)}
-                      onMoveUp={displayBudgets.length > 1 && idx > 0 ? () => {} : undefined}
-                      onMoveDown={displayBudgets.length > 1 && idx < displayBudgets.length - 1 ? () => {} : undefined}
-                    />
-                  </div>
+                    budget={budget}
+                    onClick={() => router.push(`/budget/${budget.id}`)}
+                    onMoveUp={orderedBudgets.length > 1 && idx > 0 ? () => moveUp(budget.id) : undefined}
+                    onMoveDown={orderedBudgets.length > 1 && idx < orderedBudgets.length - 1 ? () => moveDown(budget.id) : undefined}
+                  />
                 ))}
               </div>
             </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, BarChart3, GripVertical, Settings, Plus, Link2 } from "lucide-react";
+import { ChevronDown, ChevronUp, BarChart3, Settings, Plus, Link2 } from "lucide-react";
 import type { SectionSummary, Category, CategorySummary, BudgetLink, Budget } from "@/types/budget";
 import {
   formatCurrency,
@@ -105,74 +106,13 @@ export function SectionCard({
   ], [sectionCategories, linkedCategories]);
 
   const getCatId = useCallback((c: OrderableCat) => c.id, []);
-  const { ordered: orderedCats, moveTo: moveCatTo } = useDisplayOrder(
+  const { ordered: orderedCats, moveUp: moveCatUp, moveDown: moveCatDown } = useDisplayOrder(
     `budget-${budgetId}-section-${section.id}-categories`,
     allCats,
     getCatId
   );
 
-  const [dragCatId, setDragCatId] = useState<string | null>(null);
-  const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
-  const [dropCatPosition, setDropCatPosition] = useState<"before" | "after">("before");
-
-  const handleCatDragStart = useCallback((e: React.DragEvent, id: string) => {
-    e.stopPropagation();
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", id);
-    // Create a compact drag ghost
-    const el = e.currentTarget as HTMLElement;
-    const ghost = el.cloneNode(true) as HTMLElement;
-    ghost.style.width = `${el.offsetWidth}px`;
-    ghost.style.opacity = '0.85';
-    ghost.style.position = 'absolute';
-    ghost.style.top = '-9999px';
-    ghost.style.left = '-9999px';
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, e.nativeEvent.offsetX, 20);
-    requestAnimationFrame(() => {
-      setDragCatId(id);
-      document.body.removeChild(ghost);
-    });
-  }, []);
-  const handleCatDragOver = useCallback((e: React.DragEvent, itemId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = "move";
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const midY = rect.top + rect.height / 2;
-    const pos = e.clientY < midY ? "before" : "after";
-    setDragOverCatId((prev) => prev === itemId ? prev : itemId);
-    setDropCatPosition((prev) => prev === pos ? prev : pos);
-  }, []);
-  const handleCatDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (dragCatId && dragOverCatId && dragCatId !== dragOverCatId) {
-      const fromIdx = orderedCats.findIndex(i => i.id === dragCatId);
-      let toIdx = orderedCats.findIndex(i => i.id === dragOverCatId);
-      if (toIdx >= 0 && fromIdx >= 0) {
-        // If dropping "after" and source is before target, target stays.
-        // If dropping "before" and source is after target, target stays.
-        // Otherwise adjust for the removal.
-        if (dropCatPosition === "after" && fromIdx < toIdx) {
-          // stays
-        } else if (dropCatPosition === "after" && fromIdx > toIdx) {
-          toIdx += 1;
-        } else if (dropCatPosition === "before" && fromIdx > toIdx) {
-          // stays
-        } else if (dropCatPosition === "before" && fromIdx < toIdx) {
-          toIdx -= 1;
-        }
-        moveCatTo(dragCatId, toIdx);
-      }
-    }
-    setDragCatId(null);
-    setDragOverCatId(null);
-  }, [dragCatId, dragOverCatId, dropCatPosition, orderedCats, moveCatTo]);
-  const handleCatDragEnd = useCallback(() => {
-    setDragCatId(null);
-    setDragOverCatId(null);
-  }, []);
+  const [catListRef] = useAutoAnimate<HTMLDivElement>();
 
   return (
     <div className={cn(
@@ -526,7 +466,7 @@ export function SectionCard({
           )}
         >
           <div className="overflow-hidden">
-            <div className="mt-5 border-t-2 border-foreground/10 pt-5 space-y-0">
+            <div ref={catListRef} className="mt-5 border-t-2 border-foreground/10 pt-5 space-y-0">
               {/* Categories (own + linked, unified and reorderable) */}
               {orderedCats.map((item, idx) => {
                 const sub = item.type === "own" ? item.sub : item.lc.categorySummary;
@@ -542,30 +482,14 @@ export function SectionCard({
                     ? `/budget/${linkedInfo.link.source_budget_id}/section/${linkedInfo.link.source_section_id}/category/${sub.category.id}`
                     : `/budget/${budgetId}/section/${section.id}/category/${sub.category.id}`;
 
-                const isDropBefore = dragCatId && dragOverCatId === item.id && dragCatId !== item.id && dropCatPosition === "before";
-                const isDropAfter = dragCatId && dragOverCatId === item.id && dragCatId !== item.id && dropCatPosition === "after";
-
                 return (
                   <div
                     key={item.id}
-                    draggable={orderedCats.length > 1}
-                    onDragStart={(e) => handleCatDragStart(e, item.id)}
-                    onDragOver={(e) => handleCatDragOver(e, item.id)}
-                    onDrop={(e) => handleCatDrop(e)}
-                    onDragEnd={handleCatDragEnd}
                     className={cn(
                       "group/sub px-3 py-3 relative hover:bg-muted/50 min-h-[44px]",
                       idx !== 0 && "border-t border-foreground/10",
-                      dragCatId === item.id && "opacity-20"
                     )}
                   >
-                    {/* Drop indicator lines */}
-                    {isDropBefore && (
-                      <div className="absolute left-3 right-3 -top-px h-[3px] bg-foreground z-10 rounded-full" />
-                    )}
-                    {isDropAfter && (
-                      <div className="absolute left-3 right-3 -bottom-px h-[3px] bg-foreground z-10 rounded-full" />
-                    )}
                     {/* Linked badge */}
                     {isLinkedCat && (
                       <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
@@ -582,11 +506,11 @@ export function SectionCard({
                         <span className="text-sm font-bold tabular-nums font-mono text-foreground shrink-0">
                           {formatCurrency(sub.allocated_amount, currency)}
                         </span>
-                        {orderedCats.length > 1 && (
-                          <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40" onClick={(e) => e.stopPropagation()}>
-                            <GripVertical className="size-4" />
-                          </div>
-                        )}
+                        {/* Up/down buttons mobile */}
+                        <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-3.5" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-3.5" /></button>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                         <span className="font-mono tabular-nums">
@@ -667,18 +591,10 @@ export function SectionCard({
                             </span>
                           </div>
                         </div>
-                        {/* Drag grip (always reserves space for alignment) */}
-                        <div
-                          className={cn(
-                            "shrink-0 transition-colors",
-                            orderedCats.length > 1
-                              ? "cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground"
-                              : "invisible"
-                          )}
-                          aria-label="Drag to reorder"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <GripVertical className="size-5" />
+                        {/* Up/down buttons desktop (always reserves space for alignment) */}
+                        <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-4" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-4" /></button>
                         </div>
                       </div>
                       {/* Progress bar */}

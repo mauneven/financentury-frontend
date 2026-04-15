@@ -13,7 +13,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { CategoryIcon } from "@/lib/icon-picker";
-import { GripVertical } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
 
 interface BudgetCardProps {
@@ -109,12 +109,13 @@ export function BudgetCard({ budget, onClick, onMoveUp, onMoveDown }: BudgetCard
             </div>
           </div>
           {(onMoveUp || onMoveDown) && (
-            <div
-              className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors p-1"
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Drag to reorder"
-            >
-              <GripVertical className="size-5" />
+            <div className="flex flex-col shrink-0" onClick={(e) => e.stopPropagation()}>
+              <button type="button" onClick={onMoveUp} className={cn("p-0.5 transition-colors", onMoveUp ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up">
+                <ChevronUp className="size-4" />
+              </button>
+              <button type="button" onClick={onMoveDown} className={cn("p-0.5 transition-colors", onMoveDown ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down">
+                <ChevronDown className="size-4" />
+              </button>
             </div>
           )}
         </div>
