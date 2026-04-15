@@ -369,7 +369,13 @@
     "remove": "Eliminar",
     "removeConfirm": "Eliminar este colaborador? Perderá acceso a este presupuesto.",
     "noCollaborators": "Aún no hay colaboradores",
-    "you": "Tú"
+    "you": "Tú",
+    "pendingInvites": "Enlaces de Invitación",
+    "noPendingInvites": "No se han generado enlaces de invitación",
+    "pending": "Pendiente",
+    "expired": "Expirado",
+    "used": "Usado",
+    "createdAt": "Creado"
   },
   "footer": {
     "privacy": "Política de Privacidad",

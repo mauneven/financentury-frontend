@@ -11,6 +11,7 @@ import type {
   Category,
   TrendsResponse,
   BillingHistoryResponse,
+  Invite,
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
 
@@ -226,6 +227,8 @@ export const categoryApi = {
 
 // Invites
 export const inviteApi = {
+  list: (budgetId: string) =>
+    request<Invite[]>(`/budgets/${budgetId}/invites`),
   create: (budgetId: string) =>
     request<{ invite_token: string; invite_url: string; expires_at: string }>(
       `/budgets/${budgetId}/invite`,

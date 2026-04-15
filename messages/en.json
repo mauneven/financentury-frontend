@@ -369,7 +369,13 @@
     "remove": "Remove",
     "removeConfirm": "Remove this collaborator? They will lose access to this budget.",
     "noCollaborators": "No collaborators yet",
-    "you": "You"
+    "you": "You",
+    "pendingInvites": "Invite Links",
+    "noPendingInvites": "No invite links generated yet",
+    "pending": "Pending",
+    "expired": "Expired",
+    "used": "Used",
+    "createdAt": "Created"
   },
   "footer": {
     "privacy": "Privacy Policy",

@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/auth-store";
 
 
 import { CollaboratorsList } from "@/components/budget/collaborators-list";
+import { PendingInvites } from "@/components/budget/pending-invites";
 import { InviteDialog } from "@/components/budget/invite-dialog";
 
 import { Button } from "@/components/ui/button";
@@ -344,10 +345,10 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
 
         {submitError && <p className="text-xs text-destructive">{submitError}</p>}
 
-        {/* Save */}
+        {/* Save — owner only */}
         <Button
           type="submit"
-          disabled={isSaving || !isDirty}
+          disabled={isSaving || !isDirty || !isOwner}
           className="bg-emerald-600 text-white hover:bg-emerald-700 min-h-[44px]"
         >
           {isSaving ? (
@@ -388,6 +389,8 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
             </div>
 
             <CollaboratorsList budgetId={budget.id} isOwner={isOwner} />
+
+            {isOwner && <PendingInvites budgetId={budget.id} />}
           </div>
 
         <InviteDialog
@@ -397,64 +400,67 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
         />
       </>
 
-      <Separator />
+      {/* Danger zone — owner only */}
+      {isOwner && (
+        <>
+          <Separator />
 
-      {/* Danger zone */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-destructive">{t("dangerZone")}</h3>
-        <p className="text-sm text-muted-foreground">
-          {t("deleteDescription")}
-        </p>
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={() => setDeleteDialogOpen(true)}
-          className="min-h-[44px]"
-        >
-          <Trash2 className="size-4 mr-1" />
-          {t("deleteBudget")}
-        </Button>
-      </div>
-
-      {/* Delete confirmation */}
-      <Dialog
-        open={deleteDialogOpen}
-        onOpenChange={(val) => setDeleteDialogOpen(val)}
-      >
-        <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("deleteConfirmMessage")}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" className="min-h-[44px]" />}
-            >
-              {tc("cancel")}
-            </DialogClose>
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-destructive">{t("dangerZone")}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t("deleteDescription")}
+            </p>
             <Button
+              type="button"
               variant="destructive"
-              disabled={isDeleting}
-              onClick={handleDelete}
+              onClick={() => setDeleteDialogOpen(true)}
               className="min-h-[44px]"
             >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="size-4 mr-1 animate-spin" />
-                  {t("deleting")}
-                </>
-              ) : (
-                <>
-                  <Trash2 className="size-4 mr-1" />
-                  {tc("delete")}
-                </>
-              )}
+              <Trash2 className="size-4 mr-1" />
+              {t("deleteBudget")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+
+          <Dialog
+            open={deleteDialogOpen}
+            onOpenChange={(val) => setDeleteDialogOpen(val)}
+          >
+            <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
+                <DialogDescription>
+                  {t("deleteConfirmMessage")}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose
+                  render={<Button variant="outline" className="min-h-[44px]" />}
+                >
+                  {tc("cancel")}
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  disabled={isDeleting}
+                  onClick={handleDelete}
+                  className="min-h-[44px]"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="size-4 mr-1 animate-spin" />
+                      {t("deleting")}
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="size-4 mr-1" />
+                      {tc("delete")}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 }

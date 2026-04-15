@@ -130,6 +130,17 @@ export interface BillingHistoryResponse {
   history: BillingPeriodBalance[];
 }
 
+export interface Invite {
+  id: string;
+  budget_id: string;
+  invite_token: string;
+  created_by: string;
+  used_by?: string | null;
+  used_at?: string | null;
+  expires_at: string;
+  created_at: string;
+}
+
 export interface CreateBudgetInput {
   name: string;
   icon?: string;
