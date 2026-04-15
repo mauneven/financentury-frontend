@@ -6,9 +6,9 @@ import { formatCurrency } from "@/lib/format";
 import { budgetApi } from "@/lib/api";
 import { useTranslations } from "@/i18n/client";
 import { cn } from "@/lib/utils";
-import type { BillingHistoryResponse, BillingPeriodBalance } from "@/types/budget";
+import type { MonthlyResumeResponse, MonthlyResumePeriod } from "@/types/budget";
 
-interface BillingHistoryProps {
+interface MonthlyResumeProps {
   budgetId: string;
   currency: string;
 }
@@ -32,23 +32,16 @@ function PeriodRow({
   period,
   currency,
   t,
-  isCurrent,
 }: {
-  period: BillingPeriodBalance;
+  period: MonthlyResumePeriod;
   currency: string;
   t: ReturnType<typeof useTranslations>;
-  isCurrent?: boolean;
 }) {
   const isPositive = period.balance > 0;
   const isNegative = period.balance < 0;
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-2 p-3 sm:p-4",
-        isCurrent && "border-2 border-foreground bg-card"
-      )}
-    >
+    <div className="flex flex-col gap-2 p-3 sm:p-4">
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Calendar className="size-3.5 shrink-0 text-muted-foreground" />
@@ -103,18 +96,18 @@ function PeriodRow({
   );
 }
 
-export function BillingHistory({ budgetId, currency }: BillingHistoryProps) {
+export function MonthlyResume({ budgetId, currency }: MonthlyResumeProps) {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
-  const [data, setData] = useState<BillingHistoryResponse | null>(null);
+  const [data, setData] = useState<MonthlyResumeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchHistory = useCallback((id: string) => {
+  const fetchResume = useCallback((id: string) => {
     let cancelled = false;
     setError(false);
     budgetApi
-      .billingHistory(id)
+      .monthlyResume(id)
       .then((res) => {
         if (!cancelled) setData(res);
       })
@@ -130,8 +123,8 @@ export function BillingHistory({ budgetId, currency }: BillingHistoryProps) {
   }, []);
 
   useEffect(() => {
-    return fetchHistory(budgetId);
-  }, [budgetId, fetchHistory]);
+    return fetchResume(budgetId);
+  }, [budgetId, fetchResume]);
 
   if (loading) {
     return (
@@ -158,7 +151,7 @@ export function BillingHistory({ budgetId, currency }: BillingHistoryProps) {
             onClick={() => {
               setLoading(true);
               setError(false);
-              fetchHistory(budgetId);
+              fetchResume(budgetId);
             }}
             className="mt-3 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
           >
@@ -169,40 +162,30 @@ export function BillingHistory({ budgetId, currency }: BillingHistoryProps) {
     );
   }
 
-  if (!data || !data.current) return null;
+  // Don't render anything if there are no completed periods with data.
+  if (!data || data.periods.length === 0) return null;
 
   return (
     <div className="border-2 border-foreground bg-card p-5 sm:p-6">
       <h3 className="font-bold text-foreground" style={{ fontSize: 'var(--text-fluid-base)' }}>
-        {t("billingHistory")}
+        {t("monthlyResume")}
       </h3>
 
-      {/* Current period */}
       <div className="mt-4 space-y-1">
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          {t("currentPeriod")}
+          {t("completedPeriods")}
         </p>
-        <PeriodRow period={data.current} currency={currency} t={t} isCurrent />
-      </div>
-
-      {/* Past periods */}
-      {data.history.length > 0 && (
-        <div className="mt-5 space-y-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            {t("pastPeriods")}
-          </p>
-          <div className="space-y-1">
-            {data.history.map((period) => (
-              <PeriodRow
-                key={period.period_start}
-                period={period}
-                currency={currency}
-                t={t}
-              />
-            ))}
-          </div>
+        <div className="space-y-1">
+          {data.periods.map((period) => (
+            <PeriodRow
+              key={period.period_start}
+              period={period}
+              currency={currency}
+              t={t}
+            />
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }

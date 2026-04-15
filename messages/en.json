@@ -171,14 +171,12 @@
       "collapse": "Collapse",
       "adjust": "Adjust"
     },
-    "billingHistory": "Period Balance",
-    "currentPeriod": "Current Period",
+    "monthlyResume": "Budget Resume by Month",
+    "completedPeriods": "Completed Periods",
     "periodRange": "{start} to {end}",
     "balance": "Balance",
     "surplus": "Surplus",
     "deficit": "Deficit",
-    "pastPeriods": "Past Periods",
-    "noPastPeriods": "No past periods yet",
     "income": "Income",
     "spent": "Spent",
     "notUsedYet": "Not used yet"

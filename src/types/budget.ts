@@ -116,7 +116,7 @@ export interface TrendsResponse {
   categories: SectionTrend[];
 }
 
-export interface BillingPeriodBalance {
+export interface MonthlyResumePeriod {
   period_start: string;
   period_end: string;
   income: number;
@@ -124,10 +124,9 @@ export interface BillingPeriodBalance {
   balance: number;
 }
 
-export interface BillingHistoryResponse {
+export interface MonthlyResumeResponse {
   budget_id: string;
-  current: BillingPeriodBalance | null;
-  history: BillingPeriodBalance[];
+  periods: MonthlyResumePeriod[];
 }
 
 export interface Invite {

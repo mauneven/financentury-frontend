@@ -171,14 +171,12 @@
       "collapse": "Contraer",
       "adjust": "Ajustar"
     },
-    "billingHistory": "Balance del Periodo",
-    "currentPeriod": "Periodo Actual",
+    "monthlyResume": "Resumen del Presupuesto por Mes",
+    "completedPeriods": "Periodos Completados",
     "periodRange": "{start} al {end}",
     "balance": "Balance",
     "surplus": "Excedente",
     "deficit": "Déficit",
-    "pastPeriods": "Periodos Anteriores",
-    "noPastPeriods": "Aún no hay periodos anteriores",
     "income": "Ingreso",
     "spent": "Gastado",
     "notUsedYet": "No usado aún"
