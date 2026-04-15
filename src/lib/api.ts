@@ -12,6 +12,7 @@ import type {
   TrendsResponse,
   BudgetResumeResponse,
   Invite,
+  Session,
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
 
@@ -135,6 +136,15 @@ export const authApi = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+  signOut: () =>
+    request<void>("/auth/sign-out", { method: "POST" }),
+};
+
+// Sessions
+export const sessionApi = {
+  list: () => request<Session[]>("/auth/sessions"),
+  revoke: (sessionId: string) =>
+    request<void>(`/auth/sessions/${sessionId}`, { method: "DELETE" }),
 };
 
 // Budgets

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
-import { useLocaleStore } from "@/i18n/locale";
+import { sessionApi } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,16 +17,164 @@ import {
 } from "@/components/ui/dialog";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { AppShell } from "@/components/layout/app-shell";
-import { LogOut, Trash2, TriangleAlert, ChevronDown, Pencil, Check, X } from "lucide-react";
+import { LogOut, Trash2, TriangleAlert, ChevronDown, Pencil, Check, X, Monitor, Smartphone, Tablet, Loader2, ShieldX } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+import type { Session } from "@/types/budget";
+
+function DeviceIcon({ type }: { type: string }) {
+  switch (type) {
+    case "mobile":
+      return <Smartphone className="size-5" />;
+    case "tablet":
+      return <Tablet className="size-5" />;
+    default:
+      return <Monitor className="size-5" />;
+  }
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+
+  return new Date(dateStr).toLocaleDateString();
+}
+
+function SessionsList({ t }: { t: ReturnType<typeof useTranslations> }) {
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  const fetchSessions = useCallback(async () => {
+    setError(false);
+    try {
+      const data = await sessionApi.list();
+      setSessions(data);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
+  const handleRevoke = async (sessionId: string) => {
+    setRevokingId(sessionId);
+    try {
+      await sessionApi.revoke(sessionId);
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    } catch {
+      // silently handle
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center py-4 gap-2">
+        <p className="text-xs text-muted-foreground">{t("errorLoadingSessions")}</p>
+        <button
+          type="button"
+          onClick={() => { setLoading(true); fetchSessions(); }}
+          className="text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+        >
+          {t("retry")}
+        </button>
+      </div>
+    );
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground py-4 text-center">
+        {t("noSessions")}
+      </p>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-border/50">
+      {sessions.map((session) => (
+        <div key={session.id} className="flex items-start gap-3 py-3">
+          <div className={cn(
+            "flex size-9 shrink-0 items-center justify-center border-2 mt-0.5",
+            session.is_current
+              ? "border-foreground bg-foreground text-background"
+              : "border-border text-muted-foreground"
+          )}>
+            <DeviceIcon type={session.device_type} />
+          </div>
+
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium truncate">
+                {session.browser} — {session.os}
+              </p>
+              {session.is_current && (
+                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border border-foreground bg-foreground text-background">
+                  {t("thisDevice")}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground font-mono">
+              {session.ip_address}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t("lastActive")} {formatRelativeTime(session.last_active_at)}
+            </p>
+          </div>
+
+          {!session.is_current && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={revokingId === session.id}
+              onClick={() => handleRevoke(session.id)}
+              className="shrink-0 text-muted-foreground hover:text-destructive text-xs gap-1"
+            >
+              {revokingId === session.id ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ShieldX className="size-3.5" />
+              )}
+              {revokingId === session.id ? t("revoking") : t("revoke")}
+            </Button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AccountPage() {
   const t = useTranslations("account");
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { user, signOut, deleteAccount, updateName } = useAuthStore();
-  const { locale, setLocale } = useLocaleStore();
 
   const [dangerOpen, setDangerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -138,36 +286,13 @@ export default function AccountPage() {
             </CardContent>
           </Card>
 
-          {/* Settings */}
+          {/* Active Sessions */}
           <Card>
-            <CardContent className="pt-4 pb-4 space-y-3">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {t("language")}
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                {t("activeSessions")}
               </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setLocale("en")}
-                  className={cn(
-                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider border-2 transition-colors",
-                    locale === "en"
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  )}
-                >
-                  English
-                </button>
-                <button
-                  onClick={() => setLocale("es")}
-                  className={cn(
-                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider border-2 transition-colors",
-                    locale === "es"
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  )}
-                >
-                  Español
-                </button>
-              </div>
+              <SessionsList t={t} />
             </CardContent>
           </Card>
 

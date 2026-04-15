@@ -199,6 +199,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: () => {
+    // Revoke server session (fire and forget).
+    authApi.signOut().catch(() => {});
     budgetWS.disconnect();
     if (typeof window !== "undefined") {
       localStorage.removeItem("financentury_token");

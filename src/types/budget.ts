@@ -141,6 +141,17 @@ export interface Invite {
   created_at: string;
 }
 
+export interface Session {
+  id: string;
+  device_type: "desktop" | "mobile" | "tablet";
+  browser: string;
+  os: string;
+  ip_address: string;
+  is_current: boolean;
+  created_at: string;
+  last_active_at: string;
+}
+
 export interface CreateBudgetInput {
   name: string;
   icon?: string;
