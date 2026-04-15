@@ -40,10 +40,10 @@ const sectionSchema = z.object({
     .string()
     .min(1, "Section name is required")
     .max(60, "Name must be 60 characters or less"),
-  allocation_percent: z
+  allocation_value: z
     .number({ message: "Allocation is required" })
     .min(0, "Must be 0 or more")
-    .max(100, "Must be 100 or less"),
+    .max(1e15, "Amount exceeds maximum"),
   icon: z.string().min(1, "Pick an icon"),
 });
 
@@ -55,12 +55,14 @@ type SectionFormValues = z.infer<typeof sectionSchema>;
 
 interface SectionImpactPreviewProps {
   categories: Category[];
-  newSectionPercent: number;
+  newSectionValue: number;
+  currency: string;
 }
 
 function SectionImpactPreview({
   categories,
-  newSectionPercent,
+  newSectionValue,
+  currency,
 }: SectionImpactPreviewProps) {
   const t = useTranslations("section");
   const [expanded, setExpanded] = React.useState(true);
@@ -68,10 +70,10 @@ function SectionImpactPreview({
   if (categories.length === 0) return null;
 
   const childTotal = categories.reduce(
-    (sum, s) => sum + s.allocation_percent,
+    (sum, s) => sum + s.allocation_value,
     0
   );
-  const isOverflow = childTotal > newSectionPercent;
+  const isOverflow = childTotal > newSectionValue;
 
   return (
     <div
@@ -111,14 +113,14 @@ function SectionImpactPreview({
             )}
           >
             {isOverflow
-              ? `Categories total ${childTotal.toFixed(1)}% but section is only ${newSectionPercent.toFixed(1)}%`
-              : `Categories total ${childTotal.toFixed(1)}% of ${newSectionPercent.toFixed(1)}% allocated`}
+              ? `Categories total ${formatAmount(childTotal)} but section is only ${formatAmount(newSectionValue)}`
+              : `Categories total ${formatAmount(childTotal)} of ${formatAmount(newSectionValue)} allocated`}
           </p>
 
           {/* Per-category rows */}
           <ul className="space-y-0.5 pl-1">
             {categories.map((sub) => {
-              const overflow = sub.allocation_percent > newSectionPercent;
+              const overflow = sub.allocation_value > newSectionValue;
               return (
                 <li
                   key={sub.id}
@@ -139,7 +141,7 @@ function SectionImpactPreview({
                       overflow ? "text-destructive" : ""
                     )}
                   >
-                    {sub.allocation_percent}%
+                    {formatAmount(sub.allocation_value)}
                   </span>
                 </li>
               );
@@ -203,13 +205,13 @@ export function EditSectionDialog({
     resolver: zodResolver(sectionSchema),
     defaultValues: {
       name: section.name,
-      allocation_percent: section.allocation_percent,
+      allocation_value: section.allocation_value,
       icon: section.icon || "home",
     },
   });
 
   const watchIcon = watch("icon");
-  const watchAllocation = watch("allocation_percent");
+  const watchAllocation = watch("allocation_value");
 
   // Compute displayed percentage from current rawAmount
   const computedPercent =
@@ -221,15 +223,13 @@ export function EditSectionDialog({
     if (open) {
       reset({
         name: section.name,
-        allocation_percent: section.allocation_percent,
+        allocation_value: section.allocation_value,
         icon: section.icon || "home",
       });
 
-      // Convert stored percent to dollar amount
-      const initialAmount =
-        totalBudget > 0 ? (section.allocation_percent / 100) * totalBudget : 0;
-      setRawAmount(initialAmount);
-      setAmountInput(formatAmount(initialAmount));
+      // allocation_value is already an absolute amount
+      setRawAmount(section.allocation_value);
+      setAmountInput(formatAmount(section.allocation_value));
 
       setShowDeleteConfirm(false);
       setIsSubmitting(false);
@@ -244,11 +244,8 @@ export function EditSectionDialog({
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
 
-    // Keep RHF in sync
-    const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
-    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(10)), 100), {
-      shouldValidate: true,
-    });
+    // Store absolute amount — backend expects the raw value, not a percentage.
+    setValue("allocation_value", numericValue, { shouldValidate: true });
   };
 
   const onSubmit = async (values: SectionFormValues) => {
@@ -257,7 +254,7 @@ export function EditSectionDialog({
     try {
       await updateSection(section.id, {
         name: values.name,
-        allocation_percent: values.allocation_percent,
+        allocation_value: values.allocation_value,
         icon: values.icon,
       });
       await refreshSummary();
@@ -285,7 +282,7 @@ export function EditSectionDialog({
 
   // Show impact preview only when allocation has changed from the original
   const allocationChanged =
-    Math.abs(watchAllocation - section.allocation_percent) > 0.001;
+    Math.abs(watchAllocation - section.allocation_value) > 0.001;
   const showImpact = allocationChanged && categories.length > 0;
 
   return (
@@ -347,7 +344,7 @@ export function EditSectionDialog({
                   className="pl-6"
                   value={amountInput}
                   onChange={handleAmountChange}
-                  aria-invalid={!!errors.allocation_percent}
+                  aria-invalid={!!errors.allocation_value}
                   placeholder="0"
                 />
               </div>
@@ -362,9 +359,9 @@ export function EditSectionDialog({
                 = {computedPercent.toFixed(1)}%
               </span>
             </div>
-            {errors.allocation_percent && (
+            {errors.allocation_value && (
               <p className="text-xs text-destructive">
-                {errors.allocation_percent.message}
+                {errors.allocation_value.message}
               </p>
             )}
           </div>
@@ -373,7 +370,8 @@ export function EditSectionDialog({
           {showImpact && (
             <SectionImpactPreview
               categories={categories}
-              newSectionPercent={watchAllocation}
+              newSectionValue={watchAllocation}
+              currency={summary?.budget.currency ?? "USD"}
             />
           )}
 

@@ -295,10 +295,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
       {/* Unallocated budget notification */}
       {(() => {
-        const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_percent, 0);
-        const unallocatedPct = parseFloat((100 - totalAllocated).toFixed(2));
-        if (unallocatedPct <= 0) return null;
-        const unallocatedAmt = (unallocatedPct / 100) * budget.monthly_income;
+        const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_value, 0);
+        const unallocatedAmt = budget.monthly_income - totalAllocated;
+        if (unallocatedAmt <= 0) return null;
+        const unallocatedPct = budget.monthly_income > 0 ? Math.round((unallocatedAmt / budget.monthly_income) * 100) : 0;
         return (
           <BudgetUnallocatedBanner
             unallocatedPercent={unallocatedPct}
@@ -308,7 +308,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
               id: s.section.id,
               name: s.section.name,
               icon: s.section.icon,
-              allocation_percent: s.section.allocation_percent,
+              allocation_value: s.section.allocation_value,
             }))}
             onCreateSection={() => {
               setSectionPrefillAmount(unallocatedAmt);
@@ -358,8 +358,8 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
               <button
                 type="button"
                 onClick={() => {
-                  const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_percent, 0);
-                  const remainingAmt = Math.max(0, ((100 - totalAllocated) / 100) * budget.monthly_income);
+                  const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_value, 0);
+                  const remainingAmt = Math.max(0, budget.monthly_income - totalAllocated);
                   setSectionPrefillAmount(remainingAmt > 0 ? remainingAmt : undefined);
                   setAddSectionOpen(true);
                 }}

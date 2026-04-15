@@ -148,7 +148,7 @@ const DONUT_COLORS = [
 
 const MODE_SECTIONS: Record<
   string,
-  readonly { name: string; allocation_percent: number }[]
+  readonly { name: string; allocation_value: number }[]
 > = {
   balanced: BALANCED_SECTIONS,
   "debt-free": DEBT_FREE_SECTIONS,
@@ -185,7 +185,7 @@ function ModeDonutChart({
   const sections = isManual ? [] : (MODE_SECTIONS[mode] ?? []);
   const chartData = isManual
     ? [{ name: "manual", value: 1 }]
-    : sections.map((s) => ({ name: s.name, value: s.allocation_percent }));
+    : sections.map((s) => ({ name: s.name, value: s.allocation_value }));
 
   return (
     <div className="flex items-center gap-2 mt-3 w-full">
@@ -236,7 +236,7 @@ function ModeDonutChart({
                 }}
               />
               <span className="truncate">{nameTranslator ? nameTranslator(section.name) : section.name}</span>
-              <span className="shrink-0 font-mono tabular-nums">({section.allocation_percent}%)</span>
+              <span className="shrink-0 font-mono tabular-nums">({section.allocation_value}%)</span>
             </span>
           ))}
         </div>

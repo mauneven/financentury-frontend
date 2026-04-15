@@ -16,14 +16,14 @@ interface SectionTarget {
   id: string;
   name: string;
   icon: string;
-  allocation_percent: number;
+  allocation_value: number;
 }
 
 interface CategoryTarget {
   id: string;
   name: string;
   icon: string;
-  allocation_percent: number;
+  allocation_value: number;
   sectionId: string;
 }
 
@@ -63,7 +63,7 @@ export function BudgetUnallocatedBanner({
     setRedirecting(true);
     try {
       await updateSection(selectedId, {
-        allocation_percent: target.allocation_percent + unallocatedPercent,
+        allocation_value: target.allocation_value + unallocatedAmount,
       });
       await refreshSummary();
       setShowRedirect(false);
@@ -129,7 +129,7 @@ export function BudgetUnallocatedBanner({
                     <CategoryIcon iconKey={sec.icon} className="size-4 shrink-0" />
                     <span className="text-sm font-semibold flex-1">{sec.name}</span>
                     <span className="text-xs font-mono tabular-nums opacity-70">
-                      {sec.allocation_percent}% → {(sec.allocation_percent + unallocatedPercent).toFixed(1)}%
+                      {formatCurrency(sec.allocation_value, currency)} → {formatCurrency(sec.allocation_value + unallocatedAmount, currency)}
                     </span>
                   </button>
                 ))}
@@ -206,7 +206,7 @@ export function SectionUnallocatedBanner({
     setRedirecting(true);
     try {
       await updateCategory(sectionId, selectedId, {
-        allocation_percent: target.allocation_percent + unallocatedPercent,
+        allocation_value: target.allocation_value + unallocatedAmount,
       });
       await refreshSummary();
       setShowRedirect(false);
@@ -283,7 +283,7 @@ export function SectionUnallocatedBanner({
                     <CategoryIcon iconKey={cat.icon} className="size-4 shrink-0" />
                     <span className="text-sm font-semibold flex-1">{cat.name}</span>
                     <span className="text-xs font-mono tabular-nums opacity-70">
-                      {cat.allocation_percent}% → {(cat.allocation_percent + unallocatedPercent).toFixed(1)}%
+                      {formatCurrency(cat.allocation_value, currency)} → {formatCurrency(cat.allocation_value + unallocatedAmount, currency)}
                     </span>
                   </button>
                 ))}

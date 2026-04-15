@@ -39,10 +39,10 @@ const sectionSchema = z.object({
     .string()
     .min(1, "Section name is required")
     .max(60, "Name must be 60 characters or less"),
-  allocation_percent: z
+  allocation_value: z
     .number({ message: "Allocation is required" })
     .min(0, "Must be 0 or more")
-    .max(100, "Must be 100 or less"),
+    .max(1e15, "Amount exceeds maximum"),
   icon: z.string().min(1, "Pick an icon"),
 });
 
@@ -106,7 +106,7 @@ export function AddSectionDialog({
     resolver: zodResolver(sectionSchema),
     defaultValues: {
       name: "",
-      allocation_percent: 0,
+      allocation_value: 0,
       icon: "tag",
     },
   });
@@ -122,13 +122,12 @@ export function AddSectionDialog({
   React.useEffect(() => {
     if (open) {
       const randomIcon = pickRandomIcon(usedIcons);
-      if (prefillAmount && prefillAmount > 0 && totalBudget > 0) {
-        const pct = Math.min(parseFloat(((prefillAmount / totalBudget) * 100).toFixed(10)), 100);
-        reset({ name: "", allocation_percent: pct, icon: randomIcon });
+      if (prefillAmount && prefillAmount > 0) {
+        reset({ name: "", allocation_value: prefillAmount, icon: randomIcon });
         setAmountInput(formatAmount(prefillAmount));
         setRawAmount(prefillAmount);
       } else {
-        reset({ name: "", allocation_percent: 0, icon: randomIcon });
+        reset({ name: "", allocation_value: 0, icon: randomIcon });
         setAmountInput("");
         setRawAmount(0);
       }
@@ -143,12 +142,8 @@ export function AddSectionDialog({
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
 
-    // Keep RHF in sync — store as percent for the backend.
-    // Use high precision to avoid rounding errors (e.g. 4M becoming 3,999,998).
-    const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
-    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(10)), 100), {
-      shouldValidate: true,
-    });
+    // Store absolute amount — backend expects the raw value, not a percentage.
+    setValue("allocation_value", numericValue, { shouldValidate: true });
   };
 
   const onSubmit = async (values: SectionFormValues) => {
@@ -157,7 +152,7 @@ export function AddSectionDialog({
     try {
       const section = await addSection({
         name: values.name,
-        allocation_percent: values.allocation_percent,
+        allocation_value: values.allocation_value,
         icon: values.icon,
       });
 
@@ -235,7 +230,7 @@ export function AddSectionDialog({
                   className="pl-6"
                   value={amountInput}
                   onChange={handleAmountChange}
-                  aria-invalid={!!errors.allocation_percent}
+                  aria-invalid={!!errors.allocation_value}
                   placeholder="0"
                 />
               </div>
@@ -250,9 +245,9 @@ export function AddSectionDialog({
                 = {computedPercent.toFixed(1)}%
               </span>
             </div>
-            {errors.allocation_percent && (
+            {errors.allocation_value && (
               <p className="text-xs text-destructive">
-                {errors.allocation_percent.message}
+                {errors.allocation_value.message}
               </p>
             )}
           </div>

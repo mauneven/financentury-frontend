@@ -38,10 +38,10 @@ const categorySchema = z.object({
     .string()
     .min(1, "Category name is required")
     .max(60, "Name must be 60 characters or less"),
-  allocation_percent: z
+  allocation_value: z
     .number({ message: "Allocation is required" })
     .min(0, "Must be 0 or more")
-    .max(100, "Must be 100 or less"),
+    .max(1e15, "Amount exceeds maximum"),
   icon: z.string().min(1, "Pick an icon"),
 });
 
@@ -77,7 +77,7 @@ export function AddCategoryDialog({
   const summary = useBudgetStore((s) => s.summary);
   const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
 
-  // Category allocation_percent is relative to the parent *section* allocation,
+  // Category allocation_value is relative to the parent *section* allocation,
   // not the total budget. Find the section's allocated dollar amount.
   const sectionBudget = React.useMemo(() => {
     if (!summary) return 0;
@@ -104,7 +104,7 @@ export function AddCategoryDialog({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
-      allocation_percent: 0,
+      allocation_value: 0,
       icon: "tag",
     },
   });
@@ -120,13 +120,12 @@ export function AddCategoryDialog({
   React.useEffect(() => {
     if (open) {
       const randomIcon = pickRandomIcon(existingCategoryIcons);
-      if (prefillAmount && prefillAmount > 0 && sectionBudget > 0) {
-        const pct = Math.min(parseFloat(((prefillAmount / sectionBudget) * 100).toFixed(10)), 100);
-        reset({ name: "", allocation_percent: pct, icon: randomIcon });
+      if (prefillAmount && prefillAmount > 0) {
+        reset({ name: "", allocation_value: prefillAmount, icon: randomIcon });
         setAmountInput(formatAmount(prefillAmount));
         setRawAmount(prefillAmount);
       } else {
-        reset({ name: "", allocation_percent: 0, icon: randomIcon });
+        reset({ name: "", allocation_value: 0, icon: randomIcon });
         setAmountInput("");
         setRawAmount(0);
       }
@@ -141,12 +140,8 @@ export function AddCategoryDialog({
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
 
-    // Keep RHF in sync — store as percent of section for the backend.
-    // Use high precision to avoid rounding errors (e.g. 4M becoming 3,999,998).
-    const pct = sectionBudget > 0 ? (numericValue / sectionBudget) * 100 : 0;
-    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(10)), 100), {
-      shouldValidate: true,
-    });
+    // Store absolute amount — backend expects the raw value, not a percentage.
+    setValue("allocation_value", numericValue, { shouldValidate: true });
   };
 
   const onSubmit = async (values: CategoryFormValues) => {
@@ -155,7 +150,7 @@ export function AddCategoryDialog({
     try {
       await addCategory(sectionId, {
         name: values.name,
-        allocation_percent: values.allocation_percent,
+        allocation_value: values.allocation_value,
         icon: values.icon,
       });
 
@@ -232,7 +227,7 @@ export function AddCategoryDialog({
                   className="pl-6"
                   value={amountInput}
                   onChange={handleAmountChange}
-                  aria-invalid={!!errors.allocation_percent}
+                  aria-invalid={!!errors.allocation_value}
                   placeholder="0"
                 />
               </div>
@@ -247,9 +242,9 @@ export function AddCategoryDialog({
                 = {computedPercent.toFixed(1)}%
               </span>
             </div>
-            {errors.allocation_percent && (
+            {errors.allocation_value && (
               <p className="text-xs text-destructive">
-                {errors.allocation_percent.message}
+                {errors.allocation_value.message}
               </p>
             )}
           </div>

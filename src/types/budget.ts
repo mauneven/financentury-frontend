@@ -24,7 +24,7 @@ export interface Section {
   id: string;
   budget_id: string;
   name: string;
-  allocation_percent: number;
+  allocation_value: number;
   icon: string;
   sort_order: number;
   created_at: string;
@@ -35,7 +35,7 @@ export interface Category {
   id: string;
   section_id: string;
   name: string;
-  allocation_percent: number;
+  allocation_value: number;
   icon: string;
   sort_order: number;
   created_at: string;
@@ -194,14 +194,14 @@ export interface CreateBudgetInput {
 
 export interface CreateSectionInput {
   name: string;
-  allocation_percent: number;
+  allocation_value: number;
   icon?: string;
   sort_order?: number;
 }
 
 export interface CreateCategoryInput {
   name: string;
-  allocation_percent: number;
+  allocation_value: number;
   icon?: string;
   sort_order?: number;
 }
@@ -236,40 +236,40 @@ export const BILLING_PERIODS = [
 export const BALANCED_SECTIONS = [
   {
     name: "Necesidades",
-    allocation_percent: 50,
+    allocation_value: 50,
     icon: "sprout",
     categories: [
-      { name: "Vivienda", allocation_percent: 45, icon: "home" },
-      { name: "Comida", allocation_percent: 25, icon: "utensils" },
-      { name: "Transporte", allocation_percent: 18, icon: "car" },
-      { name: "Servicios", allocation_percent: 12, icon: "lightbulb" },
+      { name: "Vivienda", allocation_value: 45, icon: "home" },
+      { name: "Comida", allocation_value: 25, icon: "utensils" },
+      { name: "Transporte", allocation_value: 18, icon: "car" },
+      { name: "Servicios", allocation_value: 12, icon: "lightbulb" },
     ],
   },
   {
     name: "Deseos",
-    allocation_percent: 30,
+    allocation_value: 30,
     icon: "party",
     categories: [
-      { name: "Salidas", allocation_percent: 50, icon: "party" },
-      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
+      { name: "Salidas", allocation_value: 50, icon: "party" },
+      { name: "Entretenimiento", allocation_value: 50, icon: "clapperboard" },
     ],
   },
   {
     name: "Deudas",
-    allocation_percent: 10,
+    allocation_value: 10,
     icon: "credit-card",
     categories: [
-      { name: "Tarjetas", allocation_percent: 50, icon: "credit-card" },
-      { name: "Pr\u00e9stamos", allocation_percent: 50, icon: "landmark" },
+      { name: "Tarjetas", allocation_value: 50, icon: "credit-card" },
+      { name: "Pr\u00e9stamos", allocation_value: 50, icon: "landmark" },
     ],
   },
   {
     name: "Ahorro",
-    allocation_percent: 10,
+    allocation_value: 10,
     icon: "coins",
     categories: [
-      { name: "Fondo de emergencia", allocation_percent: 50, icon: "landmark" },
-      { name: "Inversi\u00f3n", allocation_percent: 50, icon: "trending" },
+      { name: "Fondo de emergencia", allocation_value: 50, icon: "landmark" },
+      { name: "Inversi\u00f3n", allocation_value: 50, icon: "trending" },
     ],
   },
 ] as const;
@@ -277,31 +277,31 @@ export const BALANCED_SECTIONS = [
 export const DEBT_FREE_SECTIONS = [
   {
     name: "Necesidades",
-    allocation_percent: 50,
+    allocation_value: 50,
     icon: "sprout",
     categories: [
-      { name: "Vivienda", allocation_percent: 45, icon: "home" },
-      { name: "Comida", allocation_percent: 25, icon: "utensils" },
-      { name: "Transporte", allocation_percent: 18, icon: "car" },
-      { name: "Servicios", allocation_percent: 12, icon: "lightbulb" },
+      { name: "Vivienda", allocation_value: 45, icon: "home" },
+      { name: "Comida", allocation_value: 25, icon: "utensils" },
+      { name: "Transporte", allocation_value: 18, icon: "car" },
+      { name: "Servicios", allocation_value: 12, icon: "lightbulb" },
     ],
   },
   {
     name: "Deseos",
-    allocation_percent: 30,
+    allocation_value: 30,
     icon: "party",
     categories: [
-      { name: "Salidas", allocation_percent: 50, icon: "party" },
-      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
+      { name: "Salidas", allocation_value: 50, icon: "party" },
+      { name: "Entretenimiento", allocation_value: 50, icon: "clapperboard" },
     ],
   },
   {
     name: "Ahorro",
-    allocation_percent: 20,
+    allocation_value: 20,
     icon: "coins",
     categories: [
-      { name: "Fondo de emergencia", allocation_percent: 50, icon: "landmark" },
-      { name: "Inversi\u00f3n", allocation_percent: 50, icon: "trending" },
+      { name: "Fondo de emergencia", allocation_value: 50, icon: "landmark" },
+      { name: "Inversi\u00f3n", allocation_value: 50, icon: "trending" },
     ],
   },
 ] as const;
@@ -309,31 +309,31 @@ export const DEBT_FREE_SECTIONS = [
 export const DEBT_PAYOFF_SECTIONS = [
   {
     name: "Necesidades",
-    allocation_percent: 50,
+    allocation_value: 50,
     icon: "sprout",
     categories: [
-      { name: "Vivienda", allocation_percent: 45, icon: "home" },
-      { name: "Comida", allocation_percent: 25, icon: "utensils" },
-      { name: "Transporte", allocation_percent: 18, icon: "car" },
-      { name: "Servicios", allocation_percent: 12, icon: "lightbulb" },
+      { name: "Vivienda", allocation_value: 45, icon: "home" },
+      { name: "Comida", allocation_value: 25, icon: "utensils" },
+      { name: "Transporte", allocation_value: 18, icon: "car" },
+      { name: "Servicios", allocation_value: 12, icon: "lightbulb" },
     ],
   },
   {
     name: "Deseos",
-    allocation_percent: 20,
+    allocation_value: 20,
     icon: "party",
     categories: [
-      { name: "Salidas", allocation_percent: 50, icon: "party" },
-      { name: "Entretenimiento", allocation_percent: 50, icon: "clapperboard" },
+      { name: "Salidas", allocation_value: 50, icon: "party" },
+      { name: "Entretenimiento", allocation_value: 50, icon: "clapperboard" },
     ],
   },
   {
     name: "Deuda",
-    allocation_percent: 30,
+    allocation_value: 30,
     icon: "credit-card",
     categories: [
-      { name: "Tarjetas", allocation_percent: 50, icon: "credit-card" },
-      { name: "Pr\u00e9stamos", allocation_percent: 50, icon: "landmark" },
+      { name: "Tarjetas", allocation_value: 50, icon: "credit-card" },
+      { name: "Pr\u00e9stamos", allocation_value: 50, icon: "landmark" },
     ],
   },
 ] as const;
@@ -341,28 +341,28 @@ export const DEBT_PAYOFF_SECTIONS = [
 export const TRAVEL_SECTIONS = [
   {
     name: "Vuelos",
-    allocation_percent: 30,
+    allocation_value: 30,
     icon: "plane",
     categories: [
-      { name: "Vuelos", allocation_percent: 100, icon: "plane" },
+      { name: "Vuelos", allocation_value: 100, icon: "plane" },
     ],
   },
   {
     name: "Hospedaje",
-    allocation_percent: 30,
+    allocation_value: 30,
     icon: "bed",
     categories: [
-      { name: "Hospedaje", allocation_percent: 100, icon: "bed" },
+      { name: "Hospedaje", allocation_value: 100, icon: "bed" },
     ],
   },
   {
     name: "Salidas",
-    allocation_percent: 40,
+    allocation_value: 40,
     icon: "party",
     categories: [
-      { name: "Comida", allocation_percent: 40, icon: "utensils" },
-      { name: "Actividades", allocation_percent: 35, icon: "map-pin" },
-      { name: "Transporte local", allocation_percent: 25, icon: "car" },
+      { name: "Comida", allocation_value: 40, icon: "utensils" },
+      { name: "Actividades", allocation_value: 35, icon: "map-pin" },
+      { name: "Transporte local", allocation_value: 25, icon: "car" },
     ],
   },
 ] as const;
@@ -370,27 +370,27 @@ export const TRAVEL_SECTIONS = [
 export const EVENT_SECTIONS = [
   {
     name: "Comida",
-    allocation_percent: 50,
+    allocation_value: 50,
     icon: "utensils",
     categories: [
-      { name: "Comida", allocation_percent: 100, icon: "utensils" },
+      { name: "Comida", allocation_value: 100, icon: "utensils" },
     ],
   },
   {
     name: "Bebidas",
-    allocation_percent: 30,
+    allocation_value: 30,
     icon: "wine",
     categories: [
-      { name: "Bebidas", allocation_percent: 100, icon: "wine" },
+      { name: "Bebidas", allocation_value: 100, icon: "wine" },
     ],
   },
   {
     name: "Gesti\u00f3n",
-    allocation_percent: 20,
+    allocation_value: 20,
     icon: "settings",
     categories: [
-      { name: "Decoraci\u00f3n", allocation_percent: 40, icon: "sparkles" },
-      { name: "Log\u00edstica", allocation_percent: 60, icon: "truck" },
+      { name: "Decoraci\u00f3n", allocation_value: 40, icon: "sparkles" },
+      { name: "Log\u00edstica", allocation_value: 60, icon: "truck" },
     ],
   },
 ] as const;

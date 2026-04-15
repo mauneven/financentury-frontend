@@ -40,10 +40,10 @@ const categorySchema = z.object({
     .string()
     .min(1, "Category name is required")
     .max(60, "Name must be 60 characters or less"),
-  allocation_percent: z
+  allocation_value: z
     .number({ message: "Allocation is required" })
     .min(0, "Must be 0 or more")
-    .max(100, "Must be 100 or less"),
+    .max(1e15, "Amount exceeds maximum"),
   icon: z.string().min(1, "Pick an icon"),
 });
 
@@ -59,28 +59,28 @@ interface CategoryImpactPreviewProps {
   parentSection: Section;
   siblingCategories: Category[];
   currentCategoryId: string;
-  newAllocationPercent: number;
-  originalAllocationPercent: number;
+  newAllocationValue: number;
+  originalAllocationValue: number;
 }
 
 function CategoryImpactPreview({
   parentSection,
   siblingCategories,
   currentCategoryId,
-  newAllocationPercent,
-  originalAllocationPercent,
+  newAllocationValue,
+  originalAllocationValue,
 }: CategoryImpactPreviewProps) {
   const t = useTranslations("section");
   const [expanded, setExpanded] = React.useState(true);
 
   // siblings = all categories except the one being edited
   const siblings = siblingCategories.filter((s) => s.id !== currentCategoryId);
-  const siblingsTotal = siblings.reduce((sum, s) => sum + s.allocation_percent, 0);
-  const newTotal = siblingsTotal + newAllocationPercent;
-  const parentAlloc = parentSection.allocation_percent;
+  const siblingsTotal = siblings.reduce((sum, s) => sum + s.allocation_value, 0);
+  const newTotal = siblingsTotal + newAllocationValue;
+  const parentAlloc = parentSection.allocation_value;
   const isOverflow = newTotal > parentAlloc;
 
-  const direction = newAllocationPercent > originalAllocationPercent ? "increase" : "decrease";
+  const direction = newAllocationValue > originalAllocationValue ? "increase" : "decrease";
 
   return (
     <div
@@ -120,14 +120,14 @@ function CategoryImpactPreview({
               isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
             )}
           >
-            {`Parent category "${parentSection.name}" total would ${direction}: `}
+            {`"${parentSection.name}" total would ${direction}: `}
             <span className="tabular-nums">
-              {originalAllocationPercent !== newAllocationPercent
-                ? `${(siblingsTotal + originalAllocationPercent).toFixed(1)}% → ${newTotal.toFixed(1)}%`
-                : `${newTotal.toFixed(1)}%`}
+              {originalAllocationValue !== newAllocationValue
+                ? `${formatAmount(siblingsTotal + originalAllocationValue)} → ${formatAmount(newTotal)}`
+                : formatAmount(newTotal)}
             </span>
             {isOverflow && (
-              <span className="ml-1">{`(category budget: ${parentAlloc.toFixed(1)}%)`}</span>
+              <span className="ml-1">{`(section budget: ${formatAmount(parentAlloc)})`}</span>
             )}
           </p>
         </>
@@ -169,7 +169,7 @@ export function EditCategoryDialog({
   const summary = useBudgetStore((s) => s.summary);
   const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
 
-  // Category allocation_percent is relative to the parent *section* allocation,
+  // Category allocation_value is relative to the parent *section* allocation,
   // not the total budget. Find the section's allocated dollar amount.
   const sectionBudget = React.useMemo(() => {
     if (!summary) return 0;
@@ -197,13 +197,13 @@ export function EditCategoryDialog({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: category.name,
-      allocation_percent: category.allocation_percent,
+      allocation_value: category.allocation_value,
       icon: category.icon || "tag",
     },
   });
 
   const watchIcon = watch("icon");
-  const watchAllocation = watch("allocation_percent");
+  const watchAllocation = watch("allocation_value");
 
   // Compute displayed percentage from current rawAmount
   const computedPercent =
@@ -215,17 +215,13 @@ export function EditCategoryDialog({
     if (open) {
       reset({
         name: category.name,
-        allocation_percent: category.allocation_percent,
+        allocation_value: category.allocation_value,
         icon: category.icon || "tag",
       });
 
-      // Convert stored percent to dollar amount
-      const initialAmount =
-        sectionBudget > 0
-          ? (category.allocation_percent / 100) * sectionBudget
-          : 0;
-      setRawAmount(initialAmount);
-      setAmountInput(formatAmount(initialAmount));
+      // allocation_value is already an absolute amount
+      setRawAmount(category.allocation_value);
+      setAmountInput(formatAmount(category.allocation_value));
 
       setShowDeleteConfirm(false);
       setIsSubmitting(false);
@@ -240,11 +236,8 @@ export function EditCategoryDialog({
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
 
-    // Keep RHF in sync
-    const pct = sectionBudget > 0 ? (numericValue / sectionBudget) * 100 : 0;
-    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(10)), 100), {
-      shouldValidate: true,
-    });
+    // Store absolute amount — backend expects the raw value, not a percentage.
+    setValue("allocation_value", numericValue, { shouldValidate: true });
   };
 
   const onSubmit = async (values: CategoryFormValues) => {
@@ -253,7 +246,7 @@ export function EditCategoryDialog({
     try {
       await updateCategory(sectionId, category.id, {
         name: values.name,
-        allocation_percent: values.allocation_percent,
+        allocation_value: values.allocation_value,
         icon: values.icon,
       });
       await refreshSummary();
@@ -281,7 +274,7 @@ export function EditCategoryDialog({
 
   // Show impact preview only when allocation has actually changed
   const allocationChanged =
-    Math.abs(watchAllocation - category.allocation_percent) > 0.001;
+    Math.abs(watchAllocation - category.allocation_value) > 0.001;
   const showImpact = allocationChanged;
 
   return (
@@ -345,7 +338,7 @@ export function EditCategoryDialog({
                   className="pl-6"
                   value={amountInput}
                   onChange={handleAmountChange}
-                  aria-invalid={!!errors.allocation_percent}
+                  aria-invalid={!!errors.allocation_value}
                   placeholder="0"
                 />
               </div>
@@ -360,9 +353,9 @@ export function EditCategoryDialog({
                 = {computedPercent.toFixed(1)}%
               </span>
             </div>
-            {errors.allocation_percent && (
+            {errors.allocation_value && (
               <p className="text-xs text-destructive">
-                {errors.allocation_percent.message}
+                {errors.allocation_value.message}
               </p>
             )}
           </div>
@@ -373,8 +366,8 @@ export function EditCategoryDialog({
               parentSection={parentSection}
               siblingCategories={siblingCategories}
               currentCategoryId={category.id}
-              newAllocationPercent={watchAllocation}
-              originalAllocationPercent={category.allocation_percent}
+              newAllocationValue={watchAllocation}
+              originalAllocationValue={category.allocation_value}
             />
           )}
 

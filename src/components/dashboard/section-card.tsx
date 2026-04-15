@@ -12,6 +12,7 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
+import { useBudgetStore } from "@/store/budget-store";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
@@ -39,9 +40,13 @@ export function SectionCard({
   const t = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.sectionActions");
   const tSection = useTranslations("section");
+  const monthlyIncome = useBudgetStore((s) => s.summary?.budget.monthly_income ?? 0);
 
   const { section, categories: sectionCategories, allocated_amount, total_spent } =
     sectionSummary;
+
+  // Derive display percentages from absolute values
+  const sectionPct = monthlyIncome > 0 ? Math.round((section.allocation_value / monthlyIncome) * 100) : 0;
 
   const remaining = allocated_amount - total_spent;
   const percentage = getPercentage(total_spent, allocated_amount);
@@ -80,7 +85,7 @@ export function SectionCard({
               <div className="flex items-baseline gap-2">
                 <span className="h-4 w-px bg-border" />
                 <span className="text-sm font-bold font-mono text-muted-foreground">
-                  {section.allocation_percent}% {t("ofBudget")}
+                  {sectionPct}% {t("ofBudget")}
                 </span>
               </div>
             </div>
@@ -206,7 +211,7 @@ export function SectionCard({
               </p>
               <span className="h-5 w-px bg-border" />
               <span className="text-lg font-bold font-mono text-muted-foreground">
-                {section.allocation_percent}%
+                {sectionPct}%
               </span>
             </div>
             <div className="flex items-baseline justify-end gap-3 mt-1">
@@ -254,10 +259,10 @@ export function SectionCard({
 
         {/* Unallocated section notification */}
         {sectionCategories.length > 0 && (() => {
-          const totalCatPct = sectionCategories.reduce((sum, c) => sum + c.category.allocation_percent, 0);
-          const unallocPct = parseFloat((100 - totalCatPct).toFixed(2));
-          if (unallocPct <= 0) return null;
-          const unallocAmt = (unallocPct / 100) * allocated_amount;
+          const totalCatValue = sectionCategories.reduce((sum, c) => sum + c.category.allocation_value, 0);
+          const unallocAmt = allocated_amount - totalCatValue;
+          if (unallocAmt <= 0) return null;
+          const unallocPct = allocated_amount > 0 ? Math.round((unallocAmt / allocated_amount) * 100) : 0;
           return (
             <div className="mt-3">
               <SectionUnallocatedBanner
@@ -269,7 +274,7 @@ export function SectionCard({
                   id: c.category.id,
                   name: c.category.name,
                   icon: c.category.icon,
-                  allocation_percent: c.category.allocation_percent,
+                  allocation_value: c.category.allocation_value,
                   sectionId: section.id,
                 }))}
                 onCreateCategory={() => {
@@ -338,7 +343,7 @@ export function SectionCard({
                             </span>
                             <span className="hidden sm:block h-4 w-px bg-border" />
                             <span className="hidden sm:block text-sm font-bold font-mono text-muted-foreground">
-                              {sub.category.allocation_percent}% {t("ofSection")}
+                              {section.allocation_value > 0 ? Math.round((sub.category.allocation_value / section.allocation_value) * 100) : 0}% {t("ofSection")}
                             </span>
                           </div>
                         </div>

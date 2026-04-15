@@ -104,7 +104,7 @@ export default function SectionReportsPage() {
                 {section.name}
               </h1>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              {tActions("reports")} · {section.allocation_percent}% {tDash("ofBudget")}
+              {tActions("reports")} · {summary.budget.monthly_income > 0 ? Math.round((section.allocation_value / summary.budget.monthly_income) * 100) : 0}% {tDash("ofBudget")}
             </p>
           </div>
         </div>
@@ -174,10 +174,10 @@ export default function SectionReportsPage() {
 
       {/* Unallocated section notification */}
       {categories.length > 0 && (() => {
-        const totalCatPct = categories.reduce((sum, c) => sum + c.category.allocation_percent, 0);
-        const unallocPct = parseFloat((100 - totalCatPct).toFixed(2));
-        if (unallocPct <= 0) return null;
-        const unallocAmt = (unallocPct / 100) * allocated_amount;
+        const totalCatValue = categories.reduce((sum, c) => sum + c.category.allocation_value, 0);
+        const unallocAmt = allocated_amount - totalCatValue;
+        if (unallocAmt <= 0) return null;
+        const unallocPct = allocated_amount > 0 ? Math.round((unallocAmt / allocated_amount) * 100) : 0;
         return (
           <SectionUnallocatedBanner
             unallocatedPercent={unallocPct}
@@ -188,7 +188,7 @@ export default function SectionReportsPage() {
               id: c.category.id,
               name: c.category.name,
               icon: c.category.icon,
-              allocation_percent: c.category.allocation_percent,
+              allocation_value: c.category.allocation_value,
               sectionId: section.id,
             }))}
             onCreateCategory={() => {
@@ -280,7 +280,7 @@ export default function SectionReportsPage() {
                           {formatCurrency(cat.allocated_amount, currency)}
                         </p>
                         <span className="text-sm font-bold font-mono text-muted-foreground">
-                          {cat.category.allocation_percent}%
+                          {allocated_amount > 0 ? Math.round((cat.category.allocation_value / allocated_amount) * 100) : 0}%
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -347,7 +347,7 @@ export default function SectionReportsPage() {
                           {formatCurrency(cat.allocated_amount, currency)}
                         </p>
                         <span className="text-sm font-bold font-mono text-muted-foreground">
-                          {cat.category.allocation_percent}%
+                          {allocated_amount > 0 ? Math.round((cat.category.allocation_value / allocated_amount) * 100) : 0}%
                         </span>
                       </div>
                       <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>

@@ -110,7 +110,7 @@ export default function SectionPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">{section.name}</h1>
               <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-                {section.allocation_percent}% {tDash("ofBudget")}
+                {summary.budget.monthly_income > 0 ? Math.round((section.allocation_value / summary.budget.monthly_income) * 100) : 0}% {tDash("ofBudget")}
               </p>
             </div>
           </div>
