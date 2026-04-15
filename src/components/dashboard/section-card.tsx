@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useFlipList } from "@/hooks/use-flip-list";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, BarChart3, Settings, Plus, Link2 } from "lucide-react";
 import type { SectionSummary, Category, CategorySummary, BudgetLink, Budget } from "@/types/budget";
@@ -112,7 +112,7 @@ export function SectionCard({
     getCatId
   );
 
-  const [catListRef] = useAutoAnimate<HTMLDivElement>();
+  const { ref: catListRef, capturePositions: captureCatPositions } = useFlipList();
 
   return (
     <div className={cn(
@@ -485,31 +485,29 @@ export function SectionCard({
                 return (
                   <div
                     key={item.id}
+                    data-flip-key={item.id}
                     className={cn(
                       "group/sub px-3 py-3 relative hover:bg-muted/50 min-h-[44px]",
                       idx !== 0 && "border-t border-foreground/10",
                     )}
                   >
-                    {/* Linked badge */}
-                    {isLinkedCat && (
-                      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                        <Link2 className="size-3" />
-                        {tl("linkedBadge", { name: item.lc.sourceBudgetName })}
-                      </div>
-                    )}
-
                     {/* Mobile layout */}
                     <div className="sm:hidden">
                       <div className="flex items-center gap-2 mb-2">
                         <CategoryIcon iconKey={sub.category.icon} className="size-4 shrink-0" />
-                        <span className="text-sm font-bold text-foreground truncate flex-1">{sub.category.name}</span>
+                        <span className="text-sm font-bold text-foreground truncate">{sub.category.name}</span>
+                        {isLinkedCat && (
+                          <span className="flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
+                            <Link2 className="size-3" />{item.lc.sourceBudgetName}
+                          </span>
+                        )}
                         <span className="text-sm font-bold tabular-nums font-mono text-foreground shrink-0">
                           {formatCurrency(sub.allocated_amount, currency)}
                         </span>
                         {/* Up/down buttons mobile */}
                         <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-3.5" /></button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-3.5" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-3.5" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-3.5" /></button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
@@ -550,6 +548,11 @@ export function SectionCard({
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <CategoryIcon iconKey={sub.category.icon} className="size-4 shrink-0" />
                           <span className="text-base font-bold text-foreground truncate">{sub.category.name}</span>
+                          {isLinkedCat && (
+                            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
+                              <Link2 className="size-3" />{item.lc.sourceBudgetName}
+                            </span>
+                          )}
                         </div>
                         {/* Middle: buttons */}
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -593,8 +596,8 @@ export function SectionCard({
                         </div>
                         {/* Up/down buttons desktop (always reserves space for alignment) */}
                         <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-4" /></button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-4" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-4" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-4" /></button>
                         </div>
                       </div>
                       {/* Progress bar */}

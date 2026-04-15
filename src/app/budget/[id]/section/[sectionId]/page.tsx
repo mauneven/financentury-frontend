@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useFlipList } from "@/hooks/use-flip-list";
 import dynamic from "next/dynamic";
 import { EditSectionDialog } from "@/components/budget/edit-section-dialog";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
@@ -163,7 +163,7 @@ export default function SectionPage() {
     getCatId
   );
 
-  const [catListRef] = useAutoAnimate<HTMLDivElement>();
+  const { ref: catListRef, capturePositions: captureCatPositions } = useFlipList();
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -298,10 +298,10 @@ export default function SectionPage() {
 
               const moveButtons = (size: "sm" | "lg") => (
                 <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
-                  <button type="button" onClick={() => moveCatUp(item.id)} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up">
+                  <button type="button" onClick={() => { captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up">
                     <ChevronUp className={size === "sm" ? "size-4" : "size-5"} />
                   </button>
-                  <button type="button" onClick={() => moveCatDown(item.id)} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down">
+                  <button type="button" onClick={() => { captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down">
                     <ChevronDown className={size === "sm" ? "size-4" : "size-5"} />
                   </button>
                 </div>
@@ -310,6 +310,7 @@ export default function SectionPage() {
               return (
                 <div
                   key={item.id}
+                  data-flip-key={item.id}
                   className={isOwn ? "border-2 border-foreground bg-card" : "border-2 border-foreground/50 border-dashed bg-card"}
                 >
                   <div className="p-5 sm:p-7">

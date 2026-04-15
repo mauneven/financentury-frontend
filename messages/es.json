@@ -165,7 +165,7 @@
     "noData": "Aún no hay datos de gastos",
     "noDataHint": "Comienza agregando tu primer gasto para ver tu panel cobrar vida.",
     "errorLoading": "Error al cargar los datos",
-    "budgetOverview": "Resumen del Presupuesto",
+    "budgetOverview": "Resumen de uso",
     "used": "usado",
     "noCategories": "Aún no hay categorías",
     "noCategoriesHint": "Agrega categorías a esta sección para organizar y rastrear tus gastos en detalle.",

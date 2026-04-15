@@ -32,9 +32,7 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
     ? sections.filter((s) => s.section.id === sectionId)
     : sections;
 
-  // Linked categories in scope:
-  // Section-level: category-level links targeting this section
-  // Budget-level: all linked sections' categories
+  // Linked categories in scope for chart slices
   const linkedCatsInScope = sectionId
     ? linkedSections
         .filter((ls) => ls.link.source_category_id && ls.link.target_section_id === sectionId)
@@ -42,14 +40,20 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
     : linkedSections.flatMap((ls) => ls.categories);
 
   const linkedSpent = linkedCatsInScope.reduce((sum, c) => sum + c.total_spent, 0);
-  const linkedAllocated = linkedCatsInScope.reduce((sum, c) => sum + c.allocated_amount, 0);
+
+  // Budget total: only add section-level link allocations (not category-level).
+  // Category-level links live inside existing sections and don't inflate the total.
+  const linkedSectionAlloc = linkedSections
+    .filter((ls) => !ls.link.source_category_id)
+    .reduce((sum, ls) => sum + ls.section.allocation_value, 0);
 
   const scopedSpent = (sectionId
     ? filteredSections.reduce((sum, s) => sum + s.total_spent, 0)
     : total_spent) + linkedSpent;
-  const scopedBudget = (sectionId
+  const scopedBudget = sectionId
     ? filteredSections.reduce((sum, s) => sum + s.allocated_amount, 0)
-    : total_budget) + linkedAllocated;
+      + linkedCatsInScope.reduce((sum, c) => sum + c.allocated_amount, 0)
+    : total_budget + linkedSectionAlloc;
   const spentPercentage = getPercentage(scopedSpent, scopedBudget);
   const remaining = Math.max(scopedBudget - scopedSpent, 0);
   const t = useTranslations("dashboard");
@@ -99,11 +103,8 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
         </div>
         <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">
           <div className="flex h-44 sm:h-56 flex-col items-center justify-center gap-3">
-            <p className="text-2xl font-bold font-mono tabular-nums text-foreground">
-              {formatCompact(0, budget.currency)}
-            </p>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              {t("ofBudget")} {formatCompact(scopedBudget, budget.currency)}
+            <p className="text-3xl font-bold font-mono tabular-nums text-foreground">
+              0%
             </p>
             <p className="text-sm font-medium text-muted-foreground mt-2">
               {t("notEnoughData")}
@@ -186,15 +187,9 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
             </PieChart>
           </ResponsiveContainer>
           {/* Center text overlay */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-xl font-bold font-mono tabular-nums text-foreground">
-              {formatCompact(scopedSpent, budget.currency)}
-            </p>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              {t("ofBudget")} {formatCompact(scopedBudget, budget.currency)}
-            </p>
-            <p className="mt-0.5 text-sm font-semibold font-mono tabular-nums text-muted-foreground">
-              {spentPercentage}% {t("used")}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <p className="text-3xl font-bold font-mono tabular-nums text-foreground">
+              {spentPercentage}%
             </p>
           </div>
         </div>
@@ -210,7 +205,7 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
               <span className="truncate text-sm text-muted-foreground">
                 {entry.name}
               </span>
-              <span className="ml-auto text-sm font-semibold font-mono tabular-nums text-foreground">
+              <span className="ml-auto shrink-0 whitespace-nowrap text-sm font-semibold font-mono tabular-nums text-foreground">
                 {formatCompact(entry.value, budget.currency)}
               </span>
             </div>

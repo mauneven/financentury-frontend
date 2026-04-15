@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useFlipList } from "@/hooks/use-flip-list";
 import dynamic from "next/dynamic";
 import { RefreshCw, Settings, Plus, ArrowLeft } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
@@ -282,7 +282,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     getMergedSectionId
   );
 
-  const [sectionListRef] = useAutoAnimate<HTMLDivElement>();
+  const { ref: sectionListRef, capturePositions: captureSectionPositions } = useFlipList();
 
   const handleAddLinkedExpense = (sourceBudgetId: string, preselectedCategoryId?: string) => {
     setLinkedExpenseSourceBudgetId(sourceBudgetId);
@@ -478,7 +478,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             {orderedSections.map((merged, idx) => {
               const sectionKey = getMergedSectionId(merged);
               return (
-                <div key={sectionKey}>
+                <div key={sectionKey} data-flip-key={sectionKey}>
                   <SectionCard
                     sectionSummary={merged.sectionSummary}
                     currency={budget.currency}
@@ -486,8 +486,8 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
                     linkedInfo={merged.linkedInfo}
                     linkedCategories={merged.linkedCategories}
                     onAddLinkedExpense={handleAddLinkedExpense}
-                    onMoveUp={orderedSections.length > 1 && idx > 0 ? () => moveSectionUp(sectionKey) : undefined}
-                    onMoveDown={orderedSections.length > 1 && idx < orderedSections.length - 1 ? () => moveSectionDown(sectionKey) : undefined}
+                    onMoveUp={orderedSections.length > 1 && idx > 0 ? () => { captureSectionPositions(); moveSectionUp(sectionKey); } : undefined}
+                    onMoveDown={orderedSections.length > 1 && idx < orderedSections.length - 1 ? () => { captureSectionPositions(); moveSectionDown(sectionKey); } : undefined}
                   />
                 </div>
               );

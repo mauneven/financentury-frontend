@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useFlipList } from "@/hooks/use-flip-list";
 import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -33,7 +33,7 @@ export default function HomePage() {
     (b) => b.id
   );
 
-  const [budgetListRef] = useAutoAnimate<HTMLDivElement>();
+  const { ref: budgetListRef, capturePositions: captureBudgetPositions } = useFlipList();
 
   // Wait for auth to fully resolve before fetching budgets.
   const authReady = authInitialized && !authLoading && !!user;
@@ -129,13 +129,14 @@ export default function HomePage() {
 
               <div ref={budgetListRef} className="grid gap-4 sm:gap-6">
                 {orderedBudgets.map((budget, idx) => (
-                  <BudgetCard
-                    key={budget.id}
-                    budget={budget}
-                    onClick={() => router.push(`/budget/${budget.id}`)}
-                    onMoveUp={orderedBudgets.length > 1 && idx > 0 ? () => moveUp(budget.id) : undefined}
-                    onMoveDown={orderedBudgets.length > 1 && idx < orderedBudgets.length - 1 ? () => moveDown(budget.id) : undefined}
-                  />
+                  <div key={budget.id} data-flip-key={budget.id}>
+                    <BudgetCard
+                      budget={budget}
+                      onClick={() => router.push(`/budget/${budget.id}`)}
+                      onMoveUp={orderedBudgets.length > 1 && idx > 0 ? () => { captureBudgetPositions(); moveUp(budget.id); } : undefined}
+                      onMoveDown={orderedBudgets.length > 1 && idx < orderedBudgets.length - 1 ? () => { captureBudgetPositions(); moveDown(budget.id); } : undefined}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
