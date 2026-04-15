@@ -9,7 +9,6 @@ import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -106,15 +105,9 @@ export function CollaboratorsList({ budgetId, isOwner }: CollaboratorsListProps)
               key={collab.id}
               className="flex items-center gap-3 py-3"
             >
-              <Avatar size="sm">
-                {collab.profile?.avatar_url ? (
-                  <AvatarImage
-                    src={collab.profile.avatar_url}
-                    alt={displayName}
-                  />
-                ) : null}
-                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-              </Avatar>
+              <div className="flex size-8 shrink-0 items-center justify-center border-2 border-foreground bg-muted text-xs font-bold uppercase">
+                {getInitials(displayName)}
+              </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">

@@ -6,9 +6,9 @@ import { formatCurrency } from "@/lib/format";
 import { budgetApi } from "@/lib/api";
 import { useTranslations } from "@/i18n/client";
 import { cn } from "@/lib/utils";
-import type { MonthlyResumeResponse, MonthlyResumePeriod } from "@/types/budget";
+import type { BudgetResumeResponse, BudgetResumePeriod } from "@/types/budget";
 
-interface MonthlyResumeProps {
+interface BudgetResumeProps {
   budgetId: string;
   currency: string;
 }
@@ -33,7 +33,7 @@ function PeriodRow({
   currency,
   t,
 }: {
-  period: MonthlyResumePeriod;
+  period: BudgetResumePeriod;
   currency: string;
   t: ReturnType<typeof useTranslations>;
 }) {
@@ -96,10 +96,10 @@ function PeriodRow({
   );
 }
 
-export function MonthlyResume({ budgetId, currency }: MonthlyResumeProps) {
+export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
-  const [data, setData] = useState<MonthlyResumeResponse | null>(null);
+  const [data, setData] = useState<BudgetResumeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -107,7 +107,7 @@ export function MonthlyResume({ budgetId, currency }: MonthlyResumeProps) {
     let cancelled = false;
     setError(false);
     budgetApi
-      .monthlyResume(id)
+      .budgetResume(id)
       .then((res) => {
         if (!cancelled) setData(res);
       })
@@ -128,64 +128,77 @@ export function MonthlyResume({ budgetId, currency }: MonthlyResumeProps) {
 
   if (loading) {
     return (
-      <div className="border-2 border-foreground bg-card p-5 sm:p-6">
-        <div className="h-4 w-40 animate-pulse bg-muted" />
-        <div className="mt-4 space-y-3">
-          <div className="h-20 animate-pulse bg-muted" />
-          <div className="h-16 animate-pulse bg-muted" />
+      <>
+        <div className="border-t-2 border-foreground" />
+        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+          <div className="h-4 w-40 animate-pulse bg-muted" />
+          <div className="mt-4 space-y-3">
+            <div className="h-20 animate-pulse bg-muted" />
+            <div className="h-16 animate-pulse bg-muted" />
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="border-2 border-foreground bg-card p-5 sm:p-6">
-        <div className="flex flex-col items-center justify-center py-6 text-center">
-          <AlertTriangle className="size-6 text-muted-foreground mb-3" />
-          <p className="text-sm font-semibold text-foreground mb-1">
-            {t("errorLoading")}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setLoading(true);
-              setError(false);
-              fetchResume(budgetId);
-            }}
-            className="mt-3 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
-          >
-            {tc("retry")}
-          </button>
+      <>
+        <div className="border-t-2 border-foreground" />
+        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <AlertTriangle className="size-6 text-muted-foreground mb-3" />
+            <p className="text-sm font-semibold text-foreground mb-1">
+              {t("errorLoading")}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setError(false);
+                fetchResume(budgetId);
+              }}
+              className="mt-3 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+            >
+              {tc("retry")}
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // Don't render anything if there are no completed periods with data.
   if (!data || data.periods.length === 0) return null;
 
-  return (
-    <div className="border-2 border-foreground bg-card p-5 sm:p-6">
-      <h3 className="font-bold text-foreground" style={{ fontSize: 'var(--text-fluid-base)' }}>
-        {t("monthlyResume")}
-      </h3>
+  const title = data.one_time ? t("oneTimeResume") : t("budgetResume");
+  const subtitle = data.one_time ? t("oneTimeResumeDescription") : t("completedPeriods");
 
-      <div className="mt-4 space-y-1">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          {t("completedPeriods")}
-        </p>
-        <div className="space-y-1">
-          {data.periods.map((period) => (
-            <PeriodRow
-              key={period.period_start}
-              period={period}
-              currency={currency}
-              t={t}
-            />
-          ))}
+  return (
+    <>
+      {/* Horizontal separator */}
+      <div className="border-t-2 border-foreground" />
+
+      <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+        <h3 className="font-bold text-foreground" style={{ fontSize: 'var(--text-fluid-base)' }}>
+          {title}
+        </h3>
+
+        <div className="mt-4 space-y-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            {subtitle}
+          </p>
+          <div className="space-y-1">
+            {data.periods.map((period) => (
+              <PeriodRow
+                key={period.period_start}
+                period={period}
+                currency={currency}
+                t={t}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

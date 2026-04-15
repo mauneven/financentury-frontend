@@ -116,7 +116,7 @@ export interface TrendsResponse {
   categories: SectionTrend[];
 }
 
-export interface MonthlyResumePeriod {
+export interface BudgetResumePeriod {
   period_start: string;
   period_end: string;
   income: number;
@@ -124,9 +124,10 @@ export interface MonthlyResumePeriod {
   balance: number;
 }
 
-export interface MonthlyResumeResponse {
+export interface BudgetResumeResponse {
   budget_id: string;
-  periods: MonthlyResumePeriod[];
+  one_time: boolean;
+  periods: BudgetResumePeriod[];
 }
 
 export interface Invite {

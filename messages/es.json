@@ -171,7 +171,9 @@
       "collapse": "Contraer",
       "adjust": "Ajustar"
     },
-    "monthlyResume": "Resumen del Presupuesto por Mes",
+    "budgetResume": "Resumen del Presupuesto",
+    "oneTimeResume": "Resumen de Presupuesto Unico",
+    "oneTimeResumeDescription": "Resumen general desde la creacion",
     "completedPeriods": "Periodos Completados",
     "periodRange": "{start} al {end}",
     "balance": "Balance",

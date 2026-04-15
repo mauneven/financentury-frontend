@@ -171,7 +171,9 @@
       "collapse": "Collapse",
       "adjust": "Adjust"
     },
-    "monthlyResume": "Budget Resume by Month",
+    "budgetResume": "Budget Resume",
+    "oneTimeResume": "One-time Budget Resume",
+    "oneTimeResumeDescription": "Overall summary since creation",
     "completedPeriods": "Completed Periods",
     "periodRange": "{start} to {end}",
     "balance": "Balance",
