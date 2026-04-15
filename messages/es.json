@@ -243,7 +243,8 @@
     "back": "Volver",
     "signedIn": "Sesión iniciada!",
     "authFailed": "Error de autenticación. Intenta de nuevo.",
-    "tryAgain": "Intentar de nuevo"
+    "tryAgain": "Intentar de nuevo",
+    "signingIn": "Iniciando sesión..."
   },
   "landing": {
     "letsStart": "Comencemos",

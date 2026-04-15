@@ -243,7 +243,8 @@
     "back": "Back",
     "signedIn": "Signed in!",
     "authFailed": "Authentication failed. Please try again.",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "signingIn": "Signing in..."
   },
   "landing": {
     "letsStart": "Let's start",

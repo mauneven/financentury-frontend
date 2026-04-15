@@ -54,11 +54,13 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
       }, 1200);
     }
     // If initialized but no user while in "loading" → auth failed
-    if (cbState === "loading" && initialized && !authLoading && !user) {
+    // Guard: only trigger when genuinely in a callback flow (callbackState prop is "loading"),
+    // not from stale state after sign-out or other navigation.
+    if (cbState === "loading" && callbackState === "loading" && initialized && !authLoading && !user) {
       setCbState("error");
       setError(tAuth("authFailed"));
     }
-  }, [cbState, initialized, authLoading, user, router, tAuth]);
+  }, [cbState, callbackState, initialized, authLoading, user, router, tAuth]);
 
   // Cleanup timer
   useEffect(() => {

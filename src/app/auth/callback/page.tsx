@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 
-export default function AuthCallbackPage() {
+function CallbackHandler() {
   const searchParams = useSearchParams();
   const { handleGoogleCallback } = useAuthStore();
   const called = useRef(false);
@@ -28,11 +28,24 @@ export default function AuthCallbackPage() {
       });
   }, [searchParams, handleGoogleCallback]);
 
+  return null;
+}
+
+function LoadingSpinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-3">
         <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <LoadingSpinner />
+      <CallbackHandler />
+    </Suspense>
   );
 }
