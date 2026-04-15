@@ -74,9 +74,41 @@ export interface UserSpending {
   amount: number;
 }
 
+export interface BudgetLink {
+  id: string;
+  source_budget_id: string;
+  target_budget_id: string;
+  source_section_id: string;
+  source_category_id?: string | null;
+  filter_mode: "all" | "mine";
+  created_by: string;
+  created_at: string;
+}
+
+export interface LinkedSectionSummary {
+  link: BudgetLink;
+  source_budget: Budget;
+  section: Section;
+  categories: CategorySummary[];
+  total_spent: number;
+  spending_by_user?: UserSpending[];
+}
+
+export interface LinkableBudget extends Budget {
+  sections: (Section & { categories: Category[] })[];
+}
+
+export interface CreateBudgetLinkInput {
+  source_budget_id: string;
+  source_section_id: string;
+  source_category_id?: string;
+  filter_mode: "all" | "mine";
+}
+
 export interface BudgetSummary {
   budget: Budget;
   sections: SectionSummary[];
+  linked_sections?: LinkedSectionSummary[];
   total_budget: number;
   total_spent: number;
   spending_by_user?: UserSpending[];

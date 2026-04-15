@@ -17,7 +17,10 @@ export interface WSMessage {
     | "section_deleted"
     | "category_created"
     | "category_updated"
-    | "category_deleted";
+    | "category_deleted"
+    | "link_created"
+    | "link_updated"
+    | "link_deleted";
   budget_id?: string;
   payload?: Record<string, unknown>;
 }

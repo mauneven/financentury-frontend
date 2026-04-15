@@ -4,21 +4,24 @@ import { create } from "zustand";
 import type {
   Budget,
   BudgetSummary,
+  BudgetLink,
   Section,
   CreateBudgetInput,
+  CreateBudgetLinkInput,
   CreateSectionInput,
   CreateExpenseInput,
   CreateCategoryInput,
   Expense,
   Category,
 } from "@/types/budget";
-import { budgetApi, sectionApi, expenseApi, categoryApi } from "@/lib/api";
+import { budgetApi, sectionApi, expenseApi, categoryApi, linkApi } from "@/lib/api";
 
 interface BudgetState {
   budgets: Budget[];
   activeBudgetId: string | null;
   summary: BudgetSummary | null;
   expenses: Expense[];
+  links: BudgetLink[];
   loading: boolean;
   /** True only while setActiveBudget is fetching (distinct from general loading). */
   summaryLoading: boolean;
@@ -40,6 +43,9 @@ interface BudgetState {
   addCategory: (sectionId: string, data: CreateCategoryInput) => Promise<Category>;
   updateCategory: (sectionId: string, categoryId: string, data: Partial<CreateCategoryInput>) => Promise<Category>;
   deleteCategory: (sectionId: string, categoryId: string) => Promise<void>;
+  createLink: (data: CreateBudgetLinkInput) => Promise<BudgetLink>;
+  updateLink: (linkId: string, data: { filter_mode: string }) => Promise<BudgetLink>;
+  deleteLink: (linkId: string) => Promise<void>;
 }
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -47,6 +53,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   activeBudgetId: null,
   summary: null,
   expenses: [],
+  links: [],
   loading: false,
   summaryLoading: false,
   error: null,
@@ -71,17 +78,18 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       loading: true,
       summaryLoading: true,
       error: null,
-      ...(clearStale ? { summary: null, expenses: [] } : {}),
+      ...(clearStale ? { summary: null, expenses: [], links: [] } : {}),
     });
     try {
-      const [summary, expenses] = await Promise.all([
+      const [summary, expenses, links] = await Promise.all([
         budgetApi.summary(id),
         expenseApi.list(id),
+        linkApi.list(id),
       ]);
       // Only apply if this budget is still the active one (guard against
       // rapid navigation where a slower request resolves after a newer one).
       if (get().activeBudgetId === id) {
-        set({ summary, expenses, loading: false, summaryLoading: false });
+        set({ summary, expenses, links, loading: false, summaryLoading: false });
       }
     } catch (e) {
       if (get().activeBudgetId === id) {
@@ -241,5 +249,38 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
     await categoryApi.delete(activeBudgetId, sectionId, categoryId);
     // WS broadcast will trigger refreshSummary via ws-provider
+  },
+
+  createLink: async (data) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    const link = await linkApi.create(activeBudgetId, data);
+    set((state) => ({ links: [...state.links, link] }));
+    await get().refreshSummaryOnly();
+    return link;
+  },
+
+  updateLink: async (linkId, data) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    const updated = await linkApi.update(activeBudgetId, linkId, data);
+    set((state) => ({
+      links: state.links.map((l) => (l.id === linkId ? updated : l)),
+    }));
+    await get().refreshSummaryOnly();
+    return updated;
+  },
+
+  deleteLink: async (linkId) => {
+    const { activeBudgetId } = get();
+    if (!activeBudgetId) throw new Error("No active budget");
+
+    await linkApi.delete(activeBudgetId, linkId);
+    set((state) => ({
+      links: state.links.filter((l) => l.id !== linkId),
+    }));
+    await get().refreshSummaryOnly();
   },
 }));

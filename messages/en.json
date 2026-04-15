@@ -359,6 +359,27 @@
     "invalidLink": "This invite link is invalid",
     "generating": "Generating..."
   },
+  "links": {
+    "linkSection": "Link Section",
+    "linkedFrom": "Linked from {name}",
+    "filterAll": "All collaborators",
+    "filterMine": "Only my expenses",
+    "pickBudget": "Choose a budget",
+    "pickSection": "Choose what to link",
+    "filterMode": "Filter mode",
+    "removeLink": "Remove Link",
+    "removeLinkConfirm": "Remove this link? Expenses won't be deleted but will no longer appear here.",
+    "manageLink": "Manage Link",
+    "createLink": "Link",
+    "creating": "Linking...",
+    "noBudgetsAvailable": "No other budgets with the same currency available",
+    "selectBudget": "Select a budget",
+    "entireSection": "Entire section",
+    "linkedSections": "Linked Sections",
+    "removing": "Removing...",
+    "saving": "Saving...",
+    "addExpenseToLinked": "Add Expense"
+  },
   "collaborators": {
     "title": "Collaborators",
     "owner": "Owner",

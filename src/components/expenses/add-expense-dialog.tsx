@@ -14,6 +14,7 @@ import {
 import type { Section, CategorySummary } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 import { useBudgetStore } from "@/store/budget-store";
+import { expenseApi } from "@/lib/api";
 import { formatCurrency, getPercentage, getProgressTextColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
@@ -58,6 +59,8 @@ interface AddExpenseDialogProps {
   categories: Section[];
   currency: string;
   preselectedCategoryId?: string;
+  /** When set, expense is routed to this budget (for linked sections). */
+  sourceBudgetId?: string;
 }
 
 function formatAmountDisplay(value: string): string {
@@ -84,10 +87,12 @@ export function AddExpenseDialog({
   categories,
   currency,
   preselectedCategoryId,
+  sourceBudgetId,
 }: AddExpenseDialogProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
   const addExpense = useBudgetStore((s) => s.addExpense);
+  const refreshSummaryOnly = useBudgetStore((s) => s.refreshSummaryOnly);
   const summary = useBudgetStore((s) => s.summary);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -189,12 +194,19 @@ export function AddExpenseDialog({
   const onSubmit = async (data: ExpenseFormValues) => {
     setIsSubmitting(true);
     try {
-      await addExpense({
+      const expenseData = {
         category_id: data.category_id,
         amount: data.amount,
         description: data.description || undefined,
         expense_date: data.expense_date,
-      });
+      };
+      if (sourceBudgetId) {
+        // Linked context: route expense to the source budget
+        await expenseApi.create(sourceBudgetId, expenseData);
+        await refreshSummaryOnly();
+      } else {
+        await addExpense(expenseData);
+      }
       onOpenChange(false);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to add expense");

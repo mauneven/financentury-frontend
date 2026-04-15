@@ -7,12 +7,15 @@ import type {
   CreateSectionInput,
   CreateExpenseInput,
   CreateCategoryInput,
+  CreateBudgetLinkInput,
   Expense,
   Category,
   TrendsResponse,
   BudgetResumeResponse,
   Invite,
   Session,
+  BudgetLink,
+  LinkableBudget,
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
 
@@ -166,6 +169,32 @@ export const budgetApi = {
 
   budgetResume: (id: string) =>
     request<BudgetResumeResponse>(`/budgets/${id}/budget-resume`),
+};
+
+// Budget Links
+export const linkApi = {
+  list: (budgetId: string) =>
+    request<BudgetLink[]>(`/budgets/${budgetId}/links`),
+
+  create: (budgetId: string, data: CreateBudgetLinkInput) =>
+    request<BudgetLink>(`/budgets/${budgetId}/links`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (budgetId: string, linkId: string, data: { filter_mode: string }) =>
+    request<BudgetLink>(`/budgets/${budgetId}/links/${linkId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (budgetId: string, linkId: string) =>
+    request<void>(`/budgets/${budgetId}/links/${linkId}`, {
+      method: "DELETE",
+    }),
+
+  linkableBudgets: (budgetId: string) =>
+    request<LinkableBudget[]>(`/budgets/${budgetId}/linkable`),
 };
 
 // Sections (was Categories)

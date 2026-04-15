@@ -359,6 +359,27 @@
     "invalidLink": "Este enlace de invitación no es válido",
     "generating": "Generando..."
   },
+  "links": {
+    "linkSection": "Vincular Sección",
+    "linkedFrom": "Vinculado de {name}",
+    "filterAll": "Todos los colaboradores",
+    "filterMine": "Solo mis gastos",
+    "pickBudget": "Elige un presupuesto",
+    "pickSection": "Elige qué vincular",
+    "filterMode": "Modo de filtro",
+    "removeLink": "Eliminar Vínculo",
+    "removeLinkConfirm": "¿Eliminar este vínculo? Los gastos no se borrarán pero ya no aparecerán aquí.",
+    "manageLink": "Administrar Vínculo",
+    "createLink": "Vincular",
+    "creating": "Vinculando...",
+    "noBudgetsAvailable": "No hay otros presupuestos con la misma moneda disponibles",
+    "selectBudget": "Seleccionar presupuesto",
+    "entireSection": "Sección completa",
+    "linkedSections": "Secciones Vinculadas",
+    "removing": "Eliminando...",
+    "saving": "Guardando...",
+    "addExpenseToLinked": "Agregar Gasto"
+  },
   "collaborators": {
     "title": "Colaboradores",
     "owner": "Propietario",

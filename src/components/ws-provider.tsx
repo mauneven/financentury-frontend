@@ -46,6 +46,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         case "category_created":
         case "category_updated":
         case "category_deleted":
+        case "link_created":
+        case "link_updated":
+        case "link_deleted":
           // Debounce to coalesce rapid WS events (e.g. self-echo after
           // an optimistic update) into a single refreshSummary call.
           if (debounceTimerRef.current) {
