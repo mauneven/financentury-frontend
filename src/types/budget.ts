@@ -80,6 +80,7 @@ export interface BudgetLink {
   target_budget_id: string;
   source_section_id: string;
   source_category_id?: string | null;
+  target_section_id?: string | null;
   filter_mode: "all" | "mine";
   created_by: string;
   created_at: string;
@@ -102,6 +103,7 @@ export interface CreateBudgetLinkInput {
   source_budget_id: string;
   source_section_id: string;
   source_category_id?: string;
+  target_section_id?: string;
   filter_mode: "all" | "mine";
 }
 

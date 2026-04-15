@@ -335,3 +335,17 @@ export const expenseApi = {
       method: "DELETE",
     }),
 };
+
+// Display Orders (read is bundled in /auth/me, save is a standalone PUT)
+export interface DisplayOrder {
+  scope_key: string;
+  ordered_ids: string[];
+}
+
+export const displayOrderApi = {
+  save: (scopeKey: string, orderedIds: string[]) =>
+    request<DisplayOrder>("/display-orders", {
+      method: "PUT",
+      body: JSON.stringify({ scope_key: scopeKey, ordered_ids: orderedIds }),
+    }),
+};

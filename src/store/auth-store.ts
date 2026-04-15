@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { budgetWS } from "@/lib/websocket";
 import { authApi } from "@/lib/api";
+import { seedDisplayOrderCache } from "@/hooks/use-display-order";
 
 export interface AuthUser {
   id: string;
@@ -102,7 +103,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (!res.ok) throw new Error("Unauthorized");
         return res.json();
       })
-      .then((user: AuthUser) => {
+      .then((data: AuthUser & { display_orders?: { scope_key: string; ordered_ids: string[] }[] }) => {
+        const { display_orders, ...user } = data;
+        if (display_orders) seedDisplayOrderCache(display_orders);
         set({ user, token, loading: false });
       })
       .catch(() => {

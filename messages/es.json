@@ -119,13 +119,26 @@
     "deleting": "Eliminando...",
     "impactPreview": "Vista previa del impacto",
     "categoryCount": "{count} categoría",
-    "categoryCountPlural": "{count} categorías"
+    "categoryCountPlural": "{count} categorías",
+    "addFromBudget": "Agregar sección de otro presupuesto",
+    "addCategoryFromBudget": "Agregar categoría de otro presupuesto",
+    "orLinkSection": "Agregar de otro presupuesto",
+    "orLinkCategory": "Agregar de otro presupuesto",
+    "pickBudget": "Elige un presupuesto",
+    "pickSection": "Elige una sección",
+    "pickCategory": "Elige una categoría",
+    "categorySummary": "{count} categorías",
+    "categorySummarySingular": "{count} categoría",
+    "linking": "Vinculando...",
+    "back": "Volver",
+    "noLinkableBudgets": "Lamentablemente, para agregar una sección de otro presupuesto necesitas al menos dos presupuestos con la misma moneda.",
+    "noLinkableBudgetsCategory": "Lamentablemente, para agregar una categoría de otro presupuesto necesitas al menos dos presupuestos con la misma moneda."
   },
   "unallocated": {
     "budgetTitle": "{percent}% de tu presupuesto no está asignado",
     "budgetDescription": "{amount} no está asignado a ninguna sección. Redirigelo o crea una nueva sección.",
     "sectionTitle": "{percent}% de esta sección no está asignado",
-    "sectionDescription": "{amount} no está asignado a ninguna categoría. Redirigelo o crea una nueva categoría.",
+    "sectionDescription": "{amount} no está asignado a ninguna categoría. Redirigelo, crea una nueva categoría o ajusta la sección al valor asignado.",
     "redirectToSection": "Agregar a sección existente",
     "redirectToCategory": "Agregar a categoría existente",
     "createSection": "Crear sección",
@@ -133,7 +146,11 @@
     "selectTarget": "Seleccionar a dónde redirigir",
     "redirecting": "Redirigiendo...",
     "redirect": "Redirigir",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "trimSection": "Ajustar al asignado",
+    "trimSectionConfirm": "¿Reducir el valor de la sección de {from} a {to}?",
+    "trimming": "Ajustando..."
   },
   "dashboard": {
     "totalBudget": "Presupuesto Total",
@@ -378,7 +395,8 @@
     "linkedSections": "Secciones Vinculadas",
     "removing": "Eliminando...",
     "saving": "Guardando...",
-    "addExpenseToLinked": "Agregar Gasto"
+    "addExpenseToLinked": "Agregar Gasto",
+    "linkedBadge": "De {name}"
   },
   "collaborators": {
     "title": "Colaboradores",
@@ -406,7 +424,7 @@
     "introText": "Financentury (\"nosotros\", \"nuestro\") se compromete a proteger tu privacidad. Esta Política de Privacidad explica cómo recopilamos, usamos y protegemos tu información cuando utilizas nuestra plataforma de gestión de presupuestos.",
     "collectTitle": "Información que Recopilamos",
     "collectAccountTitle": "Información de la Cuenta",
-    "collectAccountText": "Al crear una cuenta, recopilamos tu dirección de correo electrónico, nombre y foto de perfil a través de Google OAuth o registro por correo. Esta información es necesaria para brindarte una experiencia personalizada.",
+    "collectAccountText": "Al crear una cuenta, recopilamos unicamente tu dirección de correo electrónico y nombre a través de Google OAuth o registro por correo. Esta información es necesaria para brindarte una experiencia personalizada.",
     "collectFinancialTitle": "Datos Financieros",
     "collectFinancialText": "Puedes ingresar montos de presupuesto, cifras de ingresos, registros de gastos y metas financieras. Estos datos se almacenan únicamente para proporcionar el servicio de presupuesto y nunca se venden ni se comparten con terceros con fines de marketing.",
     "collectUsageTitle": "Datos de Uso",

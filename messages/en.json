@@ -119,13 +119,26 @@
     "deleting": "Deleting...",
     "impactPreview": "Impact preview",
     "categoryCount": "{count} category",
-    "categoryCountPlural": "{count} categories"
+    "categoryCountPlural": "{count} categories",
+    "addFromBudget": "Add section from another budget",
+    "addCategoryFromBudget": "Add category from another budget",
+    "orLinkSection": "Or add from another budget",
+    "orLinkCategory": "Or add from another budget",
+    "pickBudget": "Choose a budget",
+    "pickSection": "Choose a section",
+    "pickCategory": "Choose a category",
+    "categorySummary": "{count} categories",
+    "categorySummarySingular": "{count} category",
+    "linking": "Linking...",
+    "back": "Back",
+    "noLinkableBudgets": "Unfortunately, to add a section from another budget you need at least two budgets with the same currency.",
+    "noLinkableBudgetsCategory": "Unfortunately, to add a category from another budget you need at least two budgets with the same currency."
   },
   "unallocated": {
     "budgetTitle": "{percent}% of your budget is not allocated",
     "budgetDescription": "{amount} is not assigned to any section. Redirect it or create a new section.",
     "sectionTitle": "{percent}% of this section is not allocated",
-    "sectionDescription": "{amount} is not assigned to any category. Redirect it or create a new category.",
+    "sectionDescription": "{amount} is not assigned to any category. Redirect it, create a new category, or adjust the section to the allocated amount.",
     "redirectToSection": "Add to existing section",
     "redirectToCategory": "Add to existing category",
     "createSection": "Create section",
@@ -133,7 +146,11 @@
     "selectTarget": "Select where to redirect",
     "redirecting": "Redirecting...",
     "redirect": "Redirect",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "trimSection": "Trim to allocated",
+    "trimSectionConfirm": "Reduce section value from {from} to {to}?",
+    "trimming": "Adjusting..."
   },
   "dashboard": {
     "totalBudget": "Total Budget",
@@ -378,7 +395,8 @@
     "linkedSections": "Linked Sections",
     "removing": "Removing...",
     "saving": "Saving...",
-    "addExpenseToLinked": "Add Expense"
+    "addExpenseToLinked": "Add Expense",
+    "linkedBadge": "From {name}"
   },
   "collaborators": {
     "title": "Collaborators",
@@ -406,7 +424,7 @@
     "introText": "Financentury (\"we\", \"our\", \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our budget management platform.",
     "collectTitle": "Information We Collect",
     "collectAccountTitle": "Account Information",
-    "collectAccountText": "When you create an account, we collect your email address, name, and profile picture through Google OAuth or email registration. This information is necessary to provide you with a personalized experience.",
+    "collectAccountText": "When you create an account, we collect only email address and name through Google OAuth or email registration. This information is necessary to provide you with a personalized experience.",
     "collectFinancialTitle": "Financial Data",
     "collectFinancialText": "You may enter budget amounts, income figures, expense records, and financial goals. This data is stored solely to provide the budgeting service and is never sold or shared with third parties for marketing purposes.",
     "collectUsageTitle": "Usage Data",

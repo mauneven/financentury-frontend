@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Plus, ArrowRight, Loader2 } from "lucide-react";
+import { AlertTriangle, Plus, ArrowRight, Loader2, Minus } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
 import { useTranslations } from "@/i18n/client";
@@ -177,6 +177,8 @@ interface SectionUnallocatedBannerProps {
   sectionId: string;
   categories: CategoryTarget[];
   onCreateCategory: () => void;
+  onTrimSection?: () => Promise<void>;
+  trimTargetValue?: number;
   compact?: boolean;
 }
 
@@ -187,16 +189,33 @@ export function SectionUnallocatedBanner({
   sectionId,
   categories,
   onCreateCategory,
+  onTrimSection,
+  trimTargetValue,
   compact = false,
 }: SectionUnallocatedBannerProps) {
   const t = useTranslations("unallocated");
   const [showRedirect, setShowRedirect] = useState(false);
+  const [confirmTrim, setConfirmTrim] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
+  const [trimming, setTrimming] = useState(false);
   const updateCategory = useBudgetStore((s) => s.updateCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
 
   if (unallocatedPercent <= 0) return null;
+
+  const handleTrim = async () => {
+    if (!onTrimSection) return;
+    setTrimming(true);
+    try {
+      await onTrimSection();
+      setConfirmTrim(false);
+    } catch {
+      // Error handled by store
+    } finally {
+      setTrimming(false);
+    }
+  };
 
   const handleRedirect = async () => {
     if (!selectedId) return;
@@ -241,7 +260,7 @@ export function SectionUnallocatedBanner({
             {t("sectionDescription", { amount: formatCurrency(unallocatedAmount, currency) })}
           </p>
 
-          {!showRedirect ? (
+          {!showRedirect && !confirmTrim ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {categories.length >= 2 && (
                 <button
@@ -261,6 +280,49 @@ export function SectionUnallocatedBanner({
                 <Plus className="size-3.5" />
                 {t("createCategory")}
               </button>
+              {onTrimSection && trimTargetValue !== undefined && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmTrim(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-red-500 bg-background text-red-600 dark:text-red-400 transition-colors hover:bg-red-500 hover:text-white"
+                >
+                  <Minus className="size-3.5" />
+                  {t("trimSection")}
+                </button>
+              )}
+            </div>
+          ) : confirmTrim ? (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm font-bold text-red-700 dark:text-red-300">
+                {t("trimSectionConfirm", {
+                  from: formatCurrency((trimTargetValue ?? 0) + unallocatedAmount, currency),
+                  to: formatCurrency(trimTargetValue ?? 0, currency),
+                })}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmTrim(false)}
+                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTrim}
+                  disabled={trimming}
+                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-red-500 bg-red-500 text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                >
+                  {trimming ? (
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="size-3.5 animate-spin" />
+                      {t("trimming")}
+                    </span>
+                  ) : (
+                    t("confirm")
+                  )}
+                </button>
+              </div>
             </div>
           ) : (
             <div className="mt-3 space-y-3">

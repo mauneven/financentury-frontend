@@ -1,27 +1,26 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { RefreshCw, Settings, Plus, ArrowLeft, Link2 } from "lucide-react";
+import { RefreshCw, Settings, Plus, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useTranslations } from "@/i18n/client";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { OverviewCards } from "./overview-cards";
-import { SectionCard } from "./section-card";
-import { LinkedSectionCard } from "./linked-section-card";
+import { SectionCard, type LinkedCategoryItem } from "./section-card";
 import { SpendingByUser } from "./spending-by-user";
 import { BudgetUnallocatedBanner } from "./unallocated-banner";
 import { BudgetResume } from "./budget-resume";
 import { EmptyDashboard } from "./empty-dashboard";
 import { BILLING_PERIODS } from "@/types/budget";
-import type { Expense, Section as SectionType } from "@/types/budget";
+import type { Expense, Section as SectionType, SectionSummary, BudgetLink, Budget } from "@/types/budget";
 import { AddSectionDialog } from "@/components/budget/add-section-dialog";
-import { CreateLinkDialog } from "@/components/budget/create-link-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
 import { EditExpenseDialog } from "@/components/expenses/edit-expense-dialog";
 import { ExpenseList } from "@/components/expenses/expense-list";
 import Link from "next/link";
+import { useDisplayOrder } from "@/hooks/use-display-order";
 
 // Lazy-load chart components (they import recharts which is heavy)
 const SpendingChart = dynamic(
@@ -49,6 +48,16 @@ const BreakdownChart = dynamic(
     ssr: false,
   }
 );
+
+// Types for merged section data
+interface MergedSection {
+  sectionSummary: SectionSummary;
+  linkedInfo?: {
+    link: BudgetLink;
+    source_budget: Budget;
+  };
+  linkedCategories: LinkedCategoryItem[];
+}
 
 interface BudgetDashboardProps {
   budgetId: string;
@@ -116,18 +125,17 @@ function DashboardSkeleton() {
 export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const summary = useBudgetStore((s) => s.summary);
   const expenses = useBudgetStore((s) => s.expenses);
+  const linkedExpensesFromStore = useBudgetStore((s) => s.linkedExpenses);
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
   const loading = useBudgetStore((s) => s.loading);
   const error = useBudgetStore((s) => s.error);
   const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
-  const tl = useTranslations("links");
   const [addSectionOpen, setAddSectionOpen] = useState(false);
   const [sectionPrefillAmount, setSectionPrefillAmount] = useState<number | undefined>(undefined);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [createLinkOpen, setCreateLinkOpen] = useState(false);
   // Linked expense state: when adding expense to a linked section
   const [linkedExpenseOpen, setLinkedExpenseOpen] = useState(false);
   const [linkedExpenseSourceBudgetId, setLinkedExpenseSourceBudgetId] = useState<string | null>(null);
@@ -135,6 +143,57 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
   const sections = summary?.sections ?? [];
   const linkedSections = summary?.linked_sections ?? [];
+
+  // ---------------------------------------------------------------------------
+  // Merge linked content inline into sections
+  // ---------------------------------------------------------------------------
+  const mergedSections = useMemo((): MergedSection[] => {
+    // Start with own sections — each gets an empty linkedCategories array.
+    const result: MergedSection[] = sections.map((s) => ({
+      sectionSummary: s,
+      linkedCategories: [],
+    }));
+
+    for (const ls of linkedSections) {
+      const isCategoryLink = !!ls.link.source_category_id;
+
+      if (!isCategoryLink) {
+        // Section-level link → add as a new section entry with linkedInfo
+        result.push({
+          sectionSummary: {
+            section: ls.section,
+            categories: ls.categories,
+            allocated_amount: ls.section.allocation_value,
+            total_spent: ls.total_spent,
+            spending_by_user: ls.spending_by_user,
+          },
+          linkedInfo: {
+            link: ls.link,
+            source_budget: ls.source_budget,
+          },
+          linkedCategories: [],
+        });
+      } else {
+        // Category-level link → find target section and add categories there
+        const targetSectionId = ls.link.target_section_id;
+        const targetEntry = targetSectionId
+          ? result.find((m) => m.sectionSummary.section.id === targetSectionId)
+          : null;
+
+        if (targetEntry) {
+          for (const cat of ls.categories) {
+            targetEntry.linkedCategories.push({
+              categorySummary: cat,
+              link: ls.link,
+              sourceBudgetName: ls.source_budget.name,
+            });
+          }
+        }
+      }
+    }
+
+    return result;
+  }, [sections, linkedSections]);
 
   // Memoize categoriesMap so ExpenseList doesn't get a new object every render.
   const categoriesMap = useMemo(() => {
@@ -162,14 +221,37 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   }, [sections, linkedSections]);
 
   // Memoize the categories list shared by AddExpenseDialog and EditExpenseDialog.
-  const dialogCategories = useMemo(
-    () =>
-      sections.map((s) => ({
+  // Include linked sections so their categories appear in the expense picker.
+  const dialogCategories = useMemo(() => {
+    const own = sections.map((s) => {
+      const linkedCats = linkedSections
+        .filter((ls) => ls.link.source_category_id && ls.link.target_section_id === s.section.id)
+        .flatMap((ls) => ls.categories.map((c) => c.category));
+      return {
         ...s.section,
-        categories: s.categories.map((c) => c.category),
-      })),
-    [sections]
-  );
+        categories: [...s.categories.map((c) => c.category), ...linkedCats],
+      };
+    });
+    const linked = linkedSections
+      .filter((ls) => !ls.link.source_category_id)
+      .map((ls) => ({
+        ...ls.section,
+        categories: ls.categories.map((c) => c.category),
+      }));
+    return [...own, ...linked];
+  }, [sections, linkedSections]);
+
+  const linkedCategoryBudgetMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const ls of linkedSections) {
+      if (ls.link.source_category_id) {
+        for (const cat of ls.categories) {
+          m.set(cat.category.id, ls.link.source_budget_id);
+        }
+      }
+    }
+    return m;
+  }, [linkedSections]);
 
   // Build categories for linked expense dialog (from the specific linked section being added to).
   const linkedExpenseCategories = useMemo((): SectionType[] => {
@@ -183,6 +265,22 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       }));
   }, [linkedSections, linkedExpenseSourceBudgetId]);
 
+  // Merge own + linked expenses for charts and expense list
+  const allExpenses = useMemo(
+    () => [...expenses, ...linkedExpensesFromStore],
+    [expenses, linkedExpensesFromStore]
+  );
+
+  const getMergedSectionId = useCallback(
+    (m: MergedSection) => m.linkedInfo ? `linked-${m.linkedInfo.link.id}` : m.sectionSummary.section.id,
+    []
+  );
+  const { ordered: orderedSections, moveUp: moveSectionUp, moveDown: moveSectionDown } = useDisplayOrder(
+    `budget-${budgetId}-sections`,
+    mergedSections,
+    getMergedSectionId
+  );
+
   const handleAddLinkedExpense = (sourceBudgetId: string, preselectedCategoryId?: string) => {
     setLinkedExpenseSourceBudgetId(sourceBudgetId);
     setLinkedExpensePreselectedCategoryId(preselectedCategoryId);
@@ -190,7 +288,6 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   };
 
   // Show loading skeleton only on initial load (no summary and loading)
-  // Once summary exists, show content even if still loading (e.g., refreshing data)
   if (!summary && loading) {
     return <DashboardSkeleton />;
   }
@@ -277,7 +374,13 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
       {/* Progress bar — matches section + category */}
       {(() => {
-        const pct = summary.total_budget > 0 ? Math.round((summary.total_spent / summary.total_budget) * 100) : 0;
+        const linkedSpent = linkedSections.reduce((sum, ls) => sum + ls.total_spent, 0);
+        const linkedAlloc = linkedSections
+          .filter((ls) => !ls.link.source_category_id)
+          .reduce((sum, ls) => sum + ls.section.allocation_value, 0);
+        const effectiveBudget = summary.total_budget + linkedAlloc;
+        const effectiveSpent = summary.total_spent + linkedSpent;
+        const pct = effectiveBudget > 0 ? Math.round((effectiveSpent / effectiveBudget) * 100) : 0;
         const pc = pct >= 100 ? "bg-red-600" : pct >= 75 ? "bg-yellow-500" : "bg-emerald-600";
         const tc2 = pct >= 100 ? "text-red-600 dark:text-red-400" : pct >= 75 ? "text-yellow-600 dark:text-yellow-400" : "text-emerald-600";
         return (
@@ -295,7 +398,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
       {/* Unallocated budget notification */}
       {(() => {
-        const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_value, 0);
+        const linkedSectionAlloc = linkedSections
+          .filter(ls => !ls.link.source_category_id)
+          .reduce((sum, ls) => sum + ls.section.allocation_value, 0);
+        const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_value, 0) + linkedSectionAlloc;
         const unallocatedAmt = budget.monthly_income - totalAllocated;
         if (unallocatedAmt <= 0) return null;
         const unallocatedPct = budget.monthly_income > 0 ? Math.round((unallocatedAmt / budget.monthly_income) * 100) : 0;
@@ -332,15 +438,15 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       {/* Charts row */}
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 [&>*]:h-full">
-          <SpendingChart expenses={expenses} currency={budget.currency} />
+          <SpendingChart expenses={allExpenses} currency={budget.currency} />
         </div>
         <div className="[&>*]:h-full">
           <BreakdownChart summary={summary} />
         </div>
       </div>
 
-      {/* Section breakdown */}
-      {sections.length > 0 ? (
+      {/* Section breakdown — merged: own sections + linked sections inline */}
+      {mergedSections.length > 0 ? (
         <div className="space-y-5">
           <div className="flex items-center justify-between border-b border-border pb-2">
             <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
@@ -349,16 +455,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setCreateLinkOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Link2 className="size-3.5" />
-                {tl("linkSection")}
-              </button>
-              <button
-                type="button"
                 onClick={() => {
-                  const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_value, 0);
+                  const linkedSectionAlloc = linkedSections
+                    .filter(ls => !ls.link.source_category_id)
+                    .reduce((sum, ls) => sum + ls.section.allocation_value, 0);
+                  const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_value, 0) + linkedSectionAlloc;
                   const remainingAmt = Math.max(0, budget.monthly_income - totalAllocated);
                   setSectionPrefillAmount(remainingAmt > 0 ? remainingAmt : undefined);
                   setAddSectionOpen(true);
@@ -371,32 +472,23 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             </div>
           </div>
           <div className="space-y-4 sm:space-y-5">
-            {sections.map((cat) => (
-              <SectionCard
-                key={cat.section.id}
-                sectionSummary={cat}
-                currency={budget.currency}
-                budgetId={budgetId}
-              />
-            ))}
-          </div>
-
-          {/* Linked sections */}
-          {linkedSections.length > 0 && (
-            <div className="space-y-4 sm:space-y-5 mt-6">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                {tl("linkedSections")}
-              </h3>
-              {linkedSections.map((ls) => (
-                <LinkedSectionCard
-                  key={ls.link.id}
-                  linked={ls}
+            {orderedSections.map((merged, idx) => {
+              const sectionKey = getMergedSectionId(merged);
+              return (
+                <SectionCard
+                  key={sectionKey}
+                  sectionSummary={merged.sectionSummary}
                   currency={budget.currency}
-                  onAddExpense={handleAddLinkedExpense}
+                  budgetId={budgetId}
+                  linkedInfo={merged.linkedInfo}
+                  linkedCategories={merged.linkedCategories}
+                  onAddLinkedExpense={handleAddLinkedExpense}
+                  onMoveUp={idx > 0 ? () => moveSectionUp(sectionKey) : undefined}
+                  onMoveDown={idx < orderedSections.length - 1 ? () => moveSectionDown(sectionKey) : undefined}
                 />
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
@@ -424,7 +516,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       )}
 
       {/* Expense list */}
-      {expenses.length > 0 && (
+      {allExpenses.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-2">
             <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
@@ -432,7 +524,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             </h2>
           </div>
           <ExpenseList
-            expenses={expenses}
+            expenses={allExpenses}
             currency={budget.currency}
             categoriesMap={categoriesMap}
             onEdit={(exp) => setEditingExpense(exp)}
@@ -461,6 +553,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         budgetId={budgetId}
         categories={dialogCategories}
         currency={budget.currency}
+        linkedCategoryBudgetMap={linkedCategoryBudgetMap}
       />
 
       {editingExpense && (
@@ -473,12 +566,6 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           currency={budget.currency}
         />
       )}
-
-      <CreateLinkDialog
-        budgetId={budgetId}
-        open={createLinkOpen}
-        onOpenChange={setCreateLinkOpen}
-      />
 
       {/* Linked expense dialog — routes to source budget */}
       {linkedExpenseSourceBudgetId && (

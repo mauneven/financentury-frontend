@@ -11,15 +11,23 @@ interface OverviewCardsProps {
 }
 
 export function OverviewCards({ summary }: OverviewCardsProps) {
-  const { budget, total_budget, total_spent } = summary;
+  const { budget, total_budget } = summary;
+  const linkedSections = summary.linked_sections ?? [];
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
 
-  const remaining = total_budget - total_spent;
-  const spentPercentage = getPercentage(total_spent, total_budget);
+  // Include linked spending in totals
+  const linkedSpent = linkedSections.reduce((sum, ls) => sum + ls.total_spent, 0);
+  const linkedAllocated = linkedSections
+    .filter((ls) => !ls.link.source_category_id)
+    .reduce((sum, ls) => sum + ls.section.allocation_value, 0);
+  const total_spent = summary.total_spent + linkedSpent;
+  const effectiveBudget = total_budget + linkedAllocated;
+  const remaining = effectiveBudget - total_spent;
+  const spentPercentage = getPercentage(total_spent, effectiveBudget);
   const isOverBudget = remaining < 0;
-  const overBudgetPercent = total_budget > 0 ? Math.round(((total_spent - total_budget) / total_budget) * 100) : 0;
-  const remainingPercent = total_budget > 0 ? Math.round(((total_budget - total_spent) / total_budget) * 100) : 0;
+  const overBudgetPercent = effectiveBudget > 0 ? Math.round(((total_spent - effectiveBudget) / effectiveBudget) * 100) : 0;
+  const remainingPercent = effectiveBudget > 0 ? Math.round(((effectiveBudget - total_spent) / effectiveBudget) * 100) : 0;
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -30,7 +38,7 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
         </p>
         <div className="mt-2 sm:mt-3">
           <p className="text-xl sm:text-4xl font-bold tabular-nums tracking-tight font-mono text-foreground">
-            {formatCurrency(total_budget, budget.currency)}
+            {formatCurrency(effectiveBudget, budget.currency)}
           </p>
           <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
             {(() => {

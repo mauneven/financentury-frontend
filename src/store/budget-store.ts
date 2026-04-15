@@ -15,12 +15,47 @@ import type {
   Category,
 } from "@/types/budget";
 import { budgetApi, sectionApi, expenseApi, categoryApi, linkApi } from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
+
+/** Fetch expenses from linked source budgets, filtered to linked categories only. */
+async function fetchLinkedExpenses(summary: BudgetSummary): Promise<Expense[]> {
+  const linkedSections = summary.linked_sections ?? [];
+  if (linkedSections.length === 0) return [];
+
+  const currentUserId = useAuthStore.getState().user?.id;
+
+  // Map each linked category to its filter_mode
+  const categoryFilter = new Map<string, "all" | "mine">();
+  const sourceBudgetIds = new Set<string>();
+  for (const ls of linkedSections) {
+    sourceBudgetIds.add(ls.link.source_budget_id);
+    for (const cat of ls.categories) {
+      categoryFilter.set(cat.category.id, ls.link.filter_mode);
+    }
+  }
+
+  // Fetch expenses from each source budget in parallel
+  const results = await Promise.all(
+    Array.from(sourceBudgetIds).map(async (bid) => {
+      try { return await expenseApi.list(bid); } catch { return []; }
+    })
+  );
+
+  // Keep only expenses for linked categories, respecting filter_mode
+  return results.flat().filter((exp) => {
+    const mode = categoryFilter.get(exp.category_id);
+    if (!mode) return false;
+    if (mode === "mine" && currentUserId && exp.created_by !== currentUserId) return false;
+    return true;
+  });
+}
 
 interface BudgetState {
   budgets: Budget[];
   activeBudgetId: string | null;
   summary: BudgetSummary | null;
   expenses: Expense[];
+  linkedExpenses: Expense[];
   links: BudgetLink[];
   loading: boolean;
   /** True only while setActiveBudget is fetching (distinct from general loading). */
@@ -53,6 +88,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   activeBudgetId: null,
   summary: null,
   expenses: [],
+  linkedExpenses: [],
   links: [],
   loading: false,
   summaryLoading: false,
@@ -78,7 +114,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       loading: true,
       summaryLoading: true,
       error: null,
-      ...(clearStale ? { summary: null, expenses: [], links: [] } : {}),
+      ...(clearStale ? { summary: null, expenses: [], linkedExpenses: [], links: [] } : {}),
     });
     try {
       const [summary, expenses, links] = await Promise.all([
@@ -90,6 +126,10 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       // rapid navigation where a slower request resolves after a newer one).
       if (get().activeBudgetId === id) {
         set({ summary, expenses, links, loading: false, summaryLoading: false });
+        // Fetch linked expenses in background (non-blocking)
+        fetchLinkedExpenses(summary).then((le) => {
+          if (get().activeBudgetId === id) set({ linkedExpenses: le });
+        });
       }
     } catch (e) {
       if (get().activeBudgetId === id) {
@@ -150,6 +190,9 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       ]);
       if (get().activeBudgetId !== currentId) return;
       set({ summary, expenses, error: null });
+      fetchLinkedExpenses(summary).then((le) => {
+        if (get().activeBudgetId === currentId) set({ linkedExpenses: le });
+      });
     } catch (e) {
       if (get().activeBudgetId !== currentId) return;
       set({ error: e instanceof Error ? e.message : String(e) });
@@ -163,6 +206,9 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       const summary = await budgetApi.summary(currentId);
       if (get().activeBudgetId !== currentId) return;
       set({ summary, error: null });
+      fetchLinkedExpenses(summary).then((le) => {
+        if (get().activeBudgetId === currentId) set({ linkedExpenses: le });
+      });
     } catch (e) {
       if (get().activeBudgetId !== currentId) return;
       set({ error: e instanceof Error ? e.message : String(e) });

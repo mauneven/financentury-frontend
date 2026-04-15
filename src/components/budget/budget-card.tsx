@@ -13,11 +13,14 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { CategoryIcon } from "@/lib/icon-picker";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
 
 interface BudgetCardProps {
   budget: Budget;
   onClick?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
 const MODE_STYLES: Record<
@@ -59,7 +62,7 @@ const MODE_STYLES: Record<
 // Fallback for legacy modes stored in the database.
 const FALLBACK_STYLE = MODE_STYLES.manual;
 
-export function BudgetCard({ budget, onClick }: BudgetCardProps) {
+export function BudgetCard({ budget, onClick, onMoveUp, onMoveDown }: BudgetCardProps) {
   const t = useTranslations("budgetCard");
   const tb = useTranslations("budget");
   const tc = useTranslations("common");
@@ -89,6 +92,16 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
+            {(onMoveUp || onMoveDown) && (
+              <div className="flex flex-col shrink-0 -ml-1">
+                <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }} disabled={!onMoveUp} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move up">
+                  <ChevronUp className="size-4" />
+                </button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }} disabled={!onMoveDown} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move down">
+                  <ChevronDown className="size-4" />
+                </button>
+              </div>
+            )}
             <div
               className={cn(
                 "flex h-9 w-9 items-center justify-center border-2 border-foreground",

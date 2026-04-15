@@ -27,20 +27,34 @@ interface BreakdownChartProps {
 
 export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
   const { budget, sections, total_budget, total_spent } = summary;
+  const linkedSections = summary.linked_sections ?? [];
   const filteredSections = sectionId
     ? sections.filter((s) => s.section.id === sectionId)
     : sections;
-  const scopedSpent = sectionId
+
+  // Linked categories in scope:
+  // Section-level: category-level links targeting this section
+  // Budget-level: all linked sections' categories
+  const linkedCatsInScope = sectionId
+    ? linkedSections
+        .filter((ls) => ls.link.source_category_id && ls.link.target_section_id === sectionId)
+        .flatMap((ls) => ls.categories)
+    : linkedSections.flatMap((ls) => ls.categories);
+
+  const linkedSpent = linkedCatsInScope.reduce((sum, c) => sum + c.total_spent, 0);
+  const linkedAllocated = linkedCatsInScope.reduce((sum, c) => sum + c.allocated_amount, 0);
+
+  const scopedSpent = (sectionId
     ? filteredSections.reduce((sum, s) => sum + s.total_spent, 0)
-    : total_spent;
-  const scopedBudget = sectionId
+    : total_spent) + linkedSpent;
+  const scopedBudget = (sectionId
     ? filteredSections.reduce((sum, s) => sum + s.allocated_amount, 0)
-    : total_budget;
+    : total_budget) + linkedAllocated;
   const spentPercentage = getPercentage(scopedSpent, scopedBudget);
   const remaining = Math.max(scopedBudget - scopedSpent, 0);
   const t = useTranslations("dashboard");
 
-  // Collect all child categories with spending
+  // Collect all child categories with spending (own + linked)
   const categoryData: {
     name: string;
     value: number;
@@ -60,6 +74,17 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
         });
         colorIdx++;
       }
+    }
+  }
+  for (const cat of linkedCatsInScope) {
+    if (cat.total_spent > 0) {
+      categoryData.push({
+        name: cat.category.name,
+        value: cat.total_spent,
+        allocated: cat.allocated_amount,
+        color: CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length],
+      });
+      colorIdx++;
     }
   }
 

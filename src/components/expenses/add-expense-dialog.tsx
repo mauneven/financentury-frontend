@@ -61,6 +61,8 @@ interface AddExpenseDialogProps {
   preselectedCategoryId?: string;
   /** When set, expense is routed to this budget (for linked sections). */
   sourceBudgetId?: string;
+  /** Maps category IDs to their source budget ID for category-level links. */
+  linkedCategoryBudgetMap?: Map<string, string>;
 }
 
 function formatAmountDisplay(value: string): string {
@@ -88,6 +90,7 @@ export function AddExpenseDialog({
   currency,
   preselectedCategoryId,
   sourceBudgetId,
+  linkedCategoryBudgetMap,
 }: AddExpenseDialogProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
@@ -132,9 +135,13 @@ export function AddExpenseDialog({
     if (!summary || !watchedCategoryId) return null;
     for (const sec of summary.sections) {
       for (const cat of sec.categories) {
-        if (cat.category.id === watchedCategoryId) {
-          return cat;
-        }
+        if (cat.category.id === watchedCategoryId) return cat;
+      }
+    }
+    // Also check linked sections for category-level links
+    for (const ls of summary.linked_sections ?? []) {
+      for (const cat of ls.categories) {
+        if (cat.category.id === watchedCategoryId) return cat;
       }
     }
     return null;
@@ -200,9 +207,11 @@ export function AddExpenseDialog({
         description: data.description || undefined,
         expense_date: data.expense_date,
       };
-      if (sourceBudgetId) {
-        // Linked context: route expense to the source budget
-        await expenseApi.create(sourceBudgetId, expenseData);
+      // Determine target budget: per-category override → dialog-level override → current budget
+      const categorySourceBudget = linkedCategoryBudgetMap?.get(data.category_id);
+      const targetBudget = categorySourceBudget || sourceBudgetId;
+      if (targetBudget) {
+        await expenseApi.create(targetBudget, expenseData);
         await refreshSummaryOnly();
       } else {
         await addExpense(expenseData);

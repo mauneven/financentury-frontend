@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, Plus } from "lucide-react";
 import { useTranslations } from "@/i18n/client";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { useDisplayOrder } from "@/hooks/use-display-order";
 
 export default function HomePage() {
   const router = useRouter();
@@ -25,6 +26,11 @@ export default function HomePage() {
   const authInitialized = useAuthStore((s) => s.initialized);
   const user = useAuthStore((s) => s.user);
   const [showCreateBudget, setShowCreateBudget] = useState(false);
+  const { ordered: orderedBudgets, moveUp, moveDown } = useDisplayOrder(
+    "budgets",
+    budgets,
+    (b) => b.id
+  );
 
   // Wait for auth to fully resolve before fetching budgets.
   const authReady = authInitialized && !authLoading && !!user;
@@ -119,11 +125,13 @@ export default function HomePage() {
               </div>
 
               <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
-                {budgets.map((budget) => (
+                {orderedBudgets.map((budget, idx) => (
                   <BudgetCard
                     key={budget.id}
                     budget={budget}
                     onClick={() => router.push(`/budget/${budget.id}`)}
+                    onMoveUp={orderedBudgets.length > 1 && idx > 0 ? () => moveUp(budget.id) : undefined}
+                    onMoveDown={orderedBudgets.length > 1 && idx < orderedBudgets.length - 1 ? () => moveDown(budget.id) : undefined}
                   />
                 ))}
               </div>
