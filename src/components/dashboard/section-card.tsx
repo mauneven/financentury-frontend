@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Pencil, BarChart3, ChevronUp, Settings, Plus, Link2 } from "lucide-react";
+import { ChevronDown, Pencil, BarChart3, GripVertical, Settings, Plus, Link2 } from "lucide-react";
 import type { SectionSummary, Category, CategorySummary, BudgetLink, Budget } from "@/types/budget";
 import {
   formatCurrency,
@@ -61,7 +61,7 @@ export function SectionCard({
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [categoryPrefillAmount, setCategoryPrefillAmount] = useState<number | undefined>(undefined);
   const [manageLinkOpen, setManageLinkOpen] = useState(false);
-  const [managingLinkedCat, setManagingLinkedCat] = useState<LinkedCategoryItem | null>(null);
+  const [editingLinkedCat, setEditingLinkedCat] = useState<LinkedCategoryItem | null>(null);
   const router = useRouter();
   const t = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.sectionActions");
@@ -110,16 +110,6 @@ export function SectionCard({
         {/* Section header - Mobile layout */}
         <div className="sm:hidden">
           <div className="flex items-center gap-3 mb-4">
-            {(onMoveUp || onMoveDown) && (
-              <div className="flex flex-col shrink-0 -ml-1">
-                <button type="button" onClick={onMoveUp} disabled={!onMoveUp} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move up">
-                  <ChevronUp className="size-4" />
-                </button>
-                <button type="button" onClick={onMoveDown} disabled={!onMoveDown} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move down">
-                  <ChevronDown className="size-4" />
-                </button>
-              </div>
-            )}
             <span className="text-2xl" role="img" aria-label={section.name}>
               <CategoryIcon iconKey={section.icon} className="size-6" />
             </span>
@@ -131,6 +121,11 @@ export function SectionCard({
                 {totalCategoryCount === 1 ? tSection("categoryCount", { count: String(totalCategoryCount) }) : tSection("categoryCountPlural", { count: String(totalCategoryCount) })}
               </p>
             </div>
+            {(onMoveUp || onMoveDown) && (
+              <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
+                <GripVertical className="size-5" />
+              </div>
+            )}
           </div>
 
           {/* Amount row - Mobile */}
@@ -190,7 +185,7 @@ export function SectionCard({
             >
               {isExpanded ? (
                 <>
-                  <ChevronUp className="size-3.5 shrink-0" />
+                  <ChevronDown className="size-3.5 shrink-0 rotate-180" />
                   <span className="truncate">{tActions("collapse")}</span>
                 </>
               ) : (
@@ -221,16 +216,6 @@ export function SectionCard({
         {/* Section header - Desktop layout */}
         <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
           <div className="flex items-center gap-3 flex-1">
-            {(onMoveUp || onMoveDown) && (
-              <div className="flex flex-col shrink-0 -ml-1">
-                <button type="button" onClick={onMoveUp} disabled={!onMoveUp} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move up">
-                  <ChevronUp className="size-4" />
-                </button>
-                <button type="button" onClick={onMoveDown} disabled={!onMoveDown} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move down">
-                  <ChevronDown className="size-4" />
-                </button>
-              </div>
-            )}
             <span className="text-2xl" role="img" aria-label={section.name}>
               <CategoryIcon iconKey={section.icon} className="size-6" />
             </span>
@@ -275,7 +260,7 @@ export function SectionCard({
             >
               {isExpanded ? (
                 <>
-                  <ChevronUp className="size-3.5" />
+                  <ChevronDown className="size-3.5 rotate-180" />
                   {tActions("collapse")}
                 </>
               ) : (
@@ -325,6 +310,13 @@ export function SectionCard({
               </span>
             </div>
           </div>
+
+          {/* Drag handle - right side */}
+          {(onMoveUp || onMoveDown) && (
+            <div className="shrink-0 ml-4 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
+              <GripVertical className="size-5" />
+            </div>
+          )}
         </div>
 
         {/* Left summary */}
@@ -372,13 +364,23 @@ export function SectionCard({
                 unallocatedAmount={unallocAmt}
                 currency={currency}
                 sectionId={section.id}
-                categories={sectionCategories.map((c) => ({
-                  id: c.category.id,
-                  name: c.category.name,
-                  icon: c.category.icon,
-                  allocation_value: c.category.allocation_value,
-                  sectionId: section.id,
-                }))}
+                categories={[
+                  ...sectionCategories.map((c) => ({
+                    id: c.category.id,
+                    name: c.category.name,
+                    icon: c.category.icon,
+                    allocation_value: c.category.allocation_value,
+                    sectionId: section.id,
+                  })),
+                  ...(linkedCategories ?? []).map((lc) => ({
+                    id: lc.categorySummary.category.id,
+                    name: lc.categorySummary.category.name,
+                    icon: lc.categorySummary.category.icon,
+                    allocation_value: lc.categorySummary.category.allocation_value,
+                    sectionId: lc.link.source_section_id,
+                    sourceBudgetId: lc.link.source_budget_id,
+                  })),
+                ]}
                 onCreateCategory={() => {
                   setCategoryPrefillAmount(unallocAmt);
                   setAddCategoryOpen(true);
@@ -603,7 +605,7 @@ export function SectionCard({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setManagingLinkedCat(lc);
+                          setEditingLinkedCat(lc);
                         }}
                         className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
                         aria-label={`Manage link for ${sub.category.name}`}
@@ -709,15 +711,15 @@ export function SectionCard({
         />
       )}
 
-      {/* Manage link dialog for individual linked categories */}
-      {managingLinkedCat && (
-        <ManageLinkDialog
-          link={managingLinkedCat.link}
-          sourceBudgetName={managingLinkedCat.sourceBudgetName}
-          sectionName={managingLinkedCat.categorySummary.category.name}
-          open={!!managingLinkedCat}
+      {/* Edit linked category dialog */}
+      {editingLinkedCat && (
+        <EditCategoryDialog
+          sectionId={editingLinkedCat.link.source_section_id}
+          category={editingLinkedCat.categorySummary.category}
+          link={editingLinkedCat.link}
+          open={!!editingLinkedCat}
           onOpenChange={(open) => {
-            if (!open) setManagingLinkedCat(null);
+            if (!open) setEditingLinkedCat(null);
           }}
         />
       )}

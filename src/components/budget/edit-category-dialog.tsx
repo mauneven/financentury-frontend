@@ -4,9 +4,10 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Check, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Loader2, Check, Trash2, ChevronDown, ChevronRight, Link2 } from "lucide-react";
 
 import { useBudgetStore } from "@/store/budget-store";
+import { categoryApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
 import { formatAmount, parseAmount, maskAmountInput } from "@/lib/amount-utils";
@@ -28,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useTranslations } from "@/i18n/client";
-import type { Section, Category } from "@/types/budget";
+import type { Section, Category, BudgetLink } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
@@ -143,10 +144,12 @@ function CategoryImpactPreview({
 interface EditCategoryDialogProps {
   sectionId: string;
   category: Category;
-  parentSection: Section;
-  siblingCategories: Category[];
+  parentSection?: Section;
+  siblingCategories?: Category[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When provided, the dialog manages a linked category instead of an owned one. */
+  link?: BudgetLink;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,14 +163,19 @@ export function EditCategoryDialog({
   siblingCategories,
   open,
   onOpenChange,
+  link,
 }: EditCategoryDialogProps) {
   const t = useTranslations("section");
   const tc = useTranslations("common");
+  const tl = useTranslations("links");
   const updateCategory = useBudgetStore((s) => s.updateCategory);
   const deleteCategoryAction = useBudgetStore((s) => s.deleteCategory);
+  const updateLink = useBudgetStore((s) => s.updateLink);
+  const deleteLink = useBudgetStore((s) => s.deleteLink);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
   const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
+  const isLinked = !!link;
 
   // Category allocation_value is relative to the parent *section* allocation,
   // not the total budget. Find the section's allocated dollar amount.
@@ -181,6 +189,7 @@ export function EditCategoryDialog({
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [filterMode, setFilterMode] = React.useState<"all" | "mine">(link?.filter_mode ?? "all");
 
   // Dollar amount state — managed independently from RHF
   const [amountInput, setAmountInput] = React.useState<string>("");
@@ -226,8 +235,9 @@ export function EditCategoryDialog({
       setShowDeleteConfirm(false);
       setIsSubmitting(false);
       setIsDeleting(false);
+      setFilterMode(link?.filter_mode ?? "all");
     }
-  }, [open, category, reset, sectionBudget]);
+  }, [open, category, reset, sectionBudget, link]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskAmountInput(e.target.value);
@@ -244,11 +254,28 @@ export function EditCategoryDialog({
     setSubmitError(null);
     setIsSubmitting(true);
     try {
-      await updateCategory(sectionId, category.id, {
+      const catPayload = {
         name: values.name,
         allocation_value: values.allocation_value,
         icon: values.icon,
-      });
+      };
+
+      if (isLinked && link) {
+        // Update category in the source budget
+        await categoryApi.update(
+          link.source_budget_id,
+          link.source_section_id,
+          category.id,
+          catPayload
+        );
+        // Update filter mode if changed
+        if (filterMode !== link.filter_mode) {
+          await updateLink(link.id, { filter_mode: filterMode });
+        }
+      } else {
+        await updateCategory(sectionId, category.id, catPayload);
+      }
+
       await refreshSummary();
       onOpenChange(false);
     } catch (e) {
@@ -262,7 +289,11 @@ export function EditCategoryDialog({
     setSubmitError(null);
     setIsDeleting(true);
     try {
-      await deleteCategoryAction(sectionId, category.id);
+      if (isLinked && link) {
+        await deleteLink(link.id);
+      } else {
+        await deleteCategoryAction(sectionId, category.id);
+      }
       await refreshSummary();
       onOpenChange(false);
     } catch (e) {
@@ -360,8 +391,8 @@ export function EditCategoryDialog({
             )}
           </div>
 
-          {/* Parent impact preview */}
-          {showImpact && (
+          {/* Parent impact preview — own categories only */}
+          {showImpact && parentSection && siblingCategories && (
             <CategoryImpactPreview
               parentSection={parentSection}
               siblingCategories={siblingCategories}
@@ -371,13 +402,56 @@ export function EditCategoryDialog({
             />
           )}
 
+          {/* Filter mode — linked categories only */}
+          {isLinked && (
+            <div className="space-y-2">
+              <Label>{tl("filterMode")}</Label>
+              <button
+                type="button"
+                onClick={() => setFilterMode("all")}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                  filterMode === "all"
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground/30 hover:border-foreground"
+                )}
+              >
+                <div className={cn(
+                  "flex size-5 items-center justify-center border-2",
+                  filterMode === "all" ? "border-background" : "border-foreground"
+                )}>
+                  {filterMode === "all" && <Check className="size-3" />}
+                </div>
+                <span className="text-sm font-semibold">{tl("filterAll")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode("mine")}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                  filterMode === "mine"
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground/30 hover:border-foreground"
+                )}
+              >
+                <div className={cn(
+                  "flex size-5 items-center justify-center border-2",
+                  filterMode === "mine" ? "border-background" : "border-foreground"
+                )}>
+                  {filterMode === "mine" && <Check className="size-3" />}
+                </div>
+                <span className="text-sm font-semibold">{tl("filterMine")}</span>
+              </button>
+            </div>
+          )}
+
           {submitError && <p className="text-xs text-destructive">{submitError}</p>}
 
           <Separator />
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-2">
-            {/* Delete */}
+            {/* Delete / Remove Link */}
             {!showDeleteConfirm ? (
               <Button
                 type="button"
@@ -386,8 +460,8 @@ export function EditCategoryDialog({
                 onClick={() => setShowDeleteConfirm(true)}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
-                <Trash2 className="size-4 mr-1" />
-                {t("deleteCategory")}
+                {isLinked ? <Link2 className="size-4 mr-1" /> : <Trash2 className="size-4 mr-1" />}
+                {isLinked ? tl("removeLink") : t("deleteCategory")}
               </Button>
             ) : (
               <div className="flex items-center gap-2">
@@ -440,7 +514,7 @@ export function EditCategoryDialog({
 
           {showDeleteConfirm && (
             <p className="text-xs text-destructive">
-              {t("confirmDeleteCategory")}
+              {isLinked ? tl("removeLinkConfirm") : t("confirmDeleteCategory")}
             </p>
           )}
         </form>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { RefreshCw, Settings, Plus, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
+import { RefreshCw, Settings, Plus, ArrowLeft } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { useTranslations } from "@/i18n/client";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
@@ -275,11 +275,35 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     (m: MergedSection) => m.linkedInfo ? `linked-${m.linkedInfo.link.id}` : m.sectionSummary.section.id,
     []
   );
-  const { ordered: orderedSections, moveUp: moveSectionUp, moveDown: moveSectionDown } = useDisplayOrder(
+  const { ordered: orderedSections, moveTo: moveSectionTo } = useDisplayOrder(
     `budget-${budgetId}-sections`,
     mergedSections,
     getMergedSectionId
   );
+
+  const [dragSectionId, setDragSectionId] = useState<string | null>(null);
+  const [dragOverSectionIdx, setDragOverSectionIdx] = useState<number | null>(null);
+
+  const handleSectionDragStart = useCallback((e: React.DragEvent, id: string) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    setDragSectionId(id);
+  }, []);
+  const handleSectionDragOver = useCallback((e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverSectionIdx(idx);
+  }, []);
+  const handleSectionDrop = useCallback((e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (dragSectionId) moveSectionTo(dragSectionId, targetIdx);
+    setDragSectionId(null);
+    setDragOverSectionIdx(null);
+  }, [dragSectionId, moveSectionTo]);
+  const handleSectionDragEnd = useCallback(() => {
+    setDragSectionId(null);
+    setDragOverSectionIdx(null);
+  }, []);
 
   const handleAddLinkedExpense = (sourceBudgetId: string, preselectedCategoryId?: string) => {
     setLinkedExpenseSourceBudgetId(sourceBudgetId);
@@ -475,17 +499,29 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             {orderedSections.map((merged, idx) => {
               const sectionKey = getMergedSectionId(merged);
               return (
-                <SectionCard
+                <div
                   key={sectionKey}
-                  sectionSummary={merged.sectionSummary}
-                  currency={budget.currency}
-                  budgetId={budgetId}
-                  linkedInfo={merged.linkedInfo}
-                  linkedCategories={merged.linkedCategories}
-                  onAddLinkedExpense={handleAddLinkedExpense}
-                  onMoveUp={idx > 0 ? () => moveSectionUp(sectionKey) : undefined}
-                  onMoveDown={idx < orderedSections.length - 1 ? () => moveSectionDown(sectionKey) : undefined}
-                />
+                  draggable={orderedSections.length > 1}
+                  onDragStart={(e) => handleSectionDragStart(e, sectionKey)}
+                  onDragOver={(e) => handleSectionDragOver(e, idx)}
+                  onDrop={(e) => handleSectionDrop(e, idx)}
+                  onDragEnd={handleSectionDragEnd}
+                  className={cn("transition-opacity", dragSectionId === sectionKey && "opacity-50")}
+                >
+                  {dragOverSectionIdx === idx && dragSectionId !== sectionKey && (
+                    <div className="h-1 bg-foreground mb-1" />
+                  )}
+                  <SectionCard
+                    sectionSummary={merged.sectionSummary}
+                    currency={budget.currency}
+                    budgetId={budgetId}
+                    linkedInfo={merged.linkedInfo}
+                    linkedCategories={merged.linkedCategories}
+                    onAddLinkedExpense={handleAddLinkedExpense}
+                    onMoveUp={orderedSections.length > 1 && idx > 0 ? () => {} : undefined}
+                    onMoveDown={orderedSections.length > 1 && idx < orderedSections.length - 1 ? () => {} : undefined}
+                  />
+                </div>
               );
             })}
           </div>

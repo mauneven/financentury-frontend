@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -26,11 +26,35 @@ export default function HomePage() {
   const authInitialized = useAuthStore((s) => s.initialized);
   const user = useAuthStore((s) => s.user);
   const [showCreateBudget, setShowCreateBudget] = useState(false);
-  const { ordered: orderedBudgets, moveUp, moveDown } = useDisplayOrder(
+  const { ordered: orderedBudgets, moveUp, moveDown, moveTo } = useDisplayOrder(
     "budgets",
     budgets,
     (b) => b.id
   );
+
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    setDragId(id);
+  }, []);
+  const handleDragOver = useCallback((e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIdx(idx);
+  }, []);
+  const handleDrop = useCallback((e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (dragId) moveTo(dragId, targetIdx);
+    setDragId(null);
+    setDragOverIdx(null);
+  }, [dragId, moveTo]);
+  const handleDragEnd = useCallback(() => {
+    setDragId(null);
+    setDragOverIdx(null);
+  }, []);
 
   // Wait for auth to fully resolve before fetching budgets.
   const authReady = authInitialized && !authLoading && !!user;
@@ -126,13 +150,25 @@ export default function HomePage() {
 
               <div className="grid gap-4 sm:gap-6">
                 {orderedBudgets.map((budget, idx) => (
-                  <BudgetCard
+                  <div
                     key={budget.id}
-                    budget={budget}
-                    onClick={() => router.push(`/budget/${budget.id}`)}
-                    onMoveUp={orderedBudgets.length > 1 && idx > 0 ? () => moveUp(budget.id) : undefined}
-                    onMoveDown={orderedBudgets.length > 1 && idx < orderedBudgets.length - 1 ? () => moveDown(budget.id) : undefined}
-                  />
+                    draggable={orderedBudgets.length > 1}
+                    onDragStart={(e) => handleDragStart(e, budget.id)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    onDragEnd={handleDragEnd}
+                    className={dragId === budget.id ? "opacity-50" : undefined}
+                  >
+                    {dragOverIdx === idx && dragId !== budget.id && (
+                      <div className="h-1 bg-foreground mb-1" />
+                    )}
+                    <BudgetCard
+                      budget={budget}
+                      onClick={() => router.push(`/budget/${budget.id}`)}
+                      onMoveUp={orderedBudgets.length > 1 && idx > 0 ? () => moveUp(budget.id) : undefined}
+                      onMoveDown={orderedBudgets.length > 1 && idx < orderedBudgets.length - 1 ? () => moveDown(budget.id) : undefined}
+                    />
+                  </div>
                 ))}
               </div>
             </div>

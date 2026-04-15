@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useBudgetStore } from "@/store/budget-store";
-import { ArrowLeft, BarChart3, Settings, Plus, Link2, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, BarChart3, Settings, Plus, Link2, GripVertical } from "lucide-react";
 import { formatCurrency, getPercentage, getProgressColor, getProgressTextColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/lib/icon-picker";
@@ -12,7 +12,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
-import { ManageLinkDialog } from "@/components/budget/manage-link-dialog";
+// ManageLinkDialog replaced — EditCategoryDialog handles linked categories too
 import type { Category, CategorySummary, BudgetLink, UserSpending } from "@/types/budget";
 import { SpendingByUser } from "@/components/dashboard/spending-by-user";
 import { SectionUnallocatedBanner } from "@/components/dashboard/unallocated-banner";
@@ -47,7 +47,7 @@ export default function SectionReportsPage() {
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [categoryPrefillAmount, setCategoryPrefillAmount] = useState<number | undefined>(undefined);
-  const [managingLinkedCat, setManagingLinkedCat] = useState<{ cat: CategorySummary; link: BudgetLink; sourceName: string } | null>(null);
+  const [editingLinkedCat, setEditingLinkedCat] = useState<{ cat: CategorySummary; link: BudgetLink; sourceName: string } | null>(null);
 
   const summaryLoading = useBudgetStore((s) => s.summaryLoading);
   const updateSection = useBudgetStore((s) => s.updateSection);
@@ -178,11 +178,18 @@ export default function SectionReportsPage() {
   ], [categories, linkedCategories]);
 
   const getCatId = useCallback((c: OrderableCat) => c.id, []);
-  const { ordered: orderedCats, moveUp: moveCatUp, moveDown: moveCatDown } = useDisplayOrder(
+  const { ordered: orderedCats, moveTo: moveCatTo } = useDisplayOrder(
     `budget-${params.id}-section-${params.sectionId}-categories`,
     allCats,
     getCatId
   );
+
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const handleDragStart = useCallback((e: React.DragEvent, id: string) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); setDragId(id); }, []);
+  const handleDragOver = useCallback((e: React.DragEvent, idx: number) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverIdx(idx); }, []);
+  const handleDrop = useCallback((e: React.DragEvent, targetIdx: number) => { e.preventDefault(); if (dragId) moveCatTo(dragId, targetIdx); setDragId(null); setDragOverIdx(null); }, [dragId, moveCatTo]);
+  const handleDragEnd = useCallback(() => { setDragId(null); setDragOverIdx(null); }, []);
 
   return (
     <div className="space-y-6">
@@ -286,13 +293,23 @@ export default function SectionReportsPage() {
             unallocatedAmount={unallocAmt}
             currency={currency}
             sectionId={section.id}
-            categories={categories.map((c) => ({
-              id: c.category.id,
-              name: c.category.name,
-              icon: c.category.icon,
-              allocation_value: c.category.allocation_value,
-              sectionId: section.id,
-            }))}
+            categories={[
+              ...categories.map((c) => ({
+                id: c.category.id,
+                name: c.category.name,
+                icon: c.category.icon,
+                allocation_value: c.category.allocation_value,
+                sectionId: section.id,
+              })),
+              ...linkedCategories.map((lc) => ({
+                id: lc.categorySummary.category.id,
+                name: lc.categorySummary.category.name,
+                icon: lc.categorySummary.category.icon,
+                allocation_value: lc.categorySummary.category.allocation_value,
+                sectionId: lc.link.source_section_id,
+                sourceBudgetId: lc.link.source_budget_id,
+              })),
+            ]}
             onCreateCategory={() => {
               setCategoryPrefillAmount(unallocAmt);
               setAddCategoryOpen(true);
@@ -383,21 +400,12 @@ export default function SectionReportsPage() {
               const catRemaining = cat.allocated_amount - cat.total_spent;
 
               return (
-                <div key={item.id} className="border-2 border-foreground bg-card">
+                <div key={item.id} className={cn("border-2 border-foreground bg-card transition-opacity", dragId === item.id && "opacity-50")} draggable={orderedCats.length > 1} onDragStart={(e) => handleDragStart(e, item.id)} onDragOver={(e) => handleDragOver(e, idx)} onDrop={(e) => handleDrop(e, idx)} onDragEnd={handleDragEnd}>
+                  {dragOverIdx === idx && dragId !== item.id && <div className="h-1 bg-foreground" />}
                   <div className="p-5 sm:p-7">
                     {/* Mobile layout */}
                     <div className="sm:hidden">
                       <div className="flex items-center gap-3 mb-4">
-                        {orderedCats.length > 1 && (
-                          <div className="flex flex-col shrink-0 -ml-1">
-                            <button type="button" onClick={() => moveCatUp(item.id)} disabled={idx === 0} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move up">
-                              <ChevronUp className="size-4" />
-                            </button>
-                            <button type="button" onClick={() => moveCatDown(item.id)} disabled={idx === orderedCats.length - 1} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move down">
-                              <ChevronDown className="size-4" />
-                            </button>
-                          </div>
-                        )}
                         <CategoryIcon iconKey={cat.category.icon} className="size-6" />
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
@@ -405,6 +413,11 @@ export default function SectionReportsPage() {
                             {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
                           </p>
                         </div>
+                        {orderedCats.length > 1 && (
+                          <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
+                            <GripVertical className="size-5" />
+                          </div>
+                        )}
                       </div>
                       <div className="mb-4 pb-4 border-b border-border space-y-2">
                         <div className="flex items-center justify-between">
@@ -447,16 +460,6 @@ export default function SectionReportsPage() {
                     {/* Desktop layout */}
                     <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
                       <div className="flex items-center gap-3 flex-1">
-                        {orderedCats.length > 1 && (
-                          <div className="flex flex-col shrink-0 -ml-1">
-                            <button type="button" onClick={() => moveCatUp(item.id)} disabled={idx === 0} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move up">
-                              <ChevronUp className="size-4" />
-                            </button>
-                            <button type="button" onClick={() => moveCatDown(item.id)} disabled={idx === orderedCats.length - 1} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move down">
-                              <ChevronDown className="size-4" />
-                            </button>
-                          </div>
-                        )}
                         <CategoryIcon iconKey={cat.category.icon} className="size-6" />
                         <div>
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
@@ -496,6 +499,11 @@ export default function SectionReportsPage() {
                           {formatCurrency(cat.total_spent, currency)} · {catPct}% {tDash("used")}
                         </p>
                       </div>
+                      {orderedCats.length > 1 && (
+                        <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
+                          <GripVertical className="size-5" />
+                        </div>
+                      )}
                     </div>
 
                     {/* Remaining row */}
@@ -545,7 +553,8 @@ export default function SectionReportsPage() {
             const lcRemaining = lcat.allocated_amount - lcat.total_spent;
 
             return (
-              <div key={item.id} className="border-2 border-foreground/50 border-dashed bg-card">
+              <div key={item.id} className={cn("border-2 border-foreground/50 border-dashed bg-card transition-opacity", dragId === item.id && "opacity-50")} draggable={orderedCats.length > 1} onDragStart={(e) => handleDragStart(e, item.id)} onDragOver={(e) => handleDragOver(e, idx)} onDrop={(e) => handleDrop(e, idx)} onDragEnd={handleDragEnd}>
+                {dragOverIdx === idx && dragId !== item.id && <div className="h-1 bg-foreground" />}
                 <div className="p-5 sm:p-7">
                   {/* Linked badge */}
                   <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
@@ -558,20 +567,15 @@ export default function SectionReportsPage() {
                   {/* Mobile layout */}
                   <div className="sm:hidden">
                     <div className="flex items-center gap-3 mb-4">
-                      {orderedCats.length > 1 && (
-                        <div className="flex flex-col shrink-0 -ml-1">
-                          <button type="button" onClick={() => moveCatUp(item.id)} disabled={idx === 0} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move up">
-                            <ChevronUp className="size-4" />
-                          </button>
-                          <button type="button" onClick={() => moveCatDown(item.id)} disabled={idx === orderedCats.length - 1} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move down">
-                            <ChevronDown className="size-4" />
-                          </button>
-                        </div>
-                      )}
                       <CategoryIcon iconKey={lcat.category.icon} className="size-6" />
                       <div className="flex-1">
                         <p className="text-lg font-semibold text-foreground">{lcat.category.name}</p>
                       </div>
+                      {orderedCats.length > 1 && (
+                        <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
+                          <GripVertical className="size-5" />
+                        </div>
+                      )}
                     </div>
                     <div className="mb-4 pb-4 border-b border-border space-y-2">
                       <div className="flex items-center justify-between">
@@ -594,11 +598,19 @@ export default function SectionReportsPage() {
                     <div className="flex gap-2 mb-4">
                       <button
                         type="button"
-                        onClick={() => setManagingLinkedCat({ cat: lcat, link: lc.link, sourceName: lc.sourceBudgetName })}
+                        onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${lcat.category.id}`)}
+                        className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+                      >
+                        <BarChart3 className="size-3.5" />
+                        {tActions("reports")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingLinkedCat({ cat: lcat, link: lc.link, sourceName: lc.sourceBudgetName })}
                         className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
                       >
                         <Settings className="size-3.5" />
-                        {tl("manageLink")}
+                        {tActions("adjust")}
                       </button>
                     </div>
                   </div>
@@ -606,16 +618,6 @@ export default function SectionReportsPage() {
                   {/* Desktop layout */}
                   <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
                     <div className="flex items-center gap-3 flex-1">
-                      {orderedCats.length > 1 && (
-                        <div className="flex flex-col shrink-0 -ml-1">
-                          <button type="button" onClick={() => moveCatUp(item.id)} disabled={idx === 0} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move up">
-                            <ChevronUp className="size-4" />
-                          </button>
-                          <button type="button" onClick={() => moveCatDown(item.id)} disabled={idx === orderedCats.length - 1} className="p-0.5 text-muted-foreground/40 hover:text-foreground disabled:opacity-0 transition-colors" aria-label="Move down">
-                            <ChevronDown className="size-4" />
-                          </button>
-                        </div>
-                      )}
                       <CategoryIcon iconKey={lcat.category.icon} className="size-6" />
                       <div>
                         <p className="text-lg font-semibold text-foreground">{lcat.category.name}</p>
@@ -624,11 +626,19 @@ export default function SectionReportsPage() {
                     <div className="flex items-center gap-2 mr-6">
                       <button
                         type="button"
-                        onClick={() => setManagingLinkedCat({ cat: lcat, link: lc.link, sourceName: lc.sourceBudgetName })}
+                        onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${lcat.category.id}`)}
+                        className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+                      >
+                        <BarChart3 className="size-3.5" />
+                        {tActions("reports")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingLinkedCat({ cat: lcat, link: lc.link, sourceName: lc.sourceBudgetName })}
                         className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
                       >
                         <Settings className="size-3.5" />
-                        {tl("manageLink")}
+                        {tActions("adjust")}
                       </button>
                     </div>
                     <div className="text-right">
@@ -644,6 +654,11 @@ export default function SectionReportsPage() {
                         {formatCurrency(lcat.total_spent, currency)} · {lcPct}% {tDash("used")}
                       </p>
                     </div>
+                    {orderedCats.length > 1 && (
+                      <div className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
+                        <GripVertical className="size-5" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Remaining row */}
@@ -715,14 +730,14 @@ export default function SectionReportsPage() {
         preselectedCategoryId={categories.length > 0 ? categories[0].category.id : undefined}
         linkedCategoryBudgetMap={linkedCategoryBudgetMap}
       />
-      {managingLinkedCat && (
-        <ManageLinkDialog
-          link={managingLinkedCat.link}
-          sourceBudgetName={managingLinkedCat.sourceName}
-          sectionName={managingLinkedCat.cat.category.name}
-          open={!!managingLinkedCat}
+      {editingLinkedCat && (
+        <EditCategoryDialog
+          sectionId={editingLinkedCat.link.source_section_id}
+          category={editingLinkedCat.cat.category}
+          link={editingLinkedCat.link}
+          open={!!editingLinkedCat}
           onOpenChange={(open) => {
-            if (!open) setManagingLinkedCat(null);
+            if (!open) setEditingLinkedCat(null);
           }}
         />
       )}

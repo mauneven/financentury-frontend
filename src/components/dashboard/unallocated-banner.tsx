@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertTriangle, Plus, ArrowRight, Loader2, Minus } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
+import { categoryApi } from "@/lib/api";
 import { useTranslations } from "@/i18n/client";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,8 @@ interface CategoryTarget {
   icon: string;
   allocation_value: number;
   sectionId: string;
+  /** Present for linked categories — the budget that owns this category. */
+  sourceBudgetId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,7 +92,7 @@ export function BudgetUnallocatedBanner({
 
           {!showRedirect ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              {sections.length >= 2 && (
+              {sections.length >= 1 && (
                 <button
                   type="button"
                   onClick={() => setShowRedirect(true)}
@@ -224,9 +227,17 @@ export function SectionUnallocatedBanner({
 
     setRedirecting(true);
     try {
-      await updateCategory(sectionId, selectedId, {
-        allocation_value: target.allocation_value + unallocatedAmount,
-      });
+      const newValue = target.allocation_value + unallocatedAmount;
+      if (target.sourceBudgetId) {
+        // Linked category — update in the source budget
+        await categoryApi.update(target.sourceBudgetId, target.sectionId, selectedId, {
+          allocation_value: newValue,
+        });
+      } else {
+        await updateCategory(sectionId, selectedId, {
+          allocation_value: newValue,
+        });
+      }
       await refreshSummary();
       setShowRedirect(false);
       setSelectedId(null);
@@ -262,7 +273,7 @@ export function SectionUnallocatedBanner({
 
           {!showRedirect && !confirmTrim ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              {categories.length >= 2 && (
+              {categories.length >= 1 && (
                 <button
                   type="button"
                   onClick={() => setShowRedirect(true)}

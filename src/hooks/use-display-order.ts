@@ -83,5 +83,17 @@ export function useDisplayOrder<T>(
     [ordered, getId, persist]
   );
 
-  return { ordered, moveUp, moveDown };
+  const moveTo = useCallback(
+    (id: string, toIndex: number) => {
+      const ids = ordered.map(getId);
+      const fromIndex = ids.indexOf(id);
+      if (fromIndex < 0 || fromIndex === toIndex) return;
+      const [removed] = ids.splice(fromIndex, 1);
+      ids.splice(toIndex, 0, removed);
+      persist(ids);
+    },
+    [ordered, getId, persist]
+  );
+
+  return { ordered, moveUp, moveDown, moveTo };
 }
