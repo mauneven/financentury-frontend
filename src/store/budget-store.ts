@@ -133,26 +133,30 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   },
 
   refreshSummary: async () => {
-    const { activeBudgetId } = get();
-    if (!activeBudgetId) return;
+    const currentId = get().activeBudgetId;
+    if (!currentId) return;
     try {
       const [summary, expenses] = await Promise.all([
-        budgetApi.summary(activeBudgetId),
-        expenseApi.list(activeBudgetId),
+        budgetApi.summary(currentId),
+        expenseApi.list(currentId),
       ]);
+      if (get().activeBudgetId !== currentId) return;
       set({ summary, expenses, error: null });
     } catch (e) {
+      if (get().activeBudgetId !== currentId) return;
       set({ error: e instanceof Error ? e.message : String(e) });
     }
   },
 
   refreshSummaryOnly: async () => {
-    const { activeBudgetId } = get();
-    if (!activeBudgetId) return;
+    const currentId = get().activeBudgetId;
+    if (!currentId) return;
     try {
-      const summary = await budgetApi.summary(activeBudgetId);
+      const summary = await budgetApi.summary(currentId);
+      if (get().activeBudgetId !== currentId) return;
       set({ summary, error: null });
     } catch (e) {
+      if (get().activeBudgetId !== currentId) return;
       set({ error: e instanceof Error ? e.message : String(e) });
     }
   },
@@ -163,7 +167,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
     const expense = await expenseApi.create(activeBudgetId, data);
     set((state) => ({ expenses: [...state.expenses, expense] }));
-    get().refreshSummaryOnly();
+    await get().refreshSummaryOnly();
     return expense;
   },
 
@@ -172,7 +176,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       expenses: state.expenses.map((e) => e.id === expenseId ? updated : e),
     }));
-    get().refreshSummaryOnly();
+    await get().refreshSummaryOnly();
     return updated;
   },
 
@@ -184,7 +188,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       expenses: state.expenses.filter((e) => e.id !== expenseId),
     }));
-    get().refreshSummaryOnly();
+    await get().refreshSummaryOnly();
   },
 
   addSection: async (data) => {

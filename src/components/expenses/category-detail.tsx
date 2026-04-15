@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Plus, ArrowLeft } from "lucide-react";
@@ -63,7 +63,7 @@ export function CategoryDetail({
   // averageExpense available if needed: expense_count > 0 ? total_spent / expense_count : 0
 
   // Build categories map for expense list
-  const categoriesMap = (() => {
+  const categoriesMap = useMemo(() => {
     const map = new Map<string, { name: string; icon: string | null; categoryName: string }>();
     for (const sec of categories) {
       for (const cat of sec.categories || []) {
@@ -75,7 +75,7 @@ export function CategoryDetail({
       }
     }
     return map;
-  })();
+  }, [categories]);
 
   // Filter expenses for this category
   const filteredExpenses = expenses.filter((e) => e.category_id === detailCategory.id);

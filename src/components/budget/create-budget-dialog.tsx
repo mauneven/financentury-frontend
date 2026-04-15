@@ -26,7 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import type { Budget, BudgetMode as BudgetModeType } from "@/types/budget";
+import type { Budget } from "@/types/budget";
 import {
   CURRENCIES,
   BALANCED_SECTIONS,

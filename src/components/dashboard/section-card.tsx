@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Pencil, BarChart3, ChevronUp, Settings, Plus } from "lucide-react";
-import type { SectionSummary, Section, Category } from "@/types/budget";
+import type { SectionSummary, Category } from "@/types/budget";
 import {
   formatCurrency,
   getPercentage,

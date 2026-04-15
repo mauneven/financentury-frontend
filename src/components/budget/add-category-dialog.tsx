@@ -72,7 +72,6 @@ export function AddCategoryDialog({
   prefillAmount,
 }: AddCategoryDialogProps) {
   const t = useTranslations("section");
-  const tc = useTranslations("common");
   const addCategory = useBudgetStore((s) => s.addCategory);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);

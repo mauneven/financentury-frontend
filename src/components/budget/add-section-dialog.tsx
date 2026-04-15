@@ -71,7 +71,6 @@ export function AddSectionDialog({
   prefillAmount,
 }: AddSectionDialogProps) {
   const t = useTranslations("section");
-  const tc = useTranslations("common");
   const addSection = useBudgetStore((s) => s.addSection);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);

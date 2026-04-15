@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { budgetApi } from "@/lib/api";
 import { useTranslations } from "@/i18n/client";
@@ -105,25 +105,33 @@ function PeriodRow({
 
 export function BillingHistory({ budgetId, currency }: BillingHistoryProps) {
   const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [data, setData] = useState<BillingHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const fetchHistory = useCallback((id: string) => {
     let cancelled = false;
-    setLoading(true);
+    setError(false);
     budgetApi
-      .billingHistory(budgetId)
+      .billingHistory(id)
       .then((res) => {
         if (!cancelled) setData(res);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [budgetId]);
+  }, []);
+
+  useEffect(() => {
+    return fetchHistory(budgetId);
+  }, [budgetId, fetchHistory]);
 
   if (loading) {
     return (
@@ -132,6 +140,30 @@ export function BillingHistory({ budgetId, currency }: BillingHistoryProps) {
         <div className="mt-4 space-y-3">
           <div className="h-20 animate-pulse bg-muted" />
           <div className="h-16 animate-pulse bg-muted" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <AlertTriangle className="size-6 text-muted-foreground mb-3" />
+          <p className="text-sm font-semibold text-foreground mb-1">
+            {t("errorLoading")}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+              setError(false);
+              fetchHistory(budgetId);
+            }}
+            className="mt-3 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+          >
+            {tc("retry")}
+          </button>
         </div>
       </div>
     );
