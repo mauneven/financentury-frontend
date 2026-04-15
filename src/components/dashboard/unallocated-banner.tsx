@@ -89,7 +89,7 @@ export function BudgetUnallocatedBanner({
 
           {!showRedirect ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              {sections.length > 0 && (
+              {sections.length >= 2 && (
                 <button
                   type="button"
                   onClick={() => setShowRedirect(true)}
@@ -243,7 +243,7 @@ export function SectionUnallocatedBanner({
 
           {!showRedirect ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              {categories.length > 0 && (
+              {categories.length >= 2 && (
                 <button
                   type="button"
                   onClick={() => setShowRedirect(true)}

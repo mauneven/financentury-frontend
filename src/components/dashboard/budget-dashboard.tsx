@@ -120,6 +120,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
   const [addSectionOpen, setAddSectionOpen] = useState(false);
+  const [sectionPrefillAmount, setSectionPrefillAmount] = useState<number | undefined>(undefined);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
@@ -271,7 +272,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
               icon: s.section.icon,
               allocation_percent: s.section.allocation_percent,
             }))}
-            onCreateSection={() => setAddSectionOpen(true)}
+            onCreateSection={() => {
+              setSectionPrefillAmount(unallocatedAmt);
+              setAddSectionOpen(true);
+            }}
           />
         );
       })()}
@@ -289,10 +293,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 [&>*]:h-full">
           <SpendingChart expenses={expenses} currency={budget.currency} />
         </div>
-        <div>
+        <div className="[&>*]:h-full">
           <BreakdownChart summary={summary} />
         </div>
       </div>
@@ -306,7 +310,12 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             </h2>
             <button
               type="button"
-              onClick={() => setAddSectionOpen(true)}
+              onClick={() => {
+                const totalAllocated = sections.reduce((sum, s) => sum + s.section.allocation_percent, 0);
+                const remainingAmt = Math.max(0, ((100 - totalAllocated) / 100) * budget.monthly_income);
+                setSectionPrefillAmount(remainingAmt > 0 ? remainingAmt : undefined);
+                setAddSectionOpen(true);
+              }}
               className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
             >
               <Plus className="size-3.5" />
@@ -337,7 +346,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           </p>
           <button
             type="button"
-            onClick={() => setAddSectionOpen(true)}
+            onClick={() => {
+              setSectionPrefillAmount(budget.monthly_income * 0.3);
+              setAddSectionOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
           >
             <Plus className="size-3.5" />
@@ -368,7 +380,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
       <AddSectionDialog
         budgetId={budgetId}
         open={addSectionOpen}
-        onOpenChange={setAddSectionOpen}
+        onOpenChange={(open) => {
+          setAddSectionOpen(open);
+          if (!open) setSectionPrefillAmount(undefined);
+        }}
+        prefillAmount={sectionPrefillAmount}
       />
 
       <AddExpenseDialog

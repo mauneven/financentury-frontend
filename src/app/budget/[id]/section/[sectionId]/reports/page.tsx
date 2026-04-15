@@ -41,6 +41,7 @@ export default function SectionReportsPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [categoryPrefillAmount, setCategoryPrefillAmount] = useState<number | undefined>(undefined);
 
   const summaryLoading = useBudgetStore((s) => s.summaryLoading);
 
@@ -120,7 +121,10 @@ export default function SectionReportsPage() {
         ) : (
           <button
             type="button"
-            onClick={() => setAddCategoryOpen(true)}
+            onClick={() => {
+              setCategoryPrefillAmount(allocated_amount * 0.3);
+              setAddCategoryOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
           >
             <Plus className="size-3.5" />
@@ -187,7 +191,10 @@ export default function SectionReportsPage() {
               allocation_percent: c.category.allocation_percent,
               sectionId: section.id,
             }))}
-            onCreateCategory={() => setAddCategoryOpen(true)}
+            onCreateCategory={() => {
+              setCategoryPrefillAmount(unallocAmt);
+              setAddCategoryOpen(true);
+            }}
           />
         );
       })()}
@@ -236,7 +243,10 @@ export default function SectionReportsPage() {
             </p>
             <button
               type="button"
-              onClick={() => setAddCategoryOpen(true)}
+              onClick={() => {
+                setCategoryPrefillAmount(allocated_amount * 0.3);
+                setAddCategoryOpen(true);
+              }}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
             >
               <Plus className="size-3.5" />
@@ -402,7 +412,11 @@ export default function SectionReportsPage() {
         sectionId={section.id}
         existingCategoryIcons={categories.map((c) => c.category.icon)}
         open={addCategoryOpen}
-        onOpenChange={setAddCategoryOpen}
+        onOpenChange={(open) => {
+          setAddCategoryOpen(open);
+          if (!open) setCategoryPrefillAmount(undefined);
+        }}
+        prefillAmount={categoryPrefillAmount}
       />
       <AddExpenseDialog
         open={addExpenseOpen}

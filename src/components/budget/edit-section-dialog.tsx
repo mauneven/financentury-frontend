@@ -246,7 +246,7 @@ export function EditSectionDialog({
 
     // Keep RHF in sync
     const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
-    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
+    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(10)), 100), {
       shouldValidate: true,
     });
   };

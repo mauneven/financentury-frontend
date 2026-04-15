@@ -53,7 +53,7 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
   const filteredData = chartData.filter((d) => new Date(d.date) >= cutoff);
 
   const ChartWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="border-2 border-foreground bg-card">
+    <div className="border-2 border-foreground bg-card flex flex-col">
       <div className="border-b-2 border-foreground px-6 py-4 flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
           {t("spendingTrends")}
@@ -74,7 +74,7 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
           ))}
         </div>
       </div>
-      <div className="p-6">{children}</div>
+      <div className="p-6 flex-1 flex flex-col justify-center">{children}</div>
     </div>
   );
 

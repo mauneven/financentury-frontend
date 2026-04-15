@@ -127,9 +127,6 @@ export function BudgetCard({ budget, onClick }: BudgetCardProps) {
                 ? tc(period.labelKey)
                 : `${budget.billing_period_months}${t("perMonth")}`}
             </Badge>
-            <Badge variant="outline" className="text-[10px]">
-              {t(style.labelKey)}
-            </Badge>
           </div>
         </div>
       </CardContent>

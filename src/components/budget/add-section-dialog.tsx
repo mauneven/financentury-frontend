@@ -11,7 +11,7 @@ import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
 import { CURRENCIES } from "@/types/budget";
-import { parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
+import { formatAmount, parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
 
 import {
   Dialog,
@@ -56,6 +56,8 @@ interface AddSectionDialogProps {
   budgetId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-fill the amount input with this value when the dialog opens. */
+  prefillAmount?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +68,7 @@ export function AddSectionDialog({
   budgetId,
   open,
   onOpenChange,
+  prefillAmount,
 }: AddSectionDialogProps) {
   const t = useTranslations("section");
   const tc = useTranslations("common");
@@ -116,16 +119,23 @@ export function AddSectionDialog({
     totalBudget > 0 ? (rawAmount / totalBudget) * 100 : 0;
   const percentOverBudget = rawAmount > totalBudget && totalBudget > 0;
 
-  // On open: pick a random icon and reset form
+  // On open: pick a random icon, reset form, and optionally pre-fill amount
   React.useEffect(() => {
     if (open) {
       const randomIcon = pickRandomIcon(usedIcons);
-      reset({ name: "", allocation_percent: 0, icon: randomIcon });
-      setAmountInput("");
-      setRawAmount(0);
+      if (prefillAmount && prefillAmount > 0 && totalBudget > 0) {
+        const pct = Math.min(parseFloat(((prefillAmount / totalBudget) * 100).toFixed(10)), 100);
+        reset({ name: "", allocation_percent: pct, icon: randomIcon });
+        setAmountInput(formatAmount(prefillAmount));
+        setRawAmount(prefillAmount);
+      } else {
+        reset({ name: "", allocation_percent: 0, icon: randomIcon });
+        setAmountInput("");
+        setRawAmount(0);
+      }
       setIsSubmitting(false);
     }
-  }, [open, reset, usedIcons]);
+  }, [open, reset, usedIcons, prefillAmount, totalBudget]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskAmountInput(e.target.value);
@@ -134,9 +144,10 @@ export function AddSectionDialog({
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
 
-    // Keep RHF in sync — store as percent for the backend
+    // Keep RHF in sync — store as percent for the backend.
+    // Use high precision to avoid rounding errors (e.g. 4M becoming 3,999,998).
     const pct = totalBudget > 0 ? (numericValue / totalBudget) * 100 : 0;
-    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
+    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(10)), 100), {
       shouldValidate: true,
     });
   };

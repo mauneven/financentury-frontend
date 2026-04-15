@@ -242,7 +242,7 @@ export function EditCategoryDialog({
 
     // Keep RHF in sync
     const pct = sectionBudget > 0 ? (numericValue / sectionBudget) * 100 : 0;
-    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(4)), 100), {
+    setValue("allocation_percent", Math.min(parseFloat(pct.toFixed(10)), 100), {
       shouldValidate: true,
     });
   };

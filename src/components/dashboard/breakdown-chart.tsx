@@ -65,13 +65,13 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
   // If nothing spent, show empty state
   if (categoryData.length === 0) {
     return (
-      <div className="border-2 border-foreground bg-card">
+      <div className="border-2 border-foreground bg-card flex flex-col">
         <div className="border-b-2 border-foreground px-6 py-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
             {t("budgetOverview")}
           </h3>
         </div>
-        <div className="p-6">
+        <div className="p-6 flex-1 flex flex-col justify-center">
           <div className="flex h-56 flex-col items-center justify-center gap-3">
             <p className="text-2xl font-bold font-mono tabular-nums text-foreground">
               {formatCompact(0, budget.currency)}
@@ -89,13 +89,13 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
   }
 
   return (
-    <div className="border-2 border-foreground bg-card">
+    <div className="border-2 border-foreground bg-card flex flex-col">
       <div className="border-b-2 border-foreground px-6 py-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
           {t("budgetOverview")}
         </h3>
       </div>
-      <div className="px-3 sm:px-6 py-6">
+      <div className="px-3 sm:px-6 py-6 flex-1">
         <div
           className="relative h-72 w-full [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:focus:outline-none [&_*]:focus:outline-none"
           style={{ outline: "none" }}

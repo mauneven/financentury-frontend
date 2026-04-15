@@ -34,6 +34,7 @@ export function SectionCard({
   const [editSectionOpen, setEditSectionOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [categoryPrefillAmount, setCategoryPrefillAmount] = useState<number | undefined>(undefined);
   const router = useRouter();
   const t = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.sectionActions");
@@ -251,6 +252,35 @@ export function SectionCard({
           </div>
         </div>
 
+        {/* Unallocated section notification */}
+        {sectionCategories.length > 0 && (() => {
+          const totalCatPct = sectionCategories.reduce((sum, c) => sum + c.category.allocation_percent, 0);
+          const unallocPct = parseFloat((100 - totalCatPct).toFixed(2));
+          if (unallocPct <= 0) return null;
+          const unallocAmt = (unallocPct / 100) * allocated_amount;
+          return (
+            <div className="mt-3">
+              <SectionUnallocatedBanner
+                unallocatedPercent={unallocPct}
+                unallocatedAmount={unallocAmt}
+                currency={currency}
+                sectionId={section.id}
+                categories={sectionCategories.map((c) => ({
+                  id: c.category.id,
+                  name: c.category.name,
+                  icon: c.category.icon,
+                  allocation_percent: c.category.allocation_percent,
+                  sectionId: section.id,
+                }))}
+                onCreateCategory={() => {
+                  setCategoryPrefillAmount(unallocAmt);
+                  setAddCategoryOpen(true);
+                }}
+              />
+            </div>
+          );
+        })()}
+
         {/* Per-person spending (section level) */}
         {sectionSummary.spending_by_user && sectionSummary.spending_by_user.length > 0 && (
           <SpendingByUser
@@ -364,31 +394,6 @@ export function SectionCard({
                   </div>
                 );
               })}
-              {/* Unallocated section notification */}
-              {sectionCategories.length > 0 && (() => {
-                const totalCatPct = sectionCategories.reduce((sum, c) => sum + c.category.allocation_percent, 0);
-                const unallocPct = parseFloat((100 - totalCatPct).toFixed(2));
-                if (unallocPct <= 0) return null;
-                const unallocAmt = (unallocPct / 100) * allocated_amount;
-                return (
-                  <div className="mt-3">
-                    <SectionUnallocatedBanner
-                      unallocatedPercent={unallocPct}
-                      unallocatedAmount={unallocAmt}
-                      currency={currency}
-                      sectionId={section.id}
-                      categories={sectionCategories.map((c) => ({
-                        id: c.category.id,
-                        name: c.category.name,
-                        icon: c.category.icon,
-                        allocation_percent: c.category.allocation_percent,
-                        sectionId: section.id,
-                      }))}
-                      onCreateCategory={() => setAddCategoryOpen(true)}
-                    />
-                  </div>
-                );
-              })()}
               {sectionCategories.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-foreground bg-muted">
@@ -402,7 +407,10 @@ export function SectionCard({
                   </p>
                   <button
                     type="button"
-                    onClick={() => setAddCategoryOpen(true)}
+                    onClick={() => {
+                      setCategoryPrefillAmount(allocated_amount * 0.3);
+                      setAddCategoryOpen(true);
+                    }}
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
                   >
                     <Plus className="size-3.5" />
@@ -426,7 +434,11 @@ export function SectionCard({
         sectionId={section.id}
         existingCategoryIcons={sectionCategories.map((s) => s.category.icon)}
         open={addCategoryOpen}
-        onOpenChange={setAddCategoryOpen}
+        onOpenChange={(open) => {
+          setAddCategoryOpen(open);
+          if (!open) setCategoryPrefillAmount(undefined);
+        }}
+        prefillAmount={categoryPrefillAmount}
       />
       {editingCategory && (
         <EditCategoryDialog
