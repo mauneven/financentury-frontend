@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, BarChart3, GripVertical, Settings, Plus, Link2 } from "lucide-react";
+import { ChevronDown, ChevronUp, BarChart3, GripVertical, Settings, Plus, Link2 } from "lucide-react";
 import type { SectionSummary, Category, CategorySummary, BudgetLink, Budget } from "@/types/budget";
 import {
   formatCurrency,
@@ -113,37 +113,62 @@ export function SectionCard({
 
   const [dragCatId, setDragCatId] = useState<string | null>(null);
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
-
-  const displayCats = useMemo(() => {
-    if (!dragCatId || !dragOverCatId || dragCatId === dragOverCatId) return orderedCats;
-    const items = [...orderedCats];
-    const fromIdx = items.findIndex(i => i.id === dragCatId);
-    const toIdx = items.findIndex(i => i.id === dragOverCatId);
-    if (fromIdx < 0 || toIdx < 0) return orderedCats;
-    const [removed] = items.splice(fromIdx, 1);
-    items.splice(toIdx, 0, removed);
-    return items;
-  }, [orderedCats, dragCatId, dragOverCatId]);
+  const [dropCatPosition, setDropCatPosition] = useState<"before" | "after">("before");
 
   const handleCatDragStart = useCallback((e: React.DragEvent, id: string) => {
+    e.stopPropagation();
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", id);
-    setDragCatId(id);
+    // Create a compact drag ghost
+    const el = e.currentTarget as HTMLElement;
+    const ghost = el.cloneNode(true) as HTMLElement;
+    ghost.style.width = `${el.offsetWidth}px`;
+    ghost.style.opacity = '0.85';
+    ghost.style.position = 'absolute';
+    ghost.style.top = '-9999px';
+    ghost.style.left = '-9999px';
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, e.nativeEvent.offsetX, 20);
+    requestAnimationFrame(() => {
+      setDragCatId(id);
+      document.body.removeChild(ghost);
+    });
   }, []);
   const handleCatDragOver = useCallback((e: React.DragEvent, itemId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
-    setDragOverCatId(itemId);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? "before" : "after";
+    setDragOverCatId((prev) => prev === itemId ? prev : itemId);
+    setDropCatPosition((prev) => prev === pos ? prev : pos);
   }, []);
   const handleCatDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (dragCatId && dragOverCatId && dragCatId !== dragOverCatId) {
-      const toIdx = orderedCats.findIndex(i => i.id === dragOverCatId);
-      if (toIdx >= 0) moveCatTo(dragCatId, toIdx);
+      const fromIdx = orderedCats.findIndex(i => i.id === dragCatId);
+      let toIdx = orderedCats.findIndex(i => i.id === dragOverCatId);
+      if (toIdx >= 0 && fromIdx >= 0) {
+        // If dropping "after" and source is before target, target stays.
+        // If dropping "before" and source is after target, target stays.
+        // Otherwise adjust for the removal.
+        if (dropCatPosition === "after" && fromIdx < toIdx) {
+          // stays
+        } else if (dropCatPosition === "after" && fromIdx > toIdx) {
+          toIdx += 1;
+        } else if (dropCatPosition === "before" && fromIdx > toIdx) {
+          // stays
+        } else if (dropCatPosition === "before" && fromIdx < toIdx) {
+          toIdx -= 1;
+        }
+        moveCatTo(dragCatId, toIdx);
+      }
     }
     setDragCatId(null);
     setDragOverCatId(null);
-  }, [dragCatId, dragOverCatId, orderedCats, moveCatTo]);
+  }, [dragCatId, dragOverCatId, dropCatPosition, orderedCats, moveCatTo]);
   const handleCatDragEnd = useCallback(() => {
     setDragCatId(null);
     setDragOverCatId(null);
@@ -182,8 +207,23 @@ export function SectionCard({
               </p>
             </div>
             {(onMoveUp || onMoveDown) && (
-              <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
-                <GripVertical className="size-5" />
+              <div className="flex flex-col shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
+                  className={cn("p-0.5 transition-colors", onMoveUp ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
+                  aria-label="Move section up"
+                >
+                  <ChevronUp className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
+                  className={cn("p-0.5 transition-colors", onMoveDown ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
+                  aria-label="Move section down"
+                >
+                  <ChevronDown className="size-4" />
+                </button>
               </div>
             )}
           </div>
@@ -274,13 +314,13 @@ export function SectionCard({
         </div>
 
         {/* Section header - Desktop layout */}
-        <div className="hidden sm:flex items-center justify-between min-h-[44px] mb-4">
-          <div className="flex items-center gap-3 flex-1">
-            <span className="text-2xl" role="img" aria-label={section.name}>
+        <div className="hidden sm:flex items-center gap-3 min-h-[44px] mb-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <span className="text-2xl shrink-0" role="img" aria-label={section.name}>
               <CategoryIcon iconKey={section.icon} className="size-6" />
             </span>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
+            <div className="min-w-0">
+              <h3 className="text-lg font-semibold text-foreground truncate">
                 {section.name}
               </h3>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -290,7 +330,7 @@ export function SectionCard({
           </div>
 
           {/* Desktop action buttons */}
-          <div className="flex items-center gap-2 mr-6">
+          <div className="flex items-center gap-2 shrink-0">
             {!isLinkedSection && (
               <button
                 type="button"
@@ -348,7 +388,7 @@ export function SectionCard({
           </div>
 
           {/* Amount display - right side */}
-          <div className="text-right">
+          <div className="shrink-0 min-w-[260px] text-right">
             <div className="flex items-baseline justify-end gap-3">
               <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
                 {formatCurrency(allocated_amount, currency)}
@@ -371,12 +411,25 @@ export function SectionCard({
             </div>
           </div>
 
-          {/* Drag handle - right side */}
-          {(onMoveUp || onMoveDown) && (
-            <div className="shrink-0 ml-4 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors" aria-label="Drag to reorder">
-              <GripVertical className="size-5" />
-            </div>
-          )}
+          {/* Move up/down buttons (always reserves space for alignment) */}
+          <div className={cn("flex flex-col shrink-0", !(onMoveUp || onMoveDown) && "invisible")}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
+              className={cn("p-0.5 transition-colors", onMoveUp ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
+              aria-label="Move section up"
+            >
+              <ChevronUp className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
+              className={cn("p-0.5 transition-colors", onMoveDown ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
+              aria-label="Move section down"
+            >
+              <ChevronDown className="size-4" />
+            </button>
+          </div>
         </div>
 
         {/* Left summary */}
@@ -475,7 +528,7 @@ export function SectionCard({
           <div className="overflow-hidden">
             <div className="mt-5 border-t-2 border-foreground/10 pt-5 space-y-0">
               {/* Categories (own + linked, unified and reorderable) */}
-              {displayCats.map((item, idx) => {
+              {orderedCats.map((item, idx) => {
                 const sub = item.type === "own" ? item.sub : item.lc.categorySummary;
                 const subPercentage = getPercentage(sub.total_spent, sub.allocated_amount);
                 const subProgressColor = getProgressColor(subPercentage);
@@ -489,20 +542,30 @@ export function SectionCard({
                     ? `/budget/${linkedInfo.link.source_budget_id}/section/${linkedInfo.link.source_section_id}/category/${sub.category.id}`
                     : `/budget/${budgetId}/section/${section.id}/category/${sub.category.id}`;
 
+                const isDropBefore = dragCatId && dragOverCatId === item.id && dragCatId !== item.id && dropCatPosition === "before";
+                const isDropAfter = dragCatId && dragOverCatId === item.id && dragCatId !== item.id && dropCatPosition === "after";
+
                 return (
                   <div
                     key={item.id}
-                    draggable={displayCats.length > 1}
+                    draggable={orderedCats.length > 1}
                     onDragStart={(e) => handleCatDragStart(e, item.id)}
                     onDragOver={(e) => handleCatDragOver(e, item.id)}
                     onDrop={(e) => handleCatDrop(e)}
                     onDragEnd={handleCatDragEnd}
                     className={cn(
-                      "group/sub px-3 py-3 transition-all duration-200 hover:bg-muted/50 min-h-[44px]",
+                      "group/sub px-3 py-3 relative hover:bg-muted/50 min-h-[44px]",
                       idx !== 0 && "border-t border-foreground/10",
-                      dragCatId === item.id && "opacity-50"
+                      dragCatId === item.id && "opacity-20"
                     )}
                   >
+                    {/* Drop indicator lines */}
+                    {isDropBefore && (
+                      <div className="absolute left-3 right-3 -top-px h-[3px] bg-foreground z-10 rounded-full" />
+                    )}
+                    {isDropAfter && (
+                      <div className="absolute left-3 right-3 -bottom-px h-[3px] bg-foreground z-10 rounded-full" />
+                    )}
                     {/* Linked badge */}
                     {isLinkedCat && (
                       <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
@@ -519,7 +582,7 @@ export function SectionCard({
                         <span className="text-sm font-bold tabular-nums font-mono text-foreground shrink-0">
                           {formatCurrency(sub.allocated_amount, currency)}
                         </span>
-                        {displayCats.length > 1 && (
+                        {orderedCats.length > 1 && (
                           <div className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40" onClick={(e) => e.stopPropagation()}>
                             <GripVertical className="size-4" />
                           </div>
@@ -558,14 +621,14 @@ export function SectionCard({
 
                     {/* Desktop layout */}
                     <div className="hidden sm:block">
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-3">
                         {/* Left: icon + name */}
-                        <div className="flex items-center gap-2 min-w-0 flex-1 mt-1">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <CategoryIcon iconKey={sub.category.icon} className="size-4 shrink-0" />
                           <span className="text-base font-bold text-foreground truncate">{sub.category.name}</span>
                         </div>
                         {/* Middle: buttons */}
-                        <div className="flex items-center gap-1.5 mr-4 mt-0.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); router.push(reportsHref); }}
@@ -583,33 +646,39 @@ export function SectionCard({
                             {tActions("adjust")}
                           </button>
                         </div>
-                        {/* Right: amount block + grip */}
-                        <div className="flex items-start gap-3 shrink-0">
-                          <div className="text-right">
-                            <div className="flex items-baseline justify-end gap-2">
-                              <span className="text-base font-bold tabular-nums font-mono text-foreground">
-                                {formatCurrency(sub.allocated_amount, currency)}
-                              </span>
-                              <span className="h-4 w-px bg-border" />
-                              <span className="text-sm font-bold font-mono text-muted-foreground">
-                                {catSectionPct}% {t("ofSection")}
-                              </span>
-                            </div>
-                            <div className="flex items-baseline justify-end gap-2 mt-0.5">
-                              <span className="text-sm font-mono tabular-nums text-muted-foreground">
-                                {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
-                              </span>
-                              <span className="h-3.5 w-px bg-border" />
-                              <span className={cn("text-sm font-mono tabular-nums font-bold", subTextColor)}>
-                                {subPercentage}% {t("used")}
-                              </span>
-                            </div>
+                        {/* Right: amount block */}
+                        <div className="shrink-0 min-w-[260px] text-right">
+                          <div className="flex items-baseline justify-end gap-2">
+                            <span className="text-base font-bold tabular-nums font-mono text-foreground">
+                              {formatCurrency(sub.allocated_amount, currency)}
+                            </span>
+                            <span className="h-4 w-px bg-border" />
+                            <span className="text-sm font-bold font-mono text-muted-foreground">
+                              {catSectionPct}% {t("ofSection")}
+                            </span>
                           </div>
-                          {displayCats.length > 1 && (
-                            <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground transition-colors mt-1" aria-label="Drag to reorder" onClick={(e) => e.stopPropagation()}>
-                              <GripVertical className="size-5" />
-                            </div>
+                          <div className="flex items-baseline justify-end gap-2 mt-0.5">
+                            <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                              {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
+                            </span>
+                            <span className="h-3.5 w-px bg-border" />
+                            <span className={cn("text-sm font-mono tabular-nums font-bold", subTextColor)}>
+                              {subPercentage}% {t("used")}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Drag grip (always reserves space for alignment) */}
+                        <div
+                          className={cn(
+                            "shrink-0 transition-colors",
+                            orderedCats.length > 1
+                              ? "cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground"
+                              : "invisible"
                           )}
+                          aria-label="Drag to reorder"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <GripVertical className="size-5" />
                         </div>
                       </div>
                       {/* Progress bar */}

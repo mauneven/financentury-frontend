@@ -275,49 +275,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     (m: MergedSection) => m.linkedInfo ? `linked-${m.linkedInfo.link.id}` : m.sectionSummary.section.id,
     []
   );
-  const { ordered: orderedSections, moveTo: moveSectionTo } = useDisplayOrder(
+  const { ordered: orderedSections, moveUp: moveSectionUp, moveDown: moveSectionDown } = useDisplayOrder(
     `budget-${budgetId}-sections`,
     mergedSections,
     getMergedSectionId
   );
-
-  const [dragSectionId, setDragSectionId] = useState<string | null>(null);
-  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
-
-  const displaySections = useMemo(() => {
-    if (!dragSectionId || !dragOverSectionId || dragSectionId === dragOverSectionId) return orderedSections;
-    const items = [...orderedSections];
-    const fromIdx = items.findIndex(m => getMergedSectionId(m) === dragSectionId);
-    const toIdx = items.findIndex(m => getMergedSectionId(m) === dragOverSectionId);
-    if (fromIdx < 0 || toIdx < 0) return orderedSections;
-    const [removed] = items.splice(fromIdx, 1);
-    items.splice(toIdx, 0, removed);
-    return items;
-  }, [orderedSections, dragSectionId, dragOverSectionId, getMergedSectionId]);
-
-  const handleSectionDragStart = useCallback((e: React.DragEvent, id: string) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id);
-    setDragSectionId(id);
-  }, []);
-  const handleSectionDragOver = useCallback((e: React.DragEvent, itemId: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverSectionId(itemId);
-  }, []);
-  const handleSectionDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragSectionId && dragOverSectionId && dragSectionId !== dragOverSectionId) {
-      const toIdx = orderedSections.findIndex(m => getMergedSectionId(m) === dragOverSectionId);
-      if (toIdx >= 0) moveSectionTo(dragSectionId, toIdx);
-    }
-    setDragSectionId(null);
-    setDragOverSectionId(null);
-  }, [dragSectionId, dragOverSectionId, orderedSections, getMergedSectionId, moveSectionTo]);
-  const handleSectionDragEnd = useCallback(() => {
-    setDragSectionId(null);
-    setDragOverSectionId(null);
-  }, []);
 
   const handleAddLinkedExpense = (sourceBudgetId: string, preselectedCategoryId?: string) => {
     setLinkedExpenseSourceBudgetId(sourceBudgetId);
@@ -510,18 +472,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             </div>
           </div>
           <div className="space-y-4 sm:space-y-5">
-            {displaySections.map((merged, idx) => {
+            {orderedSections.map((merged, idx) => {
               const sectionKey = getMergedSectionId(merged);
               return (
-                <div
-                  key={sectionKey}
-                  draggable={displaySections.length > 1}
-                  onDragStart={(e) => handleSectionDragStart(e, sectionKey)}
-                  onDragOver={(e) => handleSectionDragOver(e, sectionKey)}
-                  onDrop={(e) => handleSectionDrop(e)}
-                  onDragEnd={handleSectionDragEnd}
-                  className={cn("transition-opacity", dragSectionId === sectionKey && "opacity-50")}
-                >
+                <div key={sectionKey}>
                   <SectionCard
                     sectionSummary={merged.sectionSummary}
                     currency={budget.currency}
@@ -529,8 +483,8 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
                     linkedInfo={merged.linkedInfo}
                     linkedCategories={merged.linkedCategories}
                     onAddLinkedExpense={handleAddLinkedExpense}
-                    onMoveUp={displaySections.length > 1 && idx > 0 ? () => {} : undefined}
-                    onMoveDown={displaySections.length > 1 && idx < displaySections.length - 1 ? () => {} : undefined}
+                    onMoveUp={orderedSections.length > 1 && idx > 0 ? () => moveSectionUp(sectionKey) : undefined}
+                    onMoveDown={orderedSections.length > 1 && idx < orderedSections.length - 1 ? () => moveSectionDown(sectionKey) : undefined}
                   />
                 </div>
               );
