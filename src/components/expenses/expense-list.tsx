@@ -44,7 +44,6 @@ interface CategoryInfo {
 
 export interface CollaboratorInfo {
   name: string;
-  avatar_url?: string;
 }
 
 interface ExpenseListProps {

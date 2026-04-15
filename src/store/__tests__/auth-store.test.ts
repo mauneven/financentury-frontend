@@ -43,8 +43,7 @@ const mockUser = {
   id: "user-1",
   email: "test@example.com",
   full_name: "Test User",
-  avatar_url: "https://example.com/avatar.png",
-};
+  };
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -295,86 +294,6 @@ describe("useAuthStore", () => {
       expect(state.user).toBeNull();
       expect(state.token).toBeNull();
       expect(localStorage.getItem("financentury_token")).toBeNull();
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // signInWithEmail
-  // -----------------------------------------------------------------------
-  describe("signInWithEmail", () => {
-    it("stores user and token on success", async () => {
-      const token = makeFutureToken();
-      vi.mocked(authApi.login).mockResolvedValue({
-        token,
-        user: mockUser,
-      });
-
-      await useAuthStore.getState().signInWithEmail("test@example.com", "password123");
-
-      const state = useAuthStore.getState();
-      expect(state.user).toEqual(mockUser);
-      expect(state.token).toBe(token);
-      expect(state.justLoggedIn).toBe(true);
-      expect(localStorage.getItem("financentury_token")).toBe(token);
-    });
-
-    it("throws when API returns invalid token format", async () => {
-      vi.mocked(authApi.login).mockResolvedValue({
-        token: "invalid",
-        user: mockUser,
-      });
-
-      await expect(
-        useAuthStore.getState().signInWithEmail("test@example.com", "pass")
-      ).rejects.toThrow("Received invalid token from server");
-    });
-
-    it("propagates API errors", async () => {
-      vi.mocked(authApi.login).mockRejectedValue(new Error("Invalid credentials"));
-
-      await expect(
-        useAuthStore.getState().signInWithEmail("wrong@example.com", "wrong")
-      ).rejects.toThrow("Invalid credentials");
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // registerWithEmail
-  // -----------------------------------------------------------------------
-  describe("registerWithEmail", () => {
-    it("stores user and token on success", async () => {
-      const token = makeFutureToken();
-      vi.mocked(authApi.register).mockResolvedValue({
-        token,
-        user: mockUser,
-      });
-
-      await useAuthStore.getState().registerWithEmail("Test User", "test@example.com", "password123");
-
-      const state = useAuthStore.getState();
-      expect(state.user).toEqual(mockUser);
-      expect(state.token).toBe(token);
-      expect(state.justLoggedIn).toBe(true);
-      expect(localStorage.getItem("financentury_token")).toBe(token);
-    });
-
-    it("throws when API returns invalid token format", async () => {
-      vi.mocked(authApi.register).mockResolvedValue({
-        token: "bad-token",
-        user: mockUser,
-      });
-
-      await expect(
-        useAuthStore.getState().registerWithEmail("User", "test@example.com", "pass")
-      ).rejects.toThrow("Received invalid token from server");
-    });
-
-    it("propagates API errors", async () => {
-      vi.mocked(authApi.register).mockRejectedValue(new Error("Email already exists"));
-
-      await expect(
-        useAuthStore.getState().registerWithEmail("User", "taken@example.com", "pass")
-      ).rejects.toThrow("Email already exists");
     });
   });
 

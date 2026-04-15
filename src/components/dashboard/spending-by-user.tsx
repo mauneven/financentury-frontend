@@ -71,23 +71,14 @@ export function SpendingByUser({
           const name = u.profile?.full_name || u.profile?.email || t("unknownUser");
           return (
             <div key={u.user_id} className="flex items-center gap-2">
-              {/* Avatar or initials */}
-              {u.profile?.avatar_url ? (
-                <img
-                  src={u.profile.avatar_url}
-                  alt={name}
-                  className="size-5 shrink-0 border border-foreground/20 object-cover"
-                />
-              ) : (
-                <span
-                  className={cn(
-                    "flex size-5 shrink-0 items-center justify-center text-[10px] font-bold text-white",
-                    COLORS[i % COLORS.length]
-                  )}
-                >
-                  {getInitials(name)}
-                </span>
-              )}
+              <span
+                className={cn(
+                  "flex size-5 shrink-0 items-center justify-center text-[10px] font-bold text-white",
+                  COLORS[i % COLORS.length]
+                )}
+              >
+                {getInitials(name)}
+              </span>
               <span className="flex-1 truncate text-sm text-foreground">{name}</span>
               <span className="font-mono tabular-nums text-sm font-bold text-foreground">
                 {formatCompact(u.amount, currency)}

@@ -4,7 +4,6 @@ import { useAuthStore } from "@/store/auth-store";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 
 export function ThemeToggle() {
@@ -52,9 +51,9 @@ export function UserIndicator() {
       href="/account"
       className="flex items-center gap-2 transition-colors hover:opacity-80"
     >
-      <Avatar size="sm" className="overflow-hidden">
-        <AvatarFallback className="bg-foreground text-background font-mono text-[10px] font-bold">{initials}</AvatarFallback>
-      </Avatar>
+      <div className="flex size-6 shrink-0 items-center justify-center bg-foreground font-mono text-[10px] font-bold text-background">
+        {initials}
+      </div>
       <span className="hidden sm:block font-mono text-xs font-bold text-foreground">
         {displayName}
       </span>

@@ -62,7 +62,6 @@ export interface Collaborator {
   profile?: {
     email: string;
     full_name: string;
-    avatar_url: string;
   };
 }
 
@@ -71,7 +70,6 @@ export interface UserSpending {
   profile?: {
     email: string;
     full_name: string;
-    avatar_url: string;
   };
   amount: number;
 }

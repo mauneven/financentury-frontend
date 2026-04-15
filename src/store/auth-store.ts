@@ -8,7 +8,6 @@ export interface AuthUser {
   id: string;
   email: string;
   full_name: string;
-  avatar_url: string;
 }
 
 interface AuthState {
@@ -21,8 +20,6 @@ interface AuthState {
   initialize: () => void;
   signInWithGoogle: () => void;
   handleGoogleCallback: (code: string) => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
   deleteAccount: () => Promise<void>;
   updateName: (name: string) => Promise<void>;
@@ -156,36 +153,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const data: { token: string; user: AuthUser } = await res.json();
 
     // Validate token format before storing in localStorage.
-    if (!isValidJWTFormat(data.token)) {
-      throw new Error("Received invalid token from server");
-    }
-
-    localStorage.setItem("financentury_token", data.token);
-    set({
-      user: data.user,
-      token: data.token,
-      justLoggedIn: true,
-    });
-  },
-
-  signInWithEmail: async (email: string, password: string) => {
-    const data = await authApi.login(email, password);
-
-    if (!isValidJWTFormat(data.token)) {
-      throw new Error("Received invalid token from server");
-    }
-
-    localStorage.setItem("financentury_token", data.token);
-    set({
-      user: data.user,
-      token: data.token,
-      justLoggedIn: true,
-    });
-  },
-
-  registerWithEmail: async (name: string, email: string, password: string) => {
-    const data = await authApi.register(name, email, password);
-
     if (!isValidJWTFormat(data.token)) {
       throw new Error("Received invalid token from server");
     }

@@ -549,39 +549,21 @@ describe("api.ts — exported API modules", () => {
   // authApi
   // -----------------------------------------------------------------------
   describe("authApi", () => {
-    it("authApi.login calls POST /auth/login", async () => {
+    it("authApi.googleLogin calls POST /auth/google", async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
         json: () =>
           Promise.resolve({
             token: makeFutureToken(),
-            user: { id: "u1", email: "test@test.com", full_name: "Test", avatar_url: "" },
+            user: { id: "u1", email: "test@test.com", full_name: "Test" },
           }),
       });
       vi.stubGlobal("fetch", mockFetch);
 
-      await authApi.login("test@test.com", "password");
+      await authApi.googleLogin("code", "http://localhost/callback");
 
-      expect(mockFetch.mock.calls[0][0]).toContain("/auth/login");
-      expect(mockFetch.mock.calls[0][1].method).toBe("POST");
-    });
-
-    it("authApi.register calls POST /auth/register", async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () =>
-          Promise.resolve({
-            token: makeFutureToken(),
-            user: { id: "u1", email: "test@test.com", full_name: "Test", avatar_url: "" },
-          }),
-      });
-      vi.stubGlobal("fetch", mockFetch);
-
-      await authApi.register("Test", "test@test.com", "password");
-
-      expect(mockFetch.mock.calls[0][0]).toContain("/auth/register");
+      expect(mockFetch.mock.calls[0][0]).toContain("/auth/google");
       expect(mockFetch.mock.calls[0][1].method).toBe("POST");
     });
 
@@ -594,7 +576,6 @@ describe("api.ts — exported API modules", () => {
             id: "u1",
             email: "test@test.com",
             full_name: "Test",
-            avatar_url: "",
           }),
       });
       vi.stubGlobal("fetch", mockFetch);

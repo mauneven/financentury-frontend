@@ -119,16 +119,6 @@ export const authApi = {
       body: JSON.stringify({ code, redirect_uri: redirectUri }),
     }),
   me: () => request<AuthUser>("/auth/me"),
-  register: (name: string, email: string, password: string) =>
-    request<{ token: string; user: { id: string; email: string; full_name: string; avatar_url: string } }>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password }),
-    }),
-  login: (email: string, password: string) =>
-    request<{ token: string; user: { id: string; email: string; full_name: string; avatar_url: string } }>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
   deleteAccount: () =>
     request<void>("/auth/account", { method: "DELETE" }),
   updateProfile: (data: { full_name: string }) =>
