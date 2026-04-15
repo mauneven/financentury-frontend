@@ -31,7 +31,8 @@
     "yourBudgets": "Tus Presupuestos",
     "newBudget": "Nuevo Presupuesto",
     "loadingBudgets": "Cargando presupuestos...",
-    "budgetCountLabel": "presupuestos"
+    "budgetCountLabel": "presupuestos",
+    "errorLoading": "Error al cargar presupuestos"
   },
   "budget": {
     "createTitle": "Crear Nuevo Presupuesto",
@@ -179,7 +180,8 @@
     "pastPeriods": "Periodos Anteriores",
     "noPastPeriods": "Aún no hay periodos anteriores",
     "income": "Ingreso",
-    "spent": "Gastado"
+    "spent": "Gastado",
+    "notUsedYet": "No usado aún"
   },
   "expense": {
     "addExpense": "Agregar Gasto",

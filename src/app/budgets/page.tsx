@@ -16,6 +16,7 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("home");
+  const tc = useTranslations("common");
   const budgets = useBudgetStore((s) => s.budgets);
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
   const loading = useBudgetStore((s) => s.loading);
@@ -59,7 +60,7 @@ export default function HomePage() {
               </div>
               <div className="space-y-2">
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                  Failed to load budgets
+                  {t("errorLoading")}
                 </h1>
                 <p className="text-sm text-muted-foreground">{error}</p>
               </div>
@@ -69,7 +70,7 @@ export default function HomePage() {
                 className="gap-2"
               >
                 <Plus className="size-4" />
-                Retry
+                {tc("retry")}
               </Button>
             </div>
           ) : budgets.length === 0 ? (

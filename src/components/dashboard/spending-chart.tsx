@@ -54,16 +54,16 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
 
   const ChartWrapper = ({ children }: { children: React.ReactNode }) => (
     <div className="border-2 border-foreground bg-card flex flex-col">
-      <div className="border-b-2 border-foreground px-6 py-4 flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
+      <div className="border-b-2 border-foreground px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground shrink-0">
           {t("spendingTrends")}
         </h3>
-        <div className="flex gap-1">
+        <div className="flex gap-0.5 sm:gap-1">
           {(["1M", "3M", "6M", "1Y"] as const).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`px-2 py-0.5 text-xs font-mono font-bold uppercase tracking-wider transition-colors ${
+              className={`px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider transition-colors ${
                 range === r
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:text-foreground"
@@ -74,14 +74,14 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
           ))}
         </div>
       </div>
-      <div className="p-6 flex-1 flex flex-col justify-center">{children}</div>
+      <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">{children}</div>
     </div>
   );
 
   if (filteredData.length === 0) {
     return (
       <ChartWrapper>
-        <div className="flex h-72 items-center justify-center">
+        <div className="flex h-52 sm:h-72 items-center justify-center">
           <p className="text-sm font-medium text-muted-foreground">
             {t("notEnoughData")}
           </p>
@@ -93,7 +93,7 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
   return (
     <ChartWrapper>
       <div
-        className="h-72 w-full [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:focus:outline-none [&_*]:focus:outline-none"
+        className="h-52 sm:h-72 w-full [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:focus:outline-none [&_*]:focus:outline-none"
         style={{ outline: "none" }}
         tabIndex={-1}
         onMouseDown={(e) => e.preventDefault()}

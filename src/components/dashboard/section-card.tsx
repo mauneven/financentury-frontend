@@ -98,31 +98,31 @@ export function SectionCard({
           </div>
 
           {/* Action buttons - Mobile */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-1.5 mb-4">
             <button
               type="button"
               onClick={() => {
                 router.push(`/budget/${budgetId}/section/${section.id}/reports`);
               }}
-              className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
             >
-              <BarChart3 className="size-3.5" />
-              {tActions("reports")}
+              <BarChart3 className="size-3.5 shrink-0" />
+              <span className="truncate">{tActions("reports")}</span>
             </button>
             <button
               type="button"
               onClick={toggleExpanded}
-              className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5 min-w-max"
+              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
             >
               {isExpanded ? (
                 <>
-                  <ChevronUp className="size-3.5" />
-                  {tActions("collapse")}
+                  <ChevronUp className="size-3.5 shrink-0" />
+                  <span className="truncate">{tActions("collapse")}</span>
                 </>
               ) : (
                 <>
-                  <ChevronDown className="size-3.5" />
-                  {tActions("breakdown")}
+                  <ChevronDown className="size-3.5 shrink-0" />
+                  <span className="truncate">{tActions("breakdown")}</span>
                 </>
               )}
             </button>
@@ -132,10 +132,10 @@ export function SectionCard({
                 e.stopPropagation();
                 setEditSectionOpen(true);
               }}
-              className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5"
+              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
             >
-              <Settings className="size-3.5" />
-              {tActions("adjust")}
+              <Settings className="size-3.5 shrink-0" />
+              <span className="truncate">{tActions("adjust")}</span>
             </button>
           </div>
         </div>
@@ -323,21 +323,21 @@ export function SectionCard({
                     <div className="flex items-start gap-1.5">
                       <div className="flex w-full flex-col gap-2">
                         {/* Category name + allocated amount */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base" role="img" aria-label={sub.category.name}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="shrink-0 text-base" role="img" aria-label={sub.category.name}>
                               <CategoryIcon iconKey={sub.category.icon} className="size-4" />
                             </span>
-                            <span className="text-base font-bold text-foreground">
+                            <span className="text-sm sm:text-base font-bold text-foreground truncate">
                               {sub.category.name}
                             </span>
                           </div>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-base font-bold tabular-nums font-mono text-foreground">
+                          <div className="flex items-baseline gap-2 shrink-0">
+                            <span className="text-sm sm:text-base font-bold tabular-nums font-mono text-foreground">
                               {formatCurrency(sub.allocated_amount, currency)}
                             </span>
-                            <span className="h-4 w-px bg-border" />
-                            <span className="text-sm font-bold font-mono text-muted-foreground">
+                            <span className="hidden sm:block h-4 w-px bg-border" />
+                            <span className="hidden sm:block text-sm font-bold font-mono text-muted-foreground">
                               {sub.category.allocation_percent}% {t("ofSection")}
                             </span>
                           </div>

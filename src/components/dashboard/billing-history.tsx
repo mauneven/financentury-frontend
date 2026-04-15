@@ -45,18 +45,18 @@ function PeriodRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 p-4",
+        "flex flex-col gap-2 p-3 sm:p-4",
         isCurrent && "border-2 border-foreground bg-card"
       )}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="size-3.5 text-muted-foreground" />
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <Calendar className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
             {formatDate(period.period_start)} — {formatDate(period.period_end)}
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 ml-5.5 sm:ml-0">
           <BalanceIndicator balance={period.balance} />
           <span
             className={cn(
@@ -72,7 +72,7 @@ function PeriodRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
         <span className="font-mono tabular-nums">
           {t("income")}: {formatCurrency(period.income, currency)}
         </span>
