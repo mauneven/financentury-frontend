@@ -93,6 +93,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
+  const [collabCount, setCollabCount] = React.useState(0);
   const [customPeriod, setCustomPeriod] = React.useState(() => {
     return !BILLING_PERIODS.some((p) => p.value === budget.billing_period_months);
   });
@@ -374,8 +375,9 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
               <div className="flex items-center gap-2">
                 <Users className="size-5 text-muted-foreground" />
                 <h2 className="text-lg sm:text-xl font-medium">{tCollab("title")}</h2>
+                <span className="text-sm text-muted-foreground">{collabCount} / 5</span>
               </div>
-              {isOwner && (
+              {isOwner && collabCount < 5 && (
                 <Button
                   type="button"
                   variant="outline"
@@ -388,7 +390,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
               )}
             </div>
 
-            <CollaboratorsList budgetId={budget.id} isOwner={isOwner} />
+            <CollaboratorsList budgetId={budget.id} isOwner={isOwner} onCountChange={setCollabCount} />
 
             {isOwner && <PendingInvites budgetId={budget.id} />}
           </div>

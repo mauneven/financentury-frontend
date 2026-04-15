@@ -86,6 +86,18 @@ export default function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
+  // Show a minimal loader while auth resolves — prevents landing flash for logged-in users.
+  // For users without a token this resolves synchronously (no visible delay).
+  // Also gate on `user` — when /auth/me responds with a user, the redirect useEffect
+  // hasn't fired yet, so without this the landing renders for one frame.
+  if (!authParam && (!initialized || loading || user)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Navbar ─────────────────────────────────────────────── */}
@@ -128,63 +140,44 @@ export default function LandingPage() {
         />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-          <div ref={heroRef} className="relative max-w-4xl pt-16 pb-20 lg:pt-24 lg:pb-28">
-            <h1 className="font-mono font-black uppercase leading-none tracking-tight text-foreground text-5xl sm:text-7xl lg:text-8xl">
-              <span
-                className="block transition-all duration-700 ease-out"
-                style={{
-                  opacity: heroVisible ? 1 : 0,
-                  transform: heroVisible ? "translateY(0)" : "translateY(24px)",
-                  transitionDelay: "0ms",
-                }}
+          <div ref={heroRef} className="relative pt-16 pb-20 lg:pt-24 lg:pb-28">
+            {/* FINANCENTURY with planetary horizon curve */}
+            <div
+              className="relative overflow-hidden transition-all duration-700 ease-out"
+              style={{
+                opacity: heroVisible ? 1 : 0,
+                transform: heroVisible ? "translateY(0)" : "translateY(24px)",
+              }}
+            >
+              <h1 className="font-mono font-black uppercase leading-[0.85] tracking-tighter text-foreground text-6xl sm:text-8xl lg:text-[10rem] pb-6 sm:pb-10">
+                FINANCENTURY
+              </h1>
+              {/* Curved horizon line — sits over the bottom of the text */}
+              <div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"
+                style={{ width: "160%", height: "3rem" }}
               >
-                {t("heroTitle1")}
-              </span>
-              <span
-                className="block transition-all duration-700 ease-out"
-                style={{
-                  opacity: heroVisible ? 1 : 0,
-                  transform: heroVisible ? "translateY(0)" : "translateY(24px)",
-                  transitionDelay: "100ms",
-                }}
-              >
-                {t("heroTitle2")}
-              </span>
-              <span
-                className="block border-b-4 border-foreground pb-2 transition-all duration-700 ease-out"
-                style={{
-                  opacity: heroVisible ? 1 : 0,
-                  transform: heroVisible ? "translateY(0)" : "translateY(24px)",
-                  transitionDelay: "200ms",
-                }}
-              >
-                {t("heroTitle3")}
-              </span>
-            </h1>
+                <div
+                  className="w-full h-full bg-background"
+                  style={{
+                    borderTop: "2.5px solid var(--foreground)",
+                    borderRadius: "50% 50% 0 0 / 100% 100% 0 0",
+                  }}
+                />
+              </div>
+            </div>
 
-            <p className="mt-8 max-w-xl font-mono text-base sm:text-lg text-muted-foreground leading-relaxed">
+            <p
+              className="mt-6 max-w-xl font-mono text-base sm:text-lg text-muted-foreground leading-relaxed transition-all duration-700 ease-out"
+              style={{
+                opacity: heroVisible ? 1 : 0,
+                transform: heroVisible ? "translateY(0)" : "translateY(16px)",
+                transitionDelay: "150ms",
+              }}
+            >
               {t("tagline")}
             </p>
 
-            <div className="mt-10 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => setAuthOpen(true)}
-                className="btn-liquid inline-flex items-center justify-center gap-2 border-2 border-foreground bg-foreground px-8 py-4 font-mono text-sm font-black uppercase tracking-widest text-background hover:text-foreground"
-              >
-                <span>{t("letsStart")}</span>
-                <ArrowRight className="relative z-[1] size-4" />
-              </button>
-              <button
-                onClick={() =>
-                  document
-                    .getElementById("charts")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="inline-flex items-center justify-center gap-2 border-2 border-foreground bg-background px-8 py-4 font-mono text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background"
-              >
-                <ChevronDown className="size-4" />
-              </button>
-            </div>
           </div>
         </div>
       </section>
@@ -192,8 +185,7 @@ export default function LandingPage() {
       {/* ── Stats Bar ──────────────────────────────────────────── */}
       <section>
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x-2 divide-foreground">
-            {/* Column 1: $0 / It's free */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-x-2 divide-foreground">
             <div className="px-4 py-8 text-center sm:px-6">
               <p className="font-mono text-2xl sm:text-3xl font-black tabular-nums text-foreground">
                 {t("statFree")}
@@ -203,7 +195,6 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Column 2: 3,000 expenses per budget */}
             <div className="px-4 py-8 text-center sm:px-6">
               <p className="font-mono text-2xl sm:text-3xl font-black tabular-nums text-foreground">
                 {t("statExpenses")}
@@ -213,9 +204,8 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Column 3: Up to 7 budgets + collaborate */}
             <div className="px-4 py-8 text-center sm:px-6 border-t-2 sm:border-t-0 border-foreground">
-              <p className="font-mono text-2xl sm:text-3xl font-black uppercase tracking-tight text-foreground">
+              <p className="font-mono text-2xl sm:text-3xl font-black tabular-nums text-foreground">
                 {t("statBudgets")}
               </p>
               <p className="mt-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -223,8 +213,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Column 4: 12 months of history */}
-            <div className="px-4 py-8 text-center sm:px-6 border-t-2 sm:border-t-0 border-foreground">
+            <div className="px-4 py-8 text-center sm:px-6 border-t-2 lg:border-t-0 border-foreground">
               <p className="font-mono text-2xl sm:text-3xl font-black tabular-nums text-foreground">
                 {t("statHistory")}
               </p>
@@ -232,7 +221,39 @@ export default function LandingPage() {
                 {t("statHistoryLabel")}
               </p>
             </div>
+
+            <div className="px-4 py-8 text-center sm:px-6 border-t-2 lg:border-t-0 border-foreground">
+              <p className="font-mono text-2xl sm:text-3xl font-black uppercase tracking-tight text-foreground">
+                {t("statCollab")}
+              </p>
+              <p className="mt-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                {t("statCollabLabel")}
+              </p>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── CTA below stats ───────────────────────────────────── */}
+      <section className="py-12 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={() => setAuthOpen(true)}
+            className="btn-liquid inline-flex items-center justify-center gap-2 border-2 border-foreground bg-foreground px-8 py-4 font-mono text-sm font-black uppercase tracking-widest text-background hover:text-foreground"
+          >
+            <span>{t("letsStart")}</span>
+            <ArrowRight className="relative z-[1] size-4" />
+          </button>
+          <button
+            onClick={() =>
+              document
+                .getElementById("charts")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="inline-flex items-center justify-center gap-2 border-2 border-foreground bg-background px-8 py-4 font-mono text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background"
+          >
+            <ChevronDown className="size-4" />
+          </button>
         </div>
       </section>
 

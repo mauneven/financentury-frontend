@@ -124,7 +124,7 @@ export default function HomePage() {
                 )}
               </div>
 
-              <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6">
                 {orderedBudgets.map((budget, idx) => (
                   <BudgetCard
                     key={budget.id}

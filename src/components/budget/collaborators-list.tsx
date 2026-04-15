@@ -23,9 +23,10 @@ import {
 interface CollaboratorsListProps {
   budgetId: string;
   isOwner: boolean;
+  onCountChange?: (count: number) => void;
 }
 
-export function CollaboratorsList({ budgetId, isOwner }: CollaboratorsListProps) {
+export function CollaboratorsList({ budgetId, isOwner, onCountChange }: CollaboratorsListProps) {
   const t = useTranslations("collaborators");
   const tc = useTranslations("common");
   const { user } = useAuthStore();
@@ -39,6 +40,7 @@ export function CollaboratorsList({ budgetId, isOwner }: CollaboratorsListProps)
     try {
       const data = await collaboratorApi.list(budgetId);
       setCollaborators(data);
+      onCountChange?.(data.length);
     } catch {
       // Silently handle errors
     } finally {
@@ -55,7 +57,9 @@ export function CollaboratorsList({ budgetId, isOwner }: CollaboratorsListProps)
     setRemoving(true);
     try {
       await collaboratorApi.remove(budgetId, removeTarget.user_id);
-      setCollaborators((prev) => prev.filter((c) => c.id !== removeTarget.id));
+      const updated = collaborators.filter((c) => c.id !== removeTarget.id);
+      setCollaborators(updated);
+      onCountChange?.(updated.length);
       setRemoveTarget(null);
     } catch {
       // Error handling
