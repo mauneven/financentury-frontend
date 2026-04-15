@@ -116,6 +116,20 @@ export interface TrendsResponse {
   categories: SectionTrend[];
 }
 
+export interface BillingPeriodBalance {
+  period_start: string;
+  period_end: string;
+  income: number;
+  total_spent: number;
+  balance: number;
+}
+
+export interface BillingHistoryResponse {
+  budget_id: string;
+  current: BillingPeriodBalance | null;
+  history: BillingPeriodBalance[];
+}
+
 export interface CreateBudgetInput {
   name: string;
   icon?: string;

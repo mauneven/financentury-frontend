@@ -169,7 +169,17 @@
       "breakdown": "Breakdown",
       "collapse": "Collapse",
       "adjust": "Adjust"
-    }
+    },
+    "billingHistory": "Period Balance",
+    "currentPeriod": "Current Period",
+    "periodRange": "{start} to {end}",
+    "balance": "Balance",
+    "surplus": "Surplus",
+    "deficit": "Deficit",
+    "pastPeriods": "Past Periods",
+    "noPastPeriods": "No past periods yet",
+    "income": "Income",
+    "spent": "Spent"
   },
   "expense": {
     "addExpense": "Add Expense",

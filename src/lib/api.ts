@@ -10,6 +10,7 @@ import type {
   Expense,
   Category,
   TrendsResponse,
+  BillingHistoryResponse,
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
 
@@ -161,6 +162,9 @@ export const budgetApi = {
 
   trends: (id: string) =>
     request<TrendsResponse>(`/budgets/${id}/trends`),
+
+  billingHistory: (id: string) =>
+    request<BillingHistoryResponse>(`/budgets/${id}/billing-history`),
 };
 
 // Sections (was Categories)

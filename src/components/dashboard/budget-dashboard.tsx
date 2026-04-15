@@ -11,6 +11,7 @@ import { OverviewCards } from "./overview-cards";
 import { SectionCard } from "./section-card";
 import { SpendingByUser } from "./spending-by-user";
 import { BudgetUnallocatedBanner } from "./unallocated-banner";
+import { BillingHistory } from "./billing-history";
 import { EmptyDashboard } from "./empty-dashboard";
 import { BILLING_PERIODS } from "@/types/budget";
 import type { Expense } from "@/types/budget";
@@ -375,6 +376,9 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           />
         </div>
       )}
+
+      {/* Billing cycle balance history */}
+      <BillingHistory budgetId={budgetId} currency={budget.currency} />
 
       {/* Dialogs */}
       <AddSectionDialog
