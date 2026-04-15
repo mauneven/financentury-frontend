@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { displayOrderApi } from "@/lib/api";
 
 /** In-memory cache shared across all hook instances in a session. */
@@ -24,6 +24,8 @@ export function seedDisplayOrderCache(
  * linked items can have independent positions in different budgets.
  *
  * Cache is pre-populated by auth init — no separate fetch needed.
+ * Saves are debounced 2s so rapid reordering doesn't spam the API.
+ * On unmount (navigation), any pending save is flushed immediately.
  */
 export function useDisplayOrder<T>(
   scopeKey: string,
@@ -34,6 +36,25 @@ export function useDisplayOrder<T>(
     () => cache.get(scopeKey) ?? []
   );
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingIds = useRef<string[] | null>(null);
+
+  const flush = useCallback(() => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    if (pendingIds.current) {
+      displayOrderApi.save(scopeKey, pendingIds.current).catch(() => {});
+      pendingIds.current = null;
+    }
+  }, [scopeKey]);
+
+  // Flush on unmount (navigation away) so order is never lost
+  useEffect(() => {
+    return () => {
+      flush();
+    };
+  }, [flush]);
 
   const ordered = useMemo(() => {
     if (savedOrder.length === 0) return items;
@@ -52,11 +73,14 @@ export function useDisplayOrder<T>(
     (ids: string[]) => {
       setSavedOrder(ids);
       cache.set(scopeKey, ids);
-      // Debounce save to avoid rapid API calls during quick reordering
+      // Track latest pending state and reset the 2s debounce on every call
+      pendingIds.current = ids;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         displayOrderApi.save(scopeKey, ids).catch(() => {});
-      }, 400);
+        pendingIds.current = null;
+        saveTimer.current = null;
+      }, 2000);
     },
     [scopeKey]
   );
