@@ -22,14 +22,16 @@ import { useTranslations } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import type { Session } from "@/types/budget";
 
+const ICON_STROKE = 1.8;
+
 function DeviceIcon({ type }: { type: string }) {
   switch (type) {
     case "mobile":
-      return <Smartphone className="size-5" />;
+      return <Smartphone className="size-5" strokeWidth={ICON_STROKE} />;
     case "tablet":
-      return <Tablet className="size-5" />;
+      return <Tablet className="size-5" strokeWidth={ICON_STROKE} />;
     default:
-      return <Monitor className="size-5" />;
+      return <Monitor className="size-5" strokeWidth={ICON_STROKE} />;
   }
 }
 
@@ -88,7 +90,7 @@ function SessionsList({ t }: { t: ReturnType<typeof useTranslations> }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-6">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        <Loader2 className="size-5 animate-spin text-muted-foreground" strokeWidth={ICON_STROKE} />
       </div>
     );
   }
@@ -100,7 +102,7 @@ function SessionsList({ t }: { t: ReturnType<typeof useTranslations> }) {
         <button
           type="button"
           onClick={() => { setLoading(true); fetchSessions(); }}
-          className="text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           {t("retry")}
         </button>
@@ -121,9 +123,9 @@ function SessionsList({ t }: { t: ReturnType<typeof useTranslations> }) {
       {sessions.map((session) => (
         <div key={session.id} className="flex items-start gap-3 py-3">
           <div className={cn(
-            "flex size-9 shrink-0 items-center justify-center border-2 mt-0.5",
+            "flex size-9 shrink-0 items-center justify-center rounded-lg border mt-0.5",
             session.is_current
-              ? "border-foreground bg-foreground text-background"
+              ? "bg-primary text-primary-foreground border-primary"
               : "border-border text-muted-foreground"
           )}>
             <DeviceIcon type={session.device_type} />
@@ -135,12 +137,12 @@ function SessionsList({ t }: { t: ReturnType<typeof useTranslations> }) {
                 {session.browser} — {session.os}
               </p>
               {session.is_current && (
-                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border border-foreground bg-foreground text-background">
+                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-md border bg-primary text-primary-foreground border-primary">
                   {t("thisDevice")}
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground font-mono">
+            <p className="text-xs text-muted-foreground tabular-nums">
               {session.ip_address}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -157,9 +159,9 @@ function SessionsList({ t }: { t: ReturnType<typeof useTranslations> }) {
               className="shrink-0 text-muted-foreground hover:text-destructive text-xs gap-1"
             >
               {revokingId === session.id ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" strokeWidth={ICON_STROKE} />
               ) : (
-                <ShieldX className="size-3.5" />
+                <ShieldX className="size-3.5" strokeWidth={ICON_STROKE} />
               )}
               {revokingId === session.id ? t("revoking") : t("revoke")}
             </Button>
@@ -245,7 +247,7 @@ export default function AccountPage() {
           <Card>
             <CardContent className="pt-6 pb-6">
               <div className="flex items-center gap-4">
-                <div className="flex size-13 shrink-0 items-center justify-center rounded-full bg-foreground text-background font-mono text-sm font-bold">
+                <div className="flex size-13 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -261,10 +263,10 @@ export default function AccountPage() {
                         autoFocus
                       />
                       <button onClick={handleSaveName} disabled={nameSaving || !nameValue.trim()} className="shrink-0 text-foreground hover:opacity-70 disabled:opacity-30">
-                        <Check className="size-4" />
+                        <Check className="size-4" strokeWidth={ICON_STROKE} />
                       </button>
                       <button onClick={() => { setEditingName(false); setNameValue(user?.full_name || ""); setNameError(null); }} disabled={nameSaving} className="shrink-0 text-muted-foreground hover:text-foreground">
-                        <X className="size-4" />
+                        <X className="size-4" strokeWidth={ICON_STROKE} />
                       </button>
                     </div>
                   ) : (
@@ -273,7 +275,7 @@ export default function AccountPage() {
                         {user?.full_name || t("noName")}
                       </p>
                       <button onClick={() => { setNameValue(user?.full_name || ""); setEditingName(true); }} className="shrink-0 text-muted-foreground hover:text-foreground">
-                        <Pencil className="size-3.5" />
+                        <Pencil className="size-3.5" strokeWidth={ICON_STROKE} />
                       </button>
                     </div>
                   )}
@@ -289,7 +291,7 @@ export default function AccountPage() {
           {/* Active Sessions */}
           <Card>
             <CardContent className="pt-4 pb-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              <p className="text-sm font-medium text-muted-foreground mb-2">
                 {t("activeSessions")}
               </p>
               <SessionsList t={t} />
@@ -303,20 +305,20 @@ export default function AccountPage() {
                 className="flex items-center gap-3 w-full py-2 text-sm text-left text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => { signOut(); router.push("/"); }}
               >
-                <LogOut className="size-4" />
+                <LogOut className="size-4" strokeWidth={ICON_STROKE} />
                 {t("signOut")}
               </button>
             </CardContent>
           </Card>
 
-          {/* Danger zone — accordion */}
-          <Card className={cn("border-2 transition-colors", dangerOpen ? "border-destructive/60" : "border-destructive/30")}>
+          {/* Danger zone */}
+          <Card className={cn("transition-colors", dangerOpen ? "border-destructive/60" : "border-destructive/30")}>
             <button
               type="button"
               onClick={() => setDangerOpen((v) => !v)}
               className="flex items-center justify-between w-full px-4 py-4 text-left"
             >
-              <span className="text-xs font-bold uppercase tracking-wider text-destructive">
+              <span className="text-sm font-medium text-destructive">
                 {t("dangerZone")}
               </span>
               <ChevronDown
@@ -324,6 +326,7 @@ export default function AccountPage() {
                   "size-4 text-destructive transition-transform duration-200",
                   dangerOpen && "rotate-180"
                 )}
+                strokeWidth={ICON_STROKE}
               />
             </button>
 
@@ -343,7 +346,7 @@ export default function AccountPage() {
                     className="shrink-0"
                     onClick={handleOpenDialog}
                   >
-                    <Trash2 className="size-3.5" />
+                    <Trash2 className="size-3.5" strokeWidth={ICON_STROKE} />
                   </Button>
                 </div>
               </CardContent>
@@ -357,7 +360,7 @@ export default function AccountPage() {
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-1">
-                <TriangleAlert className="size-4 text-destructive" />
+                <TriangleAlert className="size-4 text-destructive" strokeWidth={ICON_STROKE} />
                 <DialogTitle>{t("deleteAccountConfirmTitle")}</DialogTitle>
               </div>
               <DialogDescription className="text-sm leading-relaxed">

@@ -132,7 +132,7 @@ export function IconPicker({
             "flex h-10 w-10 items-center justify-center rounded-none border-2 transition-all duration-150",
             "hover:bg-muted",
             value === key
-              ? "border-foreground bg-foreground/10"
+              ? "border-primary bg-primary/10"
               : "border-transparent bg-transparent"
           )}
         >

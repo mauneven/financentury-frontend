@@ -167,7 +167,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex items-center gap-2">
-        <Settings className="size-5 text-muted-foreground" />
+        <Settings className="size-5 text-muted-foreground" strokeWidth={1.8} />
         <h2 className="text-lg sm:text-xl font-medium">{t("settings")}</h2>
       </div>
 
@@ -373,7 +373,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Users className="size-5 text-muted-foreground" />
+                <Users className="size-5 text-muted-foreground" strokeWidth={1.8} />
                 <h2 className="text-lg sm:text-xl font-medium">{tCollab("title")}</h2>
                 <span className="text-sm text-muted-foreground">{collabCount} / 5</span>
               </div>

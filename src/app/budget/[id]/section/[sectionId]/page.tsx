@@ -23,16 +23,19 @@ import { ExpenseList } from "@/components/expenses/expense-list";
 // ManageLinkDialog replaced — EditCategoryDialog handles linked categories too
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { useTranslations } from "@/i18n/client";
+import { Button } from "@/components/ui/button";
 import type { Category, Expense, CategorySummary, BudgetLink } from "@/types/budget";
 import { useDisplayOrder } from "@/hooks/use-display-order";
 
+const ICON_STROKE = 1.8;
+
 const SpendingChart = dynamic(
   () => import("@/components/dashboard/spending-chart").then((mod) => ({ default: mod.SpendingChart })),
-  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-72 animate-pulse bg-muted" /></div> }
+  { ssr: false, loading: () => <div className="border border-border rounded-lg bg-card p-6"><div className="h-72 animate-pulse rounded-md bg-muted" /></div> }
 );
 const BreakdownChart = dynamic(
   () => import("@/components/dashboard/breakdown-chart").then((mod) => ({ default: mod.BreakdownChart })),
-  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-72 animate-pulse bg-muted" /></div> }
+  { ssr: false, loading: () => <div className="border border-border rounded-lg bg-card p-6"><div className="h-72 animate-pulse rounded-md bg-muted" /></div> }
 );
 
 export default function SectionPage() {
@@ -128,7 +131,7 @@ export default function SectionPage() {
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="flex flex-col items-center gap-3">
           <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
-          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {tc("loading")}
           </p>
         </div>
@@ -176,59 +179,60 @@ export default function SectionPage() {
           <button
             type="button"
             onClick={() => router.push(`/${budgetBase}/${params.id}`)}
-            className="mt-1 flex size-8 shrink-0 items-center justify-center text-foreground transition-colors duration-200 hover:bg-foreground hover:text-background border-2 border-foreground"
+            className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors duration-200 hover:bg-muted border border-border"
             aria-label="Go back"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft className="size-4" strokeWidth={ICON_STROKE} />
           </button>
           <div className="flex items-center gap-3">
             <CategoryIcon iconKey={section.icon} className="size-8" />
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">{section.name}</h1>
-              <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">{section.name}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {summary.budget.monthly_income > 0 ? Math.round((section.allocation_value / summary.budget.monthly_income) * 100) : 0}% {tDash("ofBudget")}
               </p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setAddExpenseOpen(true)}
-            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+            className="shrink-0 gap-1.5"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-3.5" strokeWidth={ICON_STROKE} />
             <span className="hidden sm:inline">{t("addExpense")}</span>
-          </button>
+          </Button>
           <button
             type="button"
             onClick={() => setEditSectionOpen(true)}
-            className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border border-border"
             aria-label="Section settings"
           >
-            <Settings className="size-4" />
+            <Settings className="size-4" strokeWidth={ICON_STROKE} />
           </button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("budgeted")}</p>
-          <p className="text-lg font-bold tabular-nums font-mono">
+        <div className="border border-border rounded-lg bg-card p-4 text-center">
+          <p className="text-sm font-medium text-muted-foreground mb-1">{t("budgeted")}</p>
+          <p className="text-lg font-semibold tabular-nums">
             {formatCompact(allocated_amount, summary.budget.currency)}
           </p>
         </div>
-        <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("spent")}</p>
-          <p className={cn("text-lg font-bold tabular-nums font-mono", textColor)}>
+        <div className="border border-border rounded-lg bg-card p-4 text-center">
+          <p className="text-sm font-medium text-muted-foreground mb-1">{t("spent")}</p>
+          <p className={cn("text-lg font-semibold tabular-nums", textColor)}>
             {formatCompact(total_spent, summary.budget.currency)}
           </p>
         </div>
-        <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("remaining")}</p>
+        <div className="border border-border rounded-lg bg-card p-4 text-center">
+          <p className="text-sm font-medium text-muted-foreground mb-1">{t("remaining")}</p>
           <p className={cn(
-            "text-lg font-bold tabular-nums font-mono",
+            "text-lg font-semibold tabular-nums",
             remaining < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600"
           )}>
             {remaining < 0 ? "-" : ""}{formatCompact(Math.abs(remaining), summary.budget.currency)}
@@ -239,14 +243,14 @@ export default function SectionPage() {
       {/* Progress */}
       <div className="space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t("budgetUsage")}</span>
-          <span className={cn("font-bold tabular-nums font-mono", textColor)}>
+          <span className="text-sm font-medium text-muted-foreground">{t("budgetUsage")}</span>
+          <span className={cn("font-semibold tabular-nums", textColor)}>
             {percentage}%
           </span>
         </div>
-        <div className="h-3 w-full overflow-hidden bg-muted">
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className={cn("h-full transition-all duration-300", progressColor)}
+            className={cn("h-full rounded-full transition-all duration-300", progressColor)}
             style={{ width: `${Math.min(percentage, 100)}%` }}
           />
         </div>
@@ -266,23 +270,23 @@ export default function SectionPage() {
         <SpendingChart expenses={sectionExpenses} currency={summary.budget.currency} />
       )}
 
-      {/* Category cards — same layout as SectionCard */}
+      {/* Category cards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-2">
-          <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
+          <h2 className="text-lg font-semibold text-foreground">
             {tSection("categories")}
           </h2>
           <button
             type="button"
             onClick={() => setAddCategoryOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-3.5" strokeWidth={ICON_STROKE} />
             {tSection("addCategory")}
           </button>
         </div>
         {orderedCats.length === 0 ? (
-          <p className="text-sm font-medium text-muted-foreground py-4 text-center">
+          <p className="text-sm text-muted-foreground py-4 text-center">
             {tDash("noCategories")}.
           </p>
         ) : (
@@ -299,10 +303,10 @@ export default function SectionPage() {
               const moveButtons = (size: "sm" | "lg") => (
                 <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
                   <button type="button" onClick={() => { captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up">
-                    <ChevronUp className={size === "sm" ? "size-4" : "size-5"} />
+                    <ChevronUp className={size === "sm" ? "size-4" : "size-5"} strokeWidth={ICON_STROKE} />
                   </button>
                   <button type="button" onClick={() => { captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down">
-                    <ChevronDown className={size === "sm" ? "size-4" : "size-5"} />
+                    <ChevronDown className={size === "sm" ? "size-4" : "size-5"} strokeWidth={ICON_STROKE} />
                   </button>
                 </div>
               );
@@ -311,14 +315,14 @@ export default function SectionPage() {
                 <div
                   key={item.id}
                   data-flip-key={item.id}
-                  className={isOwn ? "border-2 border-foreground bg-card" : "border-2 border-foreground/50 border-dashed bg-card"}
+                  className={isOwn ? "border border-border rounded-lg bg-card" : "border border-border/50 border-dashed rounded-lg bg-card"}
                 >
                   <div className="p-5 sm:p-7">
                     {/* Linked badge */}
                     {!isOwn && lc && (
-                      <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                        <Link2 className="size-3.5" />
-                        <span className="font-bold">{tl("linkedFrom", { name: lc.sourceBudgetName })}</span>
+                      <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+                        <Link2 className="size-3.5" strokeWidth={ICON_STROKE} />
+                        <span className="font-medium">{tl("linkedFrom", { name: lc.sourceBudgetName })}</span>
                       </div>
                     )}
 
@@ -329,7 +333,7 @@ export default function SectionPage() {
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
                           {isOwn && (
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
                             </p>
                           )}
@@ -338,21 +342,21 @@ export default function SectionPage() {
                       </div>
                       <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
                         <div>
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
-                          <p className="text-2xl font-bold tabular-nums font-mono text-foreground">{formatCompact(cat.allocated_amount, summary.budget.currency)}</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
+                          <p className="text-2xl font-semibold tabular-nums text-foreground">{formatCompact(cat.allocated_amount, summary.budget.currency)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tDash("used")}</p>
-                          <p className={cn("text-2xl font-bold tabular-nums font-mono", catTextColor)}>{catPct}%</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">{tDash("used")}</p>
+                          <p className={cn("text-2xl font-semibold tabular-nums", catTextColor)}>{catPct}%</p>
                         </div>
                       </div>
                       <div className="flex gap-2 mb-4">
-                        <button type="button" onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)} className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5">
-                          <BarChart3 className="size-3.5" />{tActions("reports")}
-                        </button>
-                        <button type="button" onClick={() => isOwn ? setEditingCategory(cat.category) : lc && setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })} className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1.5">
-                          <Settings className="size-3.5" />{tActions("adjust")}
-                        </button>
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)} className="flex-1 gap-1.5">
+                          <BarChart3 className="size-3.5" strokeWidth={ICON_STROKE} />{tActions("reports")}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => isOwn ? setEditingCategory(cat.category) : lc && setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })} className="flex-1 gap-1.5">
+                          <Settings className="size-3.5" strokeWidth={ICON_STROKE} />{tActions("adjust")}
+                        </Button>
                       </div>
                     </div>
 
@@ -363,25 +367,25 @@ export default function SectionPage() {
                         <div>
                           <p className="text-lg font-semibold text-foreground">{cat.category.name}</p>
                           {isOwn && (
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               {cat.expense_count === 1 ? t("expenseCountSingular", { count: cat.expense_count }) : t("expenseCount", { count: cat.expense_count })}
                             </p>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mr-6">
-                        <button type="button" onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)} className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5">
-                          <BarChart3 className="size-3.5" />{tActions("reports")}
-                        </button>
-                        <button type="button" onClick={() => isOwn ? setEditingCategory(cat.category) : lc && setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })} className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5">
-                          <Settings className="size-3.5" />{tActions("adjust")}
-                        </button>
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/${budgetBase}/${params.id}/section/${params.sectionId}/category/${cat.category.id}`)} className="gap-1.5">
+                          <BarChart3 className="size-3.5" strokeWidth={ICON_STROKE} />{tActions("reports")}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => isOwn ? setEditingCategory(cat.category) : lc && setEditingLinkedCat({ cat, link: lc.link, sourceName: lc.sourceBudgetName })} className="gap-1.5">
+                          <Settings className="size-3.5" strokeWidth={ICON_STROKE} />{tActions("adjust")}
+                        </Button>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
-                          <p className="text-3xl font-bold tabular-nums font-mono text-foreground">{formatCompact(cat.allocated_amount, summary.budget.currency)}</p>
-                          <p className={cn("text-sm font-semibold tabular-nums font-mono mt-1", catTextColor)}>{catPct}% {tDash("used")}</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">{tSection("allocationPercent")}</p>
+                          <p className="text-3xl font-semibold tabular-nums text-foreground">{formatCompact(cat.allocated_amount, summary.budget.currency)}</p>
+                          <p className={cn("text-sm font-medium tabular-nums mt-1", catTextColor)}>{catPct}% {tDash("used")}</p>
                         </div>
                         {moveButtons("lg")}
                       </div>
@@ -389,14 +393,14 @@ export default function SectionPage() {
 
                     {/* Spent / Remaining */}
                     <div className="mt-4 flex items-center justify-between text-base text-muted-foreground">
-                      <span>{t("spent")}: <span className="font-bold font-mono tabular-nums text-foreground">{formatCompact(cat.total_spent, summary.budget.currency)}</span></span>
-                      <span>{t("remaining")}: <span className={cn("font-bold font-mono tabular-nums", catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>{catRemaining < 0 ? "-" : ""}{formatCompact(Math.abs(catRemaining), summary.budget.currency)}</span></span>
+                      <span>{t("spent")}: <span className="font-semibold tabular-nums text-foreground">{formatCompact(cat.total_spent, summary.budget.currency)}</span></span>
+                      <span>{t("remaining")}: <span className={cn("font-semibold tabular-nums", catRemaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>{catRemaining < 0 ? "-" : ""}{formatCompact(Math.abs(catRemaining), summary.budget.currency)}</span></span>
                     </div>
 
                     {/* Progress bar */}
                     <div className="mt-3">
-                      <div className="h-3 w-full overflow-hidden bg-muted">
-                        <div className={cn("h-full transition-all duration-300", catProgressColor)} style={{ width: `${Math.min(catPct, 100)}%` }} />
+                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div className={cn("h-full rounded-full transition-all duration-300", catProgressColor)} style={{ width: `${Math.min(catPct, 100)}%` }} />
                       </div>
                     </div>
                   </div>

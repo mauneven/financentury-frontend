@@ -94,7 +94,7 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
 
         <div className="space-y-4">
           {error && (
-            <div className="rounded-none border-2 border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
+            <div className="rounded-lg border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
               {error}
             </div>
           )}
@@ -123,7 +123,7 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
                 <Input
                   readOnly
                   value={inviteUrl}
-                  className="text-xs font-mono"
+                  className="text-xs"
                 />
                 <Button
                   variant="outline"

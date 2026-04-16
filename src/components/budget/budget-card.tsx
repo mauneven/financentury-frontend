@@ -84,7 +84,7 @@ export function BudgetCard({ budget, onClick, onMoveUp, onMoveDown }: BudgetCard
     <Card
       className={cn(
         "cursor-pointer transition-all duration-200",
-        "hover:border-foreground/80",
+        "hover:border-border",
         "active:scale-[0.99]"
       )}
       onClick={onClick}
@@ -94,7 +94,7 @@ export function BudgetCard({ budget, onClick, onMoveUp, onMoveDown }: BudgetCard
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex h-9 w-9 items-center justify-center border-2 border-foreground",
+                "flex h-9 w-9 items-center justify-center rounded-lg border border-border",
                 style.bg,
                 style.text
               )}

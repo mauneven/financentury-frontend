@@ -78,28 +78,28 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-foreground/40" onClick={isCallbackFlow ? undefined : handleClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={isCallbackFlow ? undefined : handleClose} />
 
-      <div className="relative w-full max-w-sm border-2 border-foreground bg-background p-8">
+      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-background p-8 shadow-lg">
         {/* Close — only for idle/error states */}
         {(cbState === "idle" || cbState === "error") && (
           <button
             type="button"
             onClick={handleClose}
-            className="absolute right-4 top-4 flex size-7 items-center justify-center border-2 border-foreground bg-background font-mono text-xs font-bold transition-colors hover:bg-foreground hover:text-background"
+            className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <X className="size-4" />
+            <X className="size-4" strokeWidth={1.8} />
           </button>
         )}
 
         {/* ── Callback flow states ── */}
         {cbState === "loading" && (
           <div className="flex flex-col items-center gap-4 py-8">
-            <div className="flex size-12 items-center justify-center border-2 border-foreground bg-foreground">
-              <Wallet className="size-6 text-background" />
+            <div className="flex size-12 items-center justify-center rounded-xl bg-foreground">
+              <Wallet className="size-6 text-background" strokeWidth={1.8} />
             </div>
             <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
-            <p className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
               {tAuth("signingIn")}
             </p>
           </div>
@@ -107,10 +107,10 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
 
         {cbState === "success" && (
           <div className="flex flex-col items-center gap-4 py-8">
-            <div className="flex size-14 items-center justify-center border-2 border-foreground bg-foreground">
-              <Check className="size-7 text-background" strokeWidth={3} />
+            <div className="flex size-14 items-center justify-center rounded-xl bg-emerald-500">
+              <Check className="size-7 text-white" strokeWidth={2.5} />
             </div>
-            <p className="font-mono text-sm font-bold uppercase tracking-wider text-foreground">
+            <p className="text-sm font-semibold text-foreground">
               {tAuth("signedIn")}
             </p>
           </div>
@@ -118,11 +118,11 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
 
         {cbState === "error" && (
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="flex size-12 items-center justify-center border-2 border-foreground bg-foreground">
-              <Wallet className="size-6 text-background" />
+            <div className="flex size-12 items-center justify-center rounded-xl bg-foreground">
+              <Wallet className="size-6 text-background" strokeWidth={1.8} />
             </div>
-            <div className="border-2 border-destructive bg-destructive/10 p-3 w-full">
-              <p className="font-mono text-xs text-destructive text-center">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 w-full">
+              <p className="text-xs text-destructive text-center">
                 {error || callbackError || tAuth("authFailed")}
               </p>
             </div>
@@ -133,7 +133,7 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
                 setError(null);
                 router.replace("/");
               }}
-              className="flex w-full items-center justify-center border-2 border-foreground bg-foreground px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-background transition-colors hover:bg-background hover:text-foreground"
+              className="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {tAuth("tryAgain")}
             </button>
@@ -144,13 +144,13 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
         {cbState === "idle" && (
           <>
             <div className="mb-6 flex flex-col items-center gap-4">
-              <div className="flex size-12 items-center justify-center border-2 border-foreground bg-foreground">
-                <Wallet className="size-6 text-background" />
+              <div className="flex size-12 items-center justify-center rounded-xl bg-foreground">
+                <Wallet className="size-6 text-background" strokeWidth={1.8} />
               </div>
-              <h2 className="font-mono text-lg font-bold uppercase tracking-wider">
+              <h2 className="text-lg font-semibold tracking-tight">
                 {tLanding("letsStart")}
               </h2>
-              <p className="text-center font-mono text-xs tracking-wider text-muted-foreground">
+              <p className="text-center text-sm text-muted-foreground">
                 {tLanding("authDescription")}
               </p>
             </div>
@@ -159,7 +159,7 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
               <button
                 type="button"
                 onClick={() => signInWithGoogle()}
-                className="flex w-full items-center justify-center gap-3 border-2 border-foreground bg-foreground px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-background transition-colors hover:bg-background hover:text-foreground"
+                className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
               >
                 <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />

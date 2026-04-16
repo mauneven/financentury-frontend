@@ -53,9 +53,9 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
   const filteredData = chartData.filter((d) => new Date(d.date) >= cutoff);
 
   const ChartWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="border-2 border-foreground bg-card flex flex-col">
-      <div className="border-b-2 border-foreground px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground shrink-0">
+    <div className="rounded-xl border border-border bg-card flex flex-col">
+      <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium text-muted-foreground shrink-0">
           {t("spendingTrends")}
         </h3>
         <div className="flex gap-0.5 sm:gap-1">
@@ -63,10 +63,10 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider transition-colors ${
+              className={`px-2 sm:px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                 range === r
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
               {r}
@@ -102,25 +102,25 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
           <AreaChart data={filteredData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="gradient-total" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--foreground)" stopOpacity={0.15} />
+                <stop offset="5%" stopColor="var(--foreground)" stopOpacity={0.1} />
                 <stop offset="95%" stopColor="var(--foreground)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid
-              strokeDasharray="none"
+              strokeDasharray="3 3"
               stroke="var(--border)"
-              strokeOpacity={0.3}
+              strokeOpacity={0.5}
               vertical={false}
             />
             <XAxis
               dataKey="date"
               tickFormatter={formatDayLabel}
-              tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "monospace" }}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
               tickLine={false}
-              axisLine={{ stroke: "var(--foreground)", strokeWidth: 2 }}
+              axisLine={{ stroke: "var(--border)", strokeWidth: 1 }}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "monospace" }}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value: number) => formatCompact(value, currency)}
@@ -129,15 +129,14 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
             <Tooltip
               contentStyle={{
                 backgroundColor: "var(--card)",
-                border: "2px solid var(--foreground)",
-                borderRadius: "0",
+                border: "1px solid var(--border)",
+                borderRadius: "0.75rem",
                 fontSize: "0.75rem",
-                fontFamily: "monospace",
-                boxShadow: "4px 4px 0px var(--foreground)",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                 color: "var(--foreground)",
               }}
               labelFormatter={(label) => formatDayLabel(String(label))}
-              labelStyle={{ fontWeight: 700, marginBottom: 4, textTransform: "uppercase", color: "var(--foreground)" }}
+              labelStyle={{ fontWeight: 600, marginBottom: 4, color: "var(--foreground)" }}
               itemStyle={{ color: "var(--foreground)" }}
               formatter={(value) => [
                 formatCompact(Number(value), currency),
@@ -149,7 +148,7 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
               dataKey="total"
               stroke="var(--foreground)"
               fill="url(#gradient-total)"
-              strokeWidth={2}
+              strokeWidth={1.5}
               dot={{ fill: "var(--foreground)", r: 3, strokeWidth: 0 }}
               isAnimationActive={false}
             />

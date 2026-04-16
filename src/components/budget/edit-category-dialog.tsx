@@ -86,7 +86,7 @@ function CategoryImpactPreview({
   return (
     <div
       className={cn(
-        "rounded-none border-2 px-3 py-2 text-xs space-y-1.5",
+        "rounded-lg border px-3 py-2 text-xs space-y-1.5",
         isOverflow
           ? "border-destructive bg-destructive/5"
           : "border-amber-400 bg-amber-50/60 dark:bg-amber-900/10"
@@ -325,7 +325,7 @@ export function EditCategoryDialog({
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger
-                  className="flex size-10 shrink-0 items-center justify-center border-2 border-foreground bg-background transition-colors hover:bg-muted"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-muted"
                   aria-label={t("icon")}
                 >
                   <CategoryIcon iconKey={watchIcon} className="size-5" />
@@ -410,15 +410,15 @@ export function EditCategoryDialog({
                 type="button"
                 onClick={() => setFilterMode("all")}
                 className={cn(
-                  "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                  "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left border transition-colors",
                   filterMode === "all"
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground/30 hover:border-foreground"
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-border hover:border-border"
                 )}
               >
                 <div className={cn(
-                  "flex size-5 items-center justify-center border-2",
-                  filterMode === "all" ? "border-background" : "border-foreground"
+                  "flex size-5 items-center justify-center rounded-full border",
+                  filterMode === "all" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
                 )}>
                   {filterMode === "all" && <Check className="size-3" />}
                 </div>
@@ -428,15 +428,15 @@ export function EditCategoryDialog({
                 type="button"
                 onClick={() => setFilterMode("mine")}
                 className={cn(
-                  "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                  "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left border transition-colors",
                   filterMode === "mine"
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground/30 hover:border-foreground"
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-border hover:border-border"
                 )}
               >
                 <div className={cn(
-                  "flex size-5 items-center justify-center border-2",
-                  filterMode === "mine" ? "border-background" : "border-foreground"
+                  "flex size-5 items-center justify-center rounded-full border",
+                  filterMode === "mine" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
                 )}>
                   {filterMode === "mine" && <Check className="size-3" />}
                 </div>

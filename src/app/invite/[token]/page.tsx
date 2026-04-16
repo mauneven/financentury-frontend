@@ -11,6 +11,8 @@ import { useTranslations } from "@/i18n/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+const ICON_STROKE = 1.8;
+
 interface InviteInfo {
   budget_name: string;
   inviter_name: string;
@@ -92,7 +94,7 @@ export default function InviteAcceptPage() {
   // Loading state
   if (loading || !initialized) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-3">
           <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
         </div>
@@ -103,11 +105,11 @@ export default function InviteAcceptPage() {
   // Error state - invalid link
   if (error && !info) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-        <Card className="w-full max-w-sm border-border/50 shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm">
           <CardContent className="flex flex-col items-center gap-6 pt-8 pb-8">
             <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
-              <AlertCircle className="size-6 text-destructive" />
+              <AlertCircle className="size-6 text-destructive" strokeWidth={ICON_STROKE} />
             </div>
             <div className="text-center">
               <h1 className="text-lg font-semibold">{error}</h1>
@@ -127,11 +129,11 @@ export default function InviteAcceptPage() {
   // Accepted state
   if (accepted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-        <Card className="w-full max-w-sm border-border/50 shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm">
           <CardContent className="flex flex-col items-center gap-6 pt-8 pb-8">
             <div className="flex size-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-              <CheckCircle2 className="size-6 text-emerald-600" />
+              <CheckCircle2 className="size-6 text-emerald-600" strokeWidth={ICON_STROKE} />
             </div>
             <div className="text-center">
               <h1 className="text-lg font-semibold">{t("acceptSuccess")}</h1>
@@ -139,7 +141,7 @@ export default function InviteAcceptPage() {
                 {info?.budget_name}
               </p>
             </div>
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            <Loader2 className="size-4 animate-spin text-muted-foreground" strokeWidth={ICON_STROKE} />
           </CardContent>
         </Card>
       </div>
@@ -147,23 +149,23 @@ export default function InviteAcceptPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-      <Card className="w-full max-w-sm border-border/50 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm">
         <CardContent className="flex flex-col items-center gap-6 pt-8 pb-8">
           {/* Branding */}
           <div className="flex flex-col items-center gap-3">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-foreground shadow-lg">
-              <Wallet className="size-6 text-background" />
+              <Wallet className="size-6 text-background" strokeWidth={ICON_STROKE} />
             </div>
             <div className="text-center">
-              <h1 className="text-xl font-bold tracking-tight">Financentury</h1>
+              <h1 className="text-xl font-semibold tracking-tight">Financentury</h1>
             </div>
           </div>
 
           {/* Invite info */}
-          <div className="flex w-full flex-col items-center gap-4 rounded-lg border border-border/50 bg-muted/30 p-4">
+          <div className="flex w-full flex-col items-center gap-4 rounded-lg border border-border bg-muted/30 p-4">
             <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
-              <Users className="size-5 text-primary" />
+              <Users className="size-5 text-primary" strokeWidth={ICON_STROKE} />
             </div>
             <div className="text-center space-y-1">
               <p className="text-sm text-muted-foreground">{t("invitedBy")}</p>
@@ -202,12 +204,12 @@ export default function InviteAcceptPage() {
             >
               {accepting ? (
                 <>
-                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <Loader2 className="size-4 mr-2 animate-spin" strokeWidth={ICON_STROKE} />
                   {t("accepting")}
                 </>
               ) : (
                 <>
-                  <Users className="size-4 mr-2" />
+                  <Users className="size-4 mr-2" strokeWidth={ICON_STROKE} />
                   {t("accept")}
                 </>
               )}

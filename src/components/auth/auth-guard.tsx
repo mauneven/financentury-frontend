@@ -6,18 +6,18 @@ import { useAuthStore } from "@/store/auth-store";
 
 /**
  * Loading skeleton shown while auth is initializing.
- * Matches the app's design system (border-2, font-mono, etc.).
+ * Clean, minimal design with subtle border and rounded corners.
  */
 function AuthLoadingSkeleton() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Navbar placeholder */}
-      <div className="h-14 border-b-2 border-foreground/10 bg-background" />
+      <div className="h-14 border-b border-border bg-background" />
       {/* Content spinner */}
       <div className="flex flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
-          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Loading...
           </p>
         </div>

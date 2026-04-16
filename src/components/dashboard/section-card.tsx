@@ -116,15 +116,15 @@ export function SectionCard({
 
   return (
     <div className={cn(
-      "border-2 bg-card",
-      isLinkedSection ? "border-foreground/50 border-dashed" : "border-foreground"
+      "rounded-xl border bg-card",
+      isLinkedSection ? "border-border border-dashed" : "border-border"
     )}>
       <div className="p-5 sm:p-7">
         {/* Linked badge for section-level links */}
         {isLinkedSection && (
-          <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <Link2 className="size-3.5" />
-            <span className="font-bold">
+          <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <Link2 className="size-3.5" strokeWidth={1.8} />
+            <span className="font-medium">
               {tl("linkedFrom", { name: linkedInfo.source_budget.name })}
             </span>
             <span className="text-muted-foreground/60">&middot;</span>
@@ -142,7 +142,7 @@ export function SectionCard({
               <h3 className="text-lg font-semibold text-foreground">
                 {section.name}
               </h3>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {totalCategoryCount === 1 ? tSection("categoryCount", { count: String(totalCategoryCount) }) : tSection("categoryCountPlural", { count: String(totalCategoryCount) })}
               </p>
             </div>
@@ -154,7 +154,7 @@ export function SectionCard({
                   className={cn("p-0.5 transition-colors", onMoveUp ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
                   aria-label="Move section up"
                 >
-                  <ChevronUp className="size-4" />
+                  <ChevronUp className="size-4" strokeWidth={1.8} />
                 </button>
                 <button
                   type="button"
@@ -162,7 +162,7 @@ export function SectionCard({
                   className={cn("p-0.5 transition-colors", onMoveDown ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
                   aria-label="Move section down"
                 >
-                  <ChevronDown className="size-4" />
+                  <ChevronDown className="size-4" strokeWidth={1.8} />
                 </button>
               </div>
             )}
@@ -171,23 +171,23 @@ export function SectionCard({
           {/* Amount row - Mobile */}
           <div className="mb-4 pb-4 border-b border-border space-y-3">
             <div className="flex items-baseline justify-between">
-              <p className="text-xl font-bold tabular-nums font-mono text-foreground">
+              <p className="text-xl font-semibold tabular-nums text-foreground">
                 {formatCurrency(allocated_amount, currency)}
               </p>
               <div className="flex items-baseline gap-2">
                 <span className="h-4 w-px bg-border" />
-                <span className="text-sm font-bold font-mono text-muted-foreground">
+                <span className="text-sm font-semibold text-muted-foreground">
                   {sectionPct}% {t("ofBudget")}
                 </span>
               </div>
             </div>
             <div className="flex items-baseline justify-between">
-              <p className="text-base font-mono tabular-nums text-muted-foreground">
+              <p className="text-base tabular-nums text-muted-foreground">
                 {formatCurrency(total_spent, currency)} {t("spentLabel").toLowerCase()}
               </p>
               <div className="flex items-baseline gap-2">
                 <span className="h-4 w-px bg-border" />
-                <span className={cn("text-sm font-bold font-mono tabular-nums", textColor)}>
+                <span className={cn("text-sm font-semibold tabular-nums", textColor)}>
                   {percentage}% {t("used")}
                 </span>
               </div>
@@ -202,9 +202,9 @@ export function SectionCard({
                 onClick={() => {
                   router.push(`/budget/${budgetId}/section/${section.id}/reports`);
                 }}
-                className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
+                className="flex-1 px-2 py-2.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
               >
-                <BarChart3 className="size-3.5 shrink-0" />
+                <BarChart3 className="size-3.5 shrink-0" strokeWidth={1.8} />
                 <span className="truncate">{tActions("reports")}</span>
               </button>
             )}
@@ -212,25 +212,25 @@ export function SectionCard({
               <button
                 type="button"
                 onClick={() => onAddLinkedExpense(linkedInfo.link.source_budget_id)}
-                className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
+                className="flex-1 px-2 py-2.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
               >
-                <Plus className="size-3.5 shrink-0" />
+                <Plus className="size-3.5 shrink-0" strokeWidth={1.8} />
                 <span className="truncate">{tl("addExpenseToLinked")}</span>
               </button>
             )}
             <button
               type="button"
               onClick={toggleExpanded}
-              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
+              className="flex-1 px-2 py-2.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
             >
               {isExpanded ? (
                 <>
-                  <ChevronDown className="size-3.5 shrink-0 rotate-180" />
+                  <ChevronDown className="size-3.5 shrink-0 rotate-180" strokeWidth={1.8} />
                   <span className="truncate">{tActions("collapse")}</span>
                 </>
               ) : (
                 <>
-                  <ChevronDown className="size-3.5 shrink-0" />
+                  <ChevronDown className="size-3.5 shrink-0" strokeWidth={1.8} />
                   <span className="truncate">{tActions("breakdown")}</span>
                 </>
               )}
@@ -245,9 +245,9 @@ export function SectionCard({
                   setEditSectionOpen(true);
                 }
               }}
-              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
+              className="flex-1 px-2 py-2.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
             >
-              <Settings className="size-3.5 shrink-0" />
+              <Settings className="size-3.5 shrink-0" strokeWidth={1.8} />
               <span className="truncate">{tActions("adjust")}</span>
             </button>
           </div>
@@ -263,7 +263,7 @@ export function SectionCard({
               <h3 className="text-lg font-semibold text-foreground truncate">
                 {section.name}
               </h3>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {totalCategoryCount === 1 ? tSection("categoryCount", { count: String(totalCategoryCount) }) : tSection("categoryCountPlural", { count: String(totalCategoryCount) })}
               </p>
             </div>
@@ -277,9 +277,9 @@ export function SectionCard({
                 onClick={() => {
                   router.push(`/budget/${budgetId}/section/${section.id}/reports`);
                 }}
-                className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1.5"
               >
-                <BarChart3 className="size-3.5" />
+                <BarChart3 className="size-3.5" strokeWidth={1.8} />
                 {tActions("reports")}
               </button>
             )}
@@ -287,25 +287,25 @@ export function SectionCard({
               <button
                 type="button"
                 onClick={() => onAddLinkedExpense(linkedInfo.link.source_budget_id)}
-                className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1.5"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5" strokeWidth={1.8} />
                 {tl("addExpenseToLinked")}
               </button>
             )}
             <button
               type="button"
               onClick={toggleExpanded}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5 min-w-max"
+              className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1.5 min-w-max"
             >
               {isExpanded ? (
                 <>
-                  <ChevronDown className="size-3.5 rotate-180" />
+                  <ChevronDown className="size-3.5 rotate-180" strokeWidth={1.8} />
                   {tActions("collapse")}
                 </>
               ) : (
                 <>
-                  <ChevronDown className="size-3.5" />
+                  <ChevronDown className="size-3.5" strokeWidth={1.8} />
                   {tActions("breakdown")}
                 </>
               )}
@@ -320,9 +320,9 @@ export function SectionCard({
                   setEditSectionOpen(true);
                 }
               }}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+              className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1.5"
             >
-              <Settings className="size-3.5" />
+              <Settings className="size-3.5" strokeWidth={1.8} />
               {tActions("adjust")}
             </button>
           </div>
@@ -330,22 +330,22 @@ export function SectionCard({
           {/* Amount display - right side */}
           <div className="shrink-0 min-w-[260px] text-right">
             <div className="flex items-baseline justify-end gap-3">
-              <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+              <p className="text-2xl font-semibold tabular-nums text-foreground">
                 {formatCurrency(allocated_amount, currency)}
               </p>
               <>
                 <span className="h-5 w-px bg-border" />
-                <span className="text-lg font-bold font-mono text-muted-foreground">
+                <span className="text-lg font-semibold text-muted-foreground">
                   {sectionPct}%
                 </span>
               </>
             </div>
             <div className="flex items-baseline justify-end gap-3 mt-1">
-              <span className="text-sm font-mono tabular-nums text-muted-foreground">
+              <span className="text-sm tabular-nums text-muted-foreground">
                 {formatCurrency(total_spent, currency)} {t("spentLabel").toLowerCase()}
               </span>
               <span className="h-4 w-px bg-border" />
-              <span className={cn("text-sm font-bold font-mono tabular-nums", textColor)}>
+              <span className={cn("text-sm font-semibold tabular-nums", textColor)}>
                 {percentage}% {t("used")}
               </span>
             </div>
@@ -359,7 +359,7 @@ export function SectionCard({
               className={cn("p-0.5 transition-colors", onMoveUp ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
               aria-label="Move section up"
             >
-              <ChevronUp className="size-4" />
+              <ChevronUp className="size-4" strokeWidth={1.8} />
             </button>
             <button
               type="button"
@@ -367,7 +367,7 @@ export function SectionCard({
               className={cn("p-0.5 transition-colors", onMoveDown ? "text-muted-foreground/40 hover:text-foreground" : "invisible")}
               aria-label="Move section down"
             >
-              <ChevronDown className="size-4" />
+              <ChevronDown className="size-4" strokeWidth={1.8} />
             </button>
           </div>
         </div>
@@ -378,7 +378,7 @@ export function SectionCard({
             {t("leftLabel")}:{" "}
             <span
               className={cn(
-                "font-bold font-mono tabular-nums",
+                "font-semibold tabular-nums",
                 remaining < 0
                   ? "text-red-600 dark:text-red-400"
                   : "text-foreground"
@@ -392,7 +392,7 @@ export function SectionCard({
 
         {/* Overall progress bar */}
         <div className="mt-3">
-            <div className="h-3 w-full overflow-hidden bg-muted">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
             <div
               className={cn(
                 "h-full transition-all duration-300",
@@ -466,7 +466,7 @@ export function SectionCard({
           )}
         >
           <div className="overflow-hidden">
-            <div ref={catListRef} className="mt-5 border-t-2 border-foreground/10 pt-5 space-y-0">
+            <div ref={catListRef} className="mt-5 border-t border-border pt-5 space-y-0">
               {/* Categories (own + linked, unified and reorderable) */}
               {orderedCats.map((item, idx) => {
                 const sub = item.type === "own" ? item.sub : item.lc.categorySummary;
@@ -487,55 +487,55 @@ export function SectionCard({
                     key={item.id}
                     data-flip-key={item.id}
                     className={cn(
-                      "group/sub px-3 py-3 relative hover:bg-muted/50 min-h-[44px]",
-                      idx !== 0 && "border-t border-foreground/10",
+                      "group/sub px-3 py-3 relative rounded-lg hover:bg-muted/50 min-h-[44px]",
+                      idx !== 0 && "border-t border-border",
                     )}
                   >
                     {/* Mobile layout */}
                     <div className="sm:hidden">
                       <div className="flex items-center gap-2 mb-2">
                         <CategoryIcon iconKey={sub.category.icon} className="size-4 shrink-0" />
-                        <span className="text-sm font-bold text-foreground truncate">{sub.category.name}</span>
+                        <span className="text-sm font-semibold text-foreground truncate">{sub.category.name}</span>
                         {isLinkedCat && (
-                          <span className="flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
-                            <Link2 className="size-3" />{item.lc.sourceBudgetName}
+                          <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+                            <Link2 className="size-3" strokeWidth={1.8} />{item.lc.sourceBudgetName}
                           </span>
                         )}
-                        <span className="text-sm font-bold tabular-nums font-mono text-foreground shrink-0">
+                        <span className="text-sm font-semibold tabular-nums text-foreground shrink-0">
                           {formatCurrency(sub.allocated_amount, currency)}
                         </span>
                         {/* Up/down buttons mobile */}
                         <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-3.5" /></button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-3.5" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-3.5" strokeWidth={1.8} /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-3.5" strokeWidth={1.8} /></button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                        <span className="font-mono tabular-nums">
+                        <span className="tabular-nums">
                           {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
                         </span>
-                        <span className={cn("font-mono tabular-nums font-bold", subTextColor)}>
+                        <span className={cn("tabular-nums font-semibold", subTextColor)}>
                           {subPercentage}% {t("used")}
                         </span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden bg-muted mb-2">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted mb-2">
                         <div className={cn("h-full transition-all duration-300", subProgressColor)} style={{ width: `${Math.min(subPercentage, 100)}%` }} />
                       </div>
                       <div className="flex gap-1.5">
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); router.push(reportsHref); }}
-                          className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                          className="px-2 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1"
                         >
-                          <BarChart3 className="size-3" />
+                          <BarChart3 className="size-3" strokeWidth={1.8} />
                           {tActions("reports")}
                         </button>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); isLinkedCat ? setEditingLinkedCat(item.lc) : setEditingCategory(sub.category); }}
-                          className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                          className="px-2 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1"
                         >
-                          <Settings className="size-3" />
+                          <Settings className="size-3" strokeWidth={1.8} />
                           {tActions("adjust")}
                         </button>
                       </div>
@@ -547,10 +547,10 @@ export function SectionCard({
                         {/* Left: icon + name */}
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <CategoryIcon iconKey={sub.category.icon} className="size-4 shrink-0" />
-                          <span className="text-base font-bold text-foreground truncate">{sub.category.name}</span>
+                          <span className="text-base font-semibold text-foreground truncate">{sub.category.name}</span>
                           {isLinkedCat && (
-                            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
-                              <Link2 className="size-3" />{item.lc.sourceBudgetName}
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                              <Link2 className="size-3" strokeWidth={1.8} />{item.lc.sourceBudgetName}
                             </span>
                           )}
                         </div>
@@ -559,49 +559,49 @@ export function SectionCard({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); router.push(reportsHref); }}
-                            className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1"
                           >
-                            <BarChart3 className="size-3" />
+                            <BarChart3 className="size-3" strokeWidth={1.8} />
                             {tActions("reports")}
                           </button>
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); isLinkedCat ? setEditingLinkedCat(item.lc) : setEditingCategory(sub.category); }}
-                            className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1"
+                            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1"
                           >
-                            <Settings className="size-3" />
+                            <Settings className="size-3" strokeWidth={1.8} />
                             {tActions("adjust")}
                           </button>
                         </div>
                         {/* Right: amount block */}
                         <div className="shrink-0 min-w-[260px] text-right">
                           <div className="flex items-baseline justify-end gap-2">
-                            <span className="text-base font-bold tabular-nums font-mono text-foreground">
+                            <span className="text-base font-semibold tabular-nums text-foreground">
                               {formatCurrency(sub.allocated_amount, currency)}
                             </span>
                             <span className="h-4 w-px bg-border" />
-                            <span className="text-sm font-bold font-mono text-muted-foreground">
+                            <span className="text-sm font-medium text-muted-foreground">
                               {catSectionPct}% {t("ofSection")}
                             </span>
                           </div>
                           <div className="flex items-baseline justify-end gap-2 mt-0.5">
-                            <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                            <span className="text-sm tabular-nums text-muted-foreground">
                               {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
                             </span>
                             <span className="h-3.5 w-px bg-border" />
-                            <span className={cn("text-sm font-mono tabular-nums font-bold", subTextColor)}>
+                            <span className={cn("text-sm tabular-nums font-semibold", subTextColor)}>
                               {subPercentage}% {t("used")}
                             </span>
                           </div>
                         </div>
                         {/* Up/down buttons desktop (always reserves space for alignment) */}
                         <div className={cn("flex flex-col shrink-0", orderedCats.length <= 1 && "invisible")}>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-4" /></button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-4" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatUp(item.id); }} className={cn("p-0.5 transition-colors", idx > 0 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move up"><ChevronUp className="size-4" strokeWidth={1.8} /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); captureCatPositions(); moveCatDown(item.id); }} className={cn("p-0.5 transition-colors", idx < orderedCats.length - 1 ? "text-muted-foreground/40 hover:text-foreground" : "invisible")} aria-label="Move down"><ChevronDown className="size-4" strokeWidth={1.8} /></button>
                         </div>
                       </div>
                       {/* Progress bar */}
-                      <div className="h-2 w-full overflow-hidden bg-muted mt-2">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted mt-2">
                         <div className={cn("h-full transition-all duration-300", subProgressColor)} style={{ width: `${Math.min(subPercentage, 100)}%` }} />
                       </div>
                     </div>
@@ -624,8 +624,8 @@ export function SectionCard({
               {/* Empty state */}
               {sectionCategories.length === 0 && linkedCategories.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-foreground bg-muted">
-                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+                    <Plus className="h-6 w-6 text-muted-foreground" strokeWidth={1.8} />
                   </div>
                   <h4 className="mb-1 text-base font-semibold text-foreground">
                     {t("noCategories")}
@@ -640,9 +640,9 @@ export function SectionCard({
                         setCategoryPrefillAmount(allocated_amount * 0.3);
                         setAddCategoryOpen(true);
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
                     >
-                      <Plus className="size-3.5" />
+                      <Plus className="size-3.5" strokeWidth={1.8} />
                       {tSection("addCategory")}
                     </button>
                   )}
@@ -651,16 +651,16 @@ export function SectionCard({
 
               {/* Add Category button at the bottom of breakdown (for non-linked sections with existing categories) */}
               {!isLinkedSection && (sectionCategories.length > 0 || linkedCategories.length > 0) && (
-                <div className="border-t border-foreground/10 pt-3 pb-1">
+                <div className="border-t border-border pt-3 pb-1">
                   <button
                     type="button"
                     onClick={() => {
                       setCategoryPrefillAmount(undefined);
                       setAddCategoryOpen(true);
                     }}
-                    className="flex w-full items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                    className="flex w-full items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    <Plus className="size-3.5" />
+                    <Plus className="size-3.5" strokeWidth={1.8} />
                     {tSection("addCategory")}
                   </button>
                 </div>

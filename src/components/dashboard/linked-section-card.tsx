@@ -37,12 +37,12 @@ export function LinkedSectionCard({
   const filterLabel = link.filter_mode === "mine" ? tl("filterMine") : tl("filterAll");
 
   return (
-    <div className="border-2 border-foreground/50 border-dashed bg-card">
+    <div className="rounded-xl border border-border border-dashed bg-card">
       <div className="p-5 sm:p-7">
         {/* Linked badge */}
-        <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-          <Link2 className="size-3.5" />
-          <span className="font-bold">
+        <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+          <Link2 className="size-3.5" strokeWidth={1.8} />
+          <span className="font-medium">
             {tl("linkedFrom", { name: source_budget.name })}
           </span>
           <span className="text-muted-foreground/60">&middot;</span>
@@ -57,7 +57,7 @@ export function LinkedSectionCard({
               <h3 className="text-lg font-semibold text-foreground">
                 {section.name}
               </h3>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {categories.length} {categories.length === 1 ? "category" : "categories"}
               </p>
             </div>
@@ -65,7 +65,7 @@ export function LinkedSectionCard({
 
           {/* Spent display - Mobile */}
           <div className="mb-4 pb-4 border-b border-border">
-            <p className="text-xl font-bold tabular-nums font-mono text-foreground">
+            <p className="text-xl font-semibold tabular-nums text-foreground">
               {formatCurrency(total_spent, currency)} <span className="text-sm font-normal text-muted-foreground">{t("spentLabel").toLowerCase()}</span>
             </p>
           </div>
@@ -75,24 +75,24 @@ export function LinkedSectionCard({
             <button
               type="button"
               onClick={() => onAddExpense(link.source_budget_id)}
-              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
+              className="flex-1 px-2 py-2.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
             >
-              <Plus className="size-3.5 shrink-0" />
+              <Plus className="size-3.5 shrink-0" strokeWidth={1.8} />
               <span className="truncate">{tl("addExpenseToLinked")}</span>
             </button>
             <button
               type="button"
               onClick={() => setIsExpanded((prev) => !prev)}
-              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
+              className="flex-1 px-2 py-2.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
             >
               {isExpanded ? (
                 <>
-                  <ChevronUp className="size-3.5 shrink-0" />
+                  <ChevronUp className="size-3.5 shrink-0" strokeWidth={1.8} />
                   <span className="truncate">{tActions("collapse")}</span>
                 </>
               ) : (
                 <>
-                  <ChevronDown className="size-3.5 shrink-0" />
+                  <ChevronDown className="size-3.5 shrink-0" strokeWidth={1.8} />
                   <span className="truncate">{tActions("breakdown")}</span>
                 </>
               )}
@@ -100,9 +100,9 @@ export function LinkedSectionCard({
             <button
               type="button"
               onClick={() => setManageLinkOpen(true)}
-              className="flex-1 px-2 py-2.5 text-[11px] font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center justify-center gap-1"
+              className="flex-1 px-2 py-2.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
             >
-              <Settings className="size-3.5 shrink-0" />
+              <Settings className="size-3.5 shrink-0" strokeWidth={1.8} />
               <span className="truncate">{tActions("adjust")}</span>
             </button>
           </div>
@@ -116,7 +116,7 @@ export function LinkedSectionCard({
               <h3 className="text-lg font-semibold text-foreground">
                 {section.name}
               </h3>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {categories.length} {categories.length === 1 ? "category" : "categories"}
               </p>
             </div>
@@ -127,24 +127,24 @@ export function LinkedSectionCard({
             <button
               type="button"
               onClick={() => onAddExpense(link.source_budget_id)}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+              className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1.5"
             >
-              <Plus className="size-3.5" />
+              <Plus className="size-3.5" strokeWidth={1.8} />
               {tl("addExpenseToLinked")}
             </button>
             <button
               type="button"
               onClick={() => setIsExpanded((prev) => !prev)}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5 min-w-max"
+              className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1.5 min-w-max"
             >
               {isExpanded ? (
                 <>
-                  <ChevronUp className="size-3.5" />
+                  <ChevronUp className="size-3.5" strokeWidth={1.8} />
                   {tActions("collapse")}
                 </>
               ) : (
                 <>
-                  <ChevronDown className="size-3.5" />
+                  <ChevronDown className="size-3.5" strokeWidth={1.8} />
                   {tActions("breakdown")}
                 </>
               )}
@@ -152,19 +152,19 @@ export function LinkedSectionCard({
             <button
               type="button"
               onClick={() => setManageLinkOpen(true)}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background flex items-center gap-1.5"
+              className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center gap-1.5"
             >
-              <Settings className="size-3.5" />
+              <Settings className="size-3.5" strokeWidth={1.8} />
               {tActions("adjust")}
             </button>
           </div>
 
           {/* Spent display - right side */}
           <div className="text-right">
-            <p className="text-2xl font-bold tabular-nums font-mono text-foreground">
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
               {formatCurrency(total_spent, currency)}
             </p>
-            <p className="text-sm font-mono tabular-nums text-muted-foreground mt-1">
+            <p className="text-sm tabular-nums text-muted-foreground mt-1">
               {t("spentLabel").toLowerCase()}
             </p>
           </div>
@@ -188,7 +188,7 @@ export function LinkedSectionCard({
           )}
         >
           <div className="overflow-hidden">
-            <div className="mt-5 border-t-2 border-foreground/10 pt-5 space-y-0">
+            <div className="mt-5 border-t border-border pt-5 space-y-0">
               {categories.map((sub, idx) => {
                 const subPercentage = getPercentage(sub.total_spent, sub.allocated_amount);
                 const subProgressColor = getProgressColor(subPercentage);
@@ -198,8 +198,8 @@ export function LinkedSectionCard({
                   <div
                     key={sub.category.id}
                     className={cn(
-                      "group/sub px-3 py-3 transition-colors duration-200 hover:bg-muted/50 min-h-[44px]",
-                      idx !== 0 && "border-t border-foreground/10"
+                      "group/sub px-3 py-3 rounded-lg transition-colors duration-200 hover:bg-muted/50 min-h-[44px]",
+                      idx !== 0 && "border-t border-border"
                     )}
                   >
                     <div className="flex items-start gap-1.5">
@@ -208,18 +208,18 @@ export function LinkedSectionCard({
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <CategoryIcon iconKey={sub.category.icon} className="size-4" />
-                            <span className="text-sm sm:text-base font-bold text-foreground truncate">
+                            <span className="text-sm sm:text-base font-semibold text-foreground truncate">
                               {sub.category.name}
                             </span>
                           </div>
                           <div className="flex items-baseline gap-2 shrink-0">
-                            <span className="text-sm sm:text-base font-bold tabular-nums font-mono text-foreground">
+                            <span className="text-sm sm:text-base font-semibold tabular-nums text-foreground">
                               {formatCurrency(sub.allocated_amount, currency)}
                             </span>
                           </div>
                         </div>
                         {/* Mini progress bar */}
-                        <div className="h-2 w-full overflow-hidden bg-muted">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                           <div
                             className={cn("h-full transition-all duration-300", subProgressColor)}
                             style={{ width: `${Math.min(subPercentage, 100)}%` }}
@@ -227,12 +227,12 @@ export function LinkedSectionCard({
                         </div>
                         {/* Spent + used % */}
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span className="font-mono tabular-nums">
+                          <span className="tabular-nums">
                             {formatCurrency(sub.total_spent, currency)} {t("spentLabel").toLowerCase()}
                           </span>
                           <div className="flex items-center gap-2">
                             <span className="h-3.5 w-px bg-border" />
-                            <span className={cn("font-mono tabular-nums font-bold", subTextColor)}>
+                            <span className={cn("tabular-nums font-semibold", subTextColor)}>
                               {subPercentage}% {t("used")}
                             </span>
                           </div>
@@ -251,10 +251,10 @@ export function LinkedSectionCard({
                       <button
                         type="button"
                         onClick={() => onAddExpense(link.source_budget_id, sub.category.id)}
-                        className="mt-0.5 flex size-7 shrink-0 items-center justify-center text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
+                        className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/sub:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
                         aria-label={`Add expense to ${sub.category.name}`}
                       >
-                        <Plus className="size-3" />
+                        <Plus className="size-3" strokeWidth={1.8} />
                       </button>
                     </div>
                   </div>

@@ -2,6 +2,9 @@
 
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+const ICON_STROKE = 1.8;
 
 export default function Error({
   error,
@@ -12,12 +15,12 @@ export default function Error({
 }) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
-      <div className="w-full max-w-md border-2 border-foreground bg-card p-8 text-center">
-        <div className="mx-auto mb-6 flex size-14 items-center justify-center border-2 border-foreground bg-muted">
-          <AlertTriangle className="size-7 text-foreground" />
+      <div className="w-full max-w-md border border-border rounded-lg bg-card p-8 text-center">
+        <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-lg border border-border bg-muted">
+          <AlertTriangle className="size-7 text-foreground" strokeWidth={ICON_STROKE} />
         </div>
 
-        <h1 className="text-xl font-bold uppercase tracking-wider text-foreground">
+        <h1 className="text-xl font-semibold text-foreground">
           Something went wrong
         </h1>
 
@@ -26,20 +29,13 @@ export default function Error({
         </p>
 
         <div className="mt-8 flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={reset}
-            className="w-full border-2 border-foreground bg-foreground px-4 py-3 text-xs font-bold uppercase tracking-wider text-background transition-colors hover:bg-background hover:text-foreground"
-          >
+          <Button onClick={reset} className="w-full">
             Try Again
-          </button>
+          </Button>
 
-          <Link
-            href="/budgets"
-            className="w-full border-2 border-foreground bg-background px-4 py-3 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:bg-foreground hover:text-background inline-block"
-          >
+          <Button variant="outline" render={<Link href="/budgets" />} className="w-full">
             Go to Budgets
-          </Link>
+          </Button>
         </div>
       </div>
     </div>

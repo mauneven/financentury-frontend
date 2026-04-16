@@ -36,6 +36,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
+const ICON_STROKE = 1.8;
+
 interface CategoryInfo {
   name: string;
   icon: string | null;
@@ -112,8 +114,8 @@ export function ExpenseList({
   if (expenses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
-        <div className="mb-4 bg-muted p-4">
-          <Receipt className="size-8 text-muted-foreground" />
+        <div className="mb-4 rounded-lg bg-muted p-4">
+          <Receipt className="size-8 text-muted-foreground" strokeWidth={ICON_STROKE} />
         </div>
         <h3 className="mb-1 text-base font-medium text-foreground">{t("noExpenses")}</h3>
         <p className="max-w-xs text-sm text-muted-foreground leading-relaxed">
@@ -131,7 +133,7 @@ export function ExpenseList({
             <div key={group.date}>
               {/* Date Header */}
               <div className="sticky top-0 z-10 bg-background/95 px-2 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <p className="text-xs sm:text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {group.label}
                 </p>
               </div>
@@ -218,14 +220,14 @@ function ExpenseRow({
     <div
       className={cn(
         "group flex items-center gap-3 border-b border-border/50 px-2 py-3 sm:py-3.5",
-        "transition-colors duration-200 hover:bg-accent/50"
+        "transition-colors duration-200 hover:bg-accent/50 rounded-lg"
       )}
     >
       {/* Icon */}
-      <div className="flex size-10 shrink-0 items-center justify-center bg-muted text-muted-foreground">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
         {categoryInfo?.icon
           ? <CategoryIcon iconKey={categoryInfo.icon} className="size-5" />
-          : <Receipt className="size-5" />
+          : <Receipt className="size-5" strokeWidth={ICON_STROKE} />
         }
       </div>
 
@@ -248,10 +250,10 @@ function ExpenseRow({
 
       {/* Amount + time */}
       <div className="shrink-0 text-right">
-        <p className="font-mono text-sm font-medium text-foreground">
+        <p className="tabular-nums text-sm font-medium text-foreground">
           {formatCurrency(expense.amount, currency)}
         </p>
-        <p className="text-xs text-muted-foreground font-mono">
+        <p className="text-xs text-muted-foreground tabular-nums">
           {new Date(expense.created_at).toLocaleTimeString(locale === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" })}
           {expense.updated_at && new Date(expense.updated_at).getTime() - new Date(expense.created_at).getTime() > 60000 && (
             <span className="ml-1 text-muted-foreground/60">· {t("edited")}</span>
@@ -264,20 +266,20 @@ function ExpenseRow({
         <div className="shrink-0 sm:opacity-0 sm:transition-opacity sm:duration-200 sm:group-hover:opacity-100">
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="min-h-[44px] min-w-[44px]" />}>
-              <MoreHorizontal className="size-5" />
+              <MoreHorizontal className="size-5" strokeWidth={ICON_STROKE} />
               <span className="sr-only">{t("actions")}</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {onEdit && (
                 <DropdownMenuItem onClick={() => onEdit(expense)} className="min-h-[44px]">
-                  <Pencil className="mr-2 size-4" />
+                  <Pencil className="mr-2 size-4" strokeWidth={ICON_STROKE} />
                   {tc("edit")}
                 </DropdownMenuItem>
               )}
               {onEdit && onDelete && <DropdownMenuSeparator />}
               {onDelete && (
                 <DropdownMenuItem variant="destructive" onClick={onDelete} className="min-h-[44px]">
-                  <Trash2 className="mr-2 size-4" />
+                  <Trash2 className="mr-2 size-4" strokeWidth={ICON_STROKE} />
                   {tc("delete")}
                 </DropdownMenuItem>
               )}

@@ -20,12 +20,12 @@ function formatDate(dateStr: string): string {
 
 function BalanceIndicator({ balance }: { balance: number }) {
   if (balance > 0) {
-    return <TrendingUp className="size-4 text-emerald-600 dark:text-emerald-400" />;
+    return <TrendingUp className="size-4 text-emerald-600 dark:text-emerald-400" strokeWidth={1.8} />;
   }
   if (balance < 0) {
-    return <TrendingDown className="size-4 text-red-600 dark:text-red-400" />;
+    return <TrendingDown className="size-4 text-red-600 dark:text-red-400" strokeWidth={1.8} />;
   }
-  return <Minus className="size-4 text-muted-foreground" />;
+  return <Minus className="size-4 text-muted-foreground" strokeWidth={1.8} />;
 }
 
 function PeriodRow({
@@ -44,8 +44,8 @@ function PeriodRow({
     <div className="flex flex-col gap-2 p-3 sm:p-4">
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="size-3.5 shrink-0 text-muted-foreground" />
-          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <Calendar className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.8} />
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground">
             {formatDate(period.period_start)} — {formatDate(period.period_end)}
           </span>
         </div>
@@ -53,7 +53,7 @@ function PeriodRow({
           <BalanceIndicator balance={period.balance} />
           <span
             className={cn(
-              "text-sm font-bold font-mono tabular-nums",
+              "text-sm font-semibold tabular-nums",
               isPositive && "text-emerald-600 dark:text-emerald-400",
               isNegative && "text-red-600 dark:text-red-400",
               !isPositive && !isNegative && "text-muted-foreground"
@@ -66,17 +66,17 @@ function PeriodRow({
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
-        <span className="font-mono tabular-nums">
+        <span className="tabular-nums">
           {t("income")}: {formatCurrency(period.income, currency)}
         </span>
         <span className="h-3 w-px bg-border" />
-        <span className="font-mono tabular-nums">
+        <span className="tabular-nums">
           {t("spent")}: {formatCurrency(period.total_spent, currency)}
         </span>
       </div>
 
       {/* Balance bar */}
-      <div className="h-1.5 w-full bg-muted overflow-hidden">
+      <div className="h-1.5 w-full bg-muted overflow-hidden rounded-full">
         <div
           className={cn(
             "h-full transition-all duration-300",
@@ -129,12 +129,12 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
   if (loading) {
     return (
       <>
-        <div className="border-t-2 border-foreground" />
-        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
-          <div className="h-4 w-40 animate-pulse bg-muted" />
+        <div className="border-t border-border" />
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+          <div className="h-4 w-40 animate-pulse rounded bg-muted" />
           <div className="mt-4 space-y-3">
-            <div className="h-20 animate-pulse bg-muted" />
-            <div className="h-16 animate-pulse bg-muted" />
+            <div className="h-20 animate-pulse rounded-lg bg-muted" />
+            <div className="h-16 animate-pulse rounded-lg bg-muted" />
           </div>
         </div>
       </>
@@ -144,10 +144,10 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
   if (error) {
     return (
       <>
-        <div className="border-t-2 border-foreground" />
-        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+        <div className="border-t border-border" />
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
           <div className="flex flex-col items-center justify-center py-6 text-center">
-            <AlertTriangle className="size-6 text-muted-foreground mb-3" />
+            <AlertTriangle className="size-6 text-muted-foreground mb-3" strokeWidth={1.8} />
             <p className="text-sm font-semibold text-foreground mb-1">
               {t("errorLoading")}
             </p>
@@ -158,7 +158,7 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
                 setError(false);
                 fetchResume(budgetId);
               }}
-              className="mt-3 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+              className="mt-3 px-4 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
             >
               {tc("retry")}
             </button>
@@ -176,15 +176,15 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
   return (
     <>
       {/* Horizontal separator */}
-      <div className="border-t-2 border-foreground" />
+      <div className="border-t border-border" />
 
-      <div className="border-2 border-foreground bg-card p-5 sm:p-6">
-        <h3 className="font-bold text-foreground" style={{ fontSize: 'var(--text-fluid-base)' }}>
+      <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+        <h3 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-base)' }}>
           {title}
         </h3>
 
         <div className="mt-4 space-y-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-sm font-medium text-muted-foreground">
             {subtitle}
           </p>
           <div className="space-y-1">

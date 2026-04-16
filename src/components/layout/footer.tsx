@@ -8,31 +8,31 @@ export function Footer() {
   const t = useTranslations("footer");
 
   return (
-    <footer className="border-t-2 border-foreground bg-background py-6">
+    <footer className="hidden lg:block border-t border-border bg-background py-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Wallet className="size-4" />
-            <span className="font-mono text-xs font-bold uppercase tracking-widest">
+            <Wallet className="size-4 text-muted-foreground" strokeWidth={1.8} />
+            <span className="text-xs font-medium text-muted-foreground">
               Financentury
             </span>
           </div>
           <div className="flex items-center gap-4">
             <Link
               href="/privacy"
-              className="font-mono text-xs text-muted-foreground uppercase tracking-wider transition-colors hover:text-foreground"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               {t("privacy")}
             </Link>
             <span className="h-3 w-px bg-border" />
             <Link
               href="/terms"
-              className="font-mono text-xs text-muted-foreground uppercase tracking-wider transition-colors hover:text-foreground"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               {t("terms")}
             </Link>
             <span className="h-3 w-px bg-border" />
-            <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+            <p className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()}
             </p>
           </div>

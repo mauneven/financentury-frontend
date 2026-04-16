@@ -7,10 +7,10 @@ import { useTranslations } from "@/i18n/client";
 export function EmptyDashboard() {
   const t = useTranslations("dashboard");
   return (
-    <Card className="min-h-[400px] flex items-center">
+    <Card className="min-h-[400px] flex items-center rounded-xl border border-border">
       <CardContent className="flex flex-col items-center justify-center px-4 py-16 sm:py-20 text-center w-full">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center border-2 border-foreground bg-emerald-50 dark:bg-emerald-950/30">
-          <Wallet className="h-10 w-10 text-emerald-500" />
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/30">
+          <Wallet className="h-10 w-10 text-emerald-500" strokeWidth={1.8} />
         </div>
         <h3 className="mb-2 text-xl font-semibold text-foreground">
           {t("noData")}
@@ -20,7 +20,7 @@ export function EmptyDashboard() {
         </p>
         <div className="flex items-center gap-1.5 text-base font-medium text-emerald-600 dark:text-emerald-400">
           <span>{t("startAddingExpense")}</span>
-          <ArrowUpRight className="h-5 w-5" />
+          <ArrowUpRight className="h-5 w-5" strokeWidth={1.8} />
         </div>
       </CardContent>
     </Card>

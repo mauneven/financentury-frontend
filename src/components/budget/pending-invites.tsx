@@ -93,9 +93,9 @@ export function PendingInvites({ budgetId }: PendingInvitesProps) {
           return (
             <div
               key={invite.id}
-              className="flex items-center gap-3 py-2 px-3 border border-border/50 text-xs"
+              className="flex items-center gap-3 rounded-lg py-2 px-3 border border-border/50 text-xs"
             >
-              <div className="min-w-0 flex-1 font-mono text-muted-foreground truncate">
+              <div className="min-w-0 flex-1 text-muted-foreground truncate">
                 ...{invite.invite_token.slice(-12)}
               </div>
 

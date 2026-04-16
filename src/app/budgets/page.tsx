@@ -15,6 +15,8 @@ import { useTranslations } from "@/i18n/client";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { useDisplayOrder } from "@/hooks/use-display-order";
 
+const ICON_STROKE = 1.8;
+
 export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("home");
@@ -64,8 +66,8 @@ export default function HomePage() {
             </div>
           ) : error && budgets.length === 0 ? (
             <div className="flex max-w-md flex-col items-center gap-6 text-center">
-              <div className="flex size-16 items-center justify-center border-2 border-red-500 bg-red-50 dark:bg-red-950/30">
-                <Wallet className="size-8 text-red-500" />
+              <div className="flex size-16 items-center justify-center rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
+                <Wallet className="size-8 text-red-500" strokeWidth={ICON_STROKE} />
               </div>
               <div className="space-y-2">
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">
@@ -78,14 +80,14 @@ export default function HomePage() {
                 onClick={() => fetchBudgets()}
                 className="gap-2"
               >
-                <Plus className="size-4" />
+                <Plus className="size-4" strokeWidth={ICON_STROKE} />
                 {tc("retry")}
               </Button>
             </div>
           ) : budgets.length === 0 ? (
             <div className="flex max-w-md flex-col items-center gap-8 text-center">
               <div className="flex size-20 items-center justify-center rounded-2xl bg-muted">
-                <Wallet className="size-10 text-muted-foreground" />
+                <Wallet className="size-10 text-muted-foreground" strokeWidth={ICON_STROKE} />
               </div>
               <div className="space-y-3">
                 <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
@@ -100,7 +102,7 @@ export default function HomePage() {
                 onClick={() => setShowCreateBudget(true)}
                 className="gap-2 h-12 px-8 text-base"
               >
-                <Plus className="size-5" />
+                <Plus className="size-5" strokeWidth={ICON_STROKE} />
                 {t("createFirst")}
               </Button>
             </div>
@@ -108,7 +110,7 @@ export default function HomePage() {
             <div className="w-full max-w-3xl space-y-6 sm:space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
                     {t("yourBudgets")}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1.5">
@@ -121,7 +123,7 @@ export default function HomePage() {
                     onClick={() => setShowCreateBudget(true)}
                     className="gap-1.5 h-10 min-w-[44px]"
                   >
-                    <Plus className="size-4" />
+                    <Plus className="size-4" strokeWidth={ICON_STROKE} />
                     <span className="hidden sm:inline">{t("newBudget")}</span>
                   </Button>
                 )}

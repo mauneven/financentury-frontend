@@ -45,12 +45,12 @@ export function SpendingByUser({
 
   return (
     <div className={cn("space-y-2", compact ? "mt-2" : "mt-3")}>
-      <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+      <p className="text-sm font-medium text-muted-foreground">
         {t("spendingByPerson")}
       </p>
       {/* Stacked bar */}
       {totalSpent > 0 && (
-        <div className="flex h-2.5 w-full overflow-hidden bg-muted">
+        <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
           {spendingByUser.map((u, i) => {
             const pct = (u.amount / totalSpent) * 100;
             return (
@@ -73,17 +73,17 @@ export function SpendingByUser({
             <div key={u.user_id} className="flex items-center gap-2">
               <span
                 className={cn(
-                  "flex size-5 shrink-0 items-center justify-center text-[10px] font-bold text-white",
+                  "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white",
                   COLORS[i % COLORS.length]
                 )}
               >
                 {getInitials(name)}
               </span>
               <span className="flex-1 truncate text-sm text-foreground">{name}</span>
-              <span className="font-mono tabular-nums text-sm font-bold text-foreground">
+              <span className="tabular-nums text-sm font-semibold text-foreground">
                 {formatCompact(u.amount, currency)}
               </span>
-              <span className={cn("min-w-[2.5rem] text-right font-mono tabular-nums text-xs font-bold", COLORS[i % COLORS.length].replace("bg-", "text-"))}>
+              <span className={cn("min-w-[2.5rem] text-right tabular-nums text-xs font-semibold", COLORS[i % COLORS.length].replace("bg-", "text-"))}>
                 {pct}%
               </span>
             </div>

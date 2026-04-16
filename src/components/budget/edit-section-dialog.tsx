@@ -78,7 +78,7 @@ function SectionImpactPreview({
   return (
     <div
       className={cn(
-        "rounded-none border-2 px-3 py-2 text-xs space-y-1.5",
+        "rounded-lg border px-3 py-2 text-xs space-y-1.5",
         isOverflow
           ? "border-destructive bg-destructive/5"
           : "border-amber-400 bg-amber-50/60 dark:bg-amber-900/10"
@@ -300,7 +300,7 @@ export function EditSectionDialog({
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger
-                  className="flex size-10 shrink-0 items-center justify-center border-2 border-foreground bg-background transition-colors hover:bg-muted"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-muted"
                   aria-label={t("icon")}
                 >
                   <CategoryIcon iconKey={watchIcon} className="size-5" />

@@ -11,6 +11,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+const ICON_STROKE = 1.8;
+
 import type { Section, CategorySummary } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 import { useBudgetStore } from "@/store/budget-store";
@@ -298,7 +300,7 @@ export function AddExpenseDialog({
             </Select>
             {errors.category_id && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.category_id.message}
               </p>
             )}
@@ -314,7 +316,7 @@ export function AddExpenseDialog({
                 <span className="text-muted-foreground">{t("remainingBudget")}</span>
                 <span
                   className={cn(
-                    "font-mono font-medium",
+                    "tabular-nums font-medium",
                     getProgressTextColor(spentPct)
                   )}
                 >
@@ -337,13 +339,13 @@ export function AddExpenseDialog({
                 placeholder="0"
                 value={amountDisplay}
                 onChange={handleAmountChange}
-                className="h-12 pl-8 text-right font-mono text-xl"
+                className="h-12 pl-8 text-right tabular-nums text-xl"
                 aria-invalid={!!errors.amount}
               />
             </div>
             {errors.amount && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.amount.message}
               </p>
             )}
@@ -363,7 +365,7 @@ export function AddExpenseDialog({
             />
             {errors.description && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.description.message}
               </p>
             )}
@@ -378,7 +380,7 @@ export function AddExpenseDialog({
                   <Button variant="outline" className="w-full justify-start text-left font-normal" />
                 }
               >
-                <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
+                <CalendarIcon className="mr-2 size-4 text-muted-foreground" strokeWidth={ICON_STROKE} />
                 {watchedDate ? format(selectedDate, "PPP") : t("pickDate")}
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -393,7 +395,7 @@ export function AddExpenseDialog({
             </Popover>
             {errors.expense_date && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.expense_date.message}
               </p>
             )}
@@ -402,7 +404,7 @@ export function AddExpenseDialog({
           {/* Footer */}
           <DialogFooter className="pt-2">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" strokeWidth={ICON_STROKE} />}
               {isSubmitting ? t("saving") : t("addExpense")}
             </Button>
             <DialogClose render={<Button variant="outline" />}>
@@ -411,7 +413,7 @@ export function AddExpenseDialog({
           </DialogFooter>
           {submitError && (
             <p className="flex items-center gap-1 text-xs text-destructive px-1">
-              <AlertCircle className="size-3" />
+              <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
               {submitError}
             </p>
           )}

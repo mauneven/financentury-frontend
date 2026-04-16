@@ -12,6 +12,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+const ICON_STROKE = 1.8;
+
 import type { Expense, Section } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 import { useBudgetStore } from "@/store/budget-store";
@@ -273,7 +275,7 @@ export function EditExpenseDialog({
             </Select>
             {errors.category_id && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.category_id.message}
               </p>
             )}
@@ -292,13 +294,13 @@ export function EditExpenseDialog({
                 placeholder="0"
                 value={amountDisplay}
                 onChange={handleAmountChange}
-                className="h-12 pl-8 text-right font-mono text-xl"
+                className="h-12 pl-8 text-right tabular-nums text-xl"
                 aria-invalid={!!errors.amount}
               />
             </div>
             {errors.amount && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.amount.message}
               </p>
             )}
@@ -318,7 +320,7 @@ export function EditExpenseDialog({
             />
             {errors.description && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.description.message}
               </p>
             )}
@@ -333,7 +335,7 @@ export function EditExpenseDialog({
                   <Button variant="outline" className="w-full justify-start text-left font-normal" />
                 }
               >
-                <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
+                <CalendarIcon className="mr-2 size-4 text-muted-foreground" strokeWidth={ICON_STROKE} />
                 {watchedDate ? format(selectedDate, "PPP") : t("pickDate")}
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -348,7 +350,7 @@ export function EditExpenseDialog({
             </Popover>
             {errors.expense_date && (
               <p className="flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
                 {errors.expense_date.message}
               </p>
             )}
@@ -361,7 +363,7 @@ export function EditExpenseDialog({
             {!showDeleteConfirm ? (
               <>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" strokeWidth={ICON_STROKE} />}
                   {isSubmitting ? t("saving") : t("saveChanges")}
                 </Button>
                 <Button
@@ -369,7 +371,7 @@ export function EditExpenseDialog({
                   variant="destructive"
                   onClick={() => setShowDeleteConfirm(true)}
                 >
-                  <Trash2 className="mr-2 size-4" />
+                  <Trash2 className="mr-2 size-4" strokeWidth={ICON_STROKE} />
                   {tc("delete")}
                 </Button>
                 <DialogClose render={<Button variant="outline" />}>
@@ -384,7 +386,7 @@ export function EditExpenseDialog({
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
-                  {isDeleting && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  {isDeleting && <Loader2 className="mr-2 size-4 animate-spin" strokeWidth={ICON_STROKE} />}
                   {t("confirmDelete")}
                 </Button>
                 <Button

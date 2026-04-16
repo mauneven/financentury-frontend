@@ -111,7 +111,7 @@ export function CreateLinkDialog({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Link2 className="size-5" />
+            <Link2 className="size-5" strokeWidth={1.8} />
             {t("linkSection")}
           </DialogTitle>
           <DialogDescription>{stepTitle}</DialogDescription>
@@ -133,7 +133,7 @@ export function CreateLinkDialog({
                   key={b.id}
                   type="button"
                   onClick={() => handleSelectBudget(b)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left border-2 border-foreground transition-colors hover:bg-foreground hover:text-background"
+                  className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left border border-border transition-colors hover:bg-muted"
                 >
                   <div>
                     <p className="font-semibold">{b.name}</p>
@@ -149,12 +149,12 @@ export function CreateLinkDialog({
         ) : step === "section" && selectedBudget ? (
           <div className="space-y-2">
             {selectedBudget.sections.map((sec) => (
-              <div key={sec.id} className="border-2 border-foreground">
+              <div key={sec.id} className="rounded-lg border border-border overflow-hidden">
                 {/* Whole section option */}
                 <button
                   type="button"
                   onClick={() => handleSelectSection(sec)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground hover:text-background"
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
                 >
                   <div className="flex items-center gap-2">
                     <CategoryIcon iconKey={sec.icon} className="size-5" />
@@ -170,7 +170,7 @@ export function CreateLinkDialog({
                 </button>
                 {/* Individual categories */}
                 {sec.categories.length > 0 && (
-                  <div className="border-t border-foreground/10">
+                  <div className="border-t border-border">
                     {sec.categories.map((cat) => (
                       <button
                         key={cat.id}
@@ -193,7 +193,7 @@ export function CreateLinkDialog({
         ) : step === "filter" ? (
           <div className="space-y-4">
             {/* Summary of what's being linked */}
-            <div className="bg-muted/50 px-4 py-3 text-sm">
+            <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm">
               <p className="font-medium">
                 {selectedBudget?.name} &rarr; {selectedSection?.name}
                 {selectedCategory ? ` / ${selectedCategory.name}` : ""}
@@ -206,15 +206,15 @@ export function CreateLinkDialog({
                 type="button"
                 onClick={() => setFilterMode("all")}
                 className={cn(
-                  "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                  "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left border transition-colors",
                   filterMode === "all"
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground/30 hover:border-foreground"
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-border hover:border-border"
                 )}
               >
                 <div className={cn(
-                  "flex size-5 items-center justify-center border-2",
-                  filterMode === "all" ? "border-background" : "border-foreground"
+                  "flex size-5 items-center justify-center rounded-full border",
+                  filterMode === "all" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
                 )}>
                   {filterMode === "all" && <Check className="size-3" />}
                 </div>
@@ -226,15 +226,15 @@ export function CreateLinkDialog({
                 type="button"
                 onClick={() => setFilterMode("mine")}
                 className={cn(
-                  "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                  "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left border transition-colors",
                   filterMode === "mine"
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground/30 hover:border-foreground"
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-border hover:border-border"
                 )}
               >
                 <div className={cn(
-                  "flex size-5 items-center justify-center border-2",
-                  filterMode === "mine" ? "border-background" : "border-foreground"
+                  "flex size-5 items-center justify-center rounded-full border",
+                  filterMode === "mine" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
                 )}>
                   {filterMode === "mine" && <Check className="size-3" />}
                 </div>

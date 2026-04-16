@@ -270,7 +270,7 @@ export function AddCategoryDialog({
           <button
             type="button"
             onClick={() => setMode("create")}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
             {t("back")}
@@ -289,7 +289,7 @@ export function AddCategoryDialog({
           <button
             type="button"
             onClick={() => setMode("create")}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
             {t("back")}
@@ -300,7 +300,7 @@ export function AddCategoryDialog({
               key={b.id}
               type="button"
               onClick={() => handleSelectBudget(b)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left border-2 border-foreground transition-colors hover:bg-foreground hover:text-background"
+              className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left border border-border transition-colors hover:bg-muted"
             >
               <div>
                 <p className="font-semibold">{b.name}</p>
@@ -322,7 +322,7 @@ export function AddCategoryDialog({
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
             {t("back")}
@@ -333,7 +333,7 @@ export function AddCategoryDialog({
               key={sec.id}
               type="button"
               onClick={() => handleSelectSection(sec)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left border-2 border-foreground transition-colors hover:bg-foreground hover:text-background"
+              className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left border border-border transition-colors hover:bg-muted"
             >
               <div className="flex items-center gap-2">
                 <CategoryIcon iconKey={sec.icon} className="size-5" />
@@ -360,7 +360,7 @@ export function AddCategoryDialog({
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
             {t("back")}
@@ -371,7 +371,7 @@ export function AddCategoryDialog({
               key={cat.id}
               type="button"
               onClick={() => handleSelectCategory(cat)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left border-2 border-foreground transition-colors hover:bg-foreground hover:text-background"
+              className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left border border-border transition-colors hover:bg-muted"
             >
               <div className="flex items-center gap-2">
                 <CategoryIcon iconKey={cat.icon} className="size-4" />
@@ -396,13 +396,13 @@ export function AddCategoryDialog({
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
             {t("back")}
           </button>
 
-          <div className="bg-muted/50 px-4 py-3 text-sm">
+          <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm">
             <p className="font-medium">
               {selectedBudget.name} &rarr; {selectedSection.name} &rarr; {selectedCategory.name}
             </p>
@@ -414,15 +414,15 @@ export function AddCategoryDialog({
               type="button"
               onClick={() => setFilterMode("all")}
               className={cn(
-                "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left border transition-colors",
                 filterMode === "all"
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-foreground/30 hover:border-foreground"
+                  ? "border-emerald-500 bg-emerald-500/10"
+                  : "border-border hover:border-border"
               )}
             >
               <div className={cn(
-                "flex size-5 items-center justify-center border-2",
-                filterMode === "all" ? "border-background" : "border-foreground"
+                "flex size-5 items-center justify-center rounded-full border",
+                filterMode === "all" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
               )}>
                 {filterMode === "all" && <Check className="size-3" />}
               </div>
@@ -432,15 +432,15 @@ export function AddCategoryDialog({
               type="button"
               onClick={() => setFilterMode("mine")}
               className={cn(
-                "flex w-full items-center gap-3 px-4 py-3 text-left border-2 transition-colors",
+                "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left border transition-colors",
                 filterMode === "mine"
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-foreground/30 hover:border-foreground"
+                  ? "border-emerald-500 bg-emerald-500/10"
+                  : "border-border hover:border-border"
               )}
             >
               <div className={cn(
-                "flex size-5 items-center justify-center border-2",
-                filterMode === "mine" ? "border-background" : "border-foreground"
+                "flex size-5 items-center justify-center rounded-full border",
+                filterMode === "mine" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
               )}>
                 {filterMode === "mine" && <Check className="size-3" />}
               </div>
@@ -501,7 +501,7 @@ export function AddCategoryDialog({
               <div className="flex items-center gap-2">
                 <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
                   <PopoverTrigger
-                    className="flex size-10 shrink-0 items-center justify-center border-2 border-foreground bg-background transition-colors hover:bg-muted"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-muted"
                     aria-label={t("icon")}
                   >
                     <CategoryIcon iconKey={watchIcon} className="size-5" />

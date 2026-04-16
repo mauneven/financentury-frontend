@@ -95,15 +95,15 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
   // If nothing spent, show empty state
   if (categoryData.length === 0) {
     return (
-      <div className="border-2 border-foreground bg-card flex flex-col">
-        <div className="border-b-2 border-foreground px-4 sm:px-6 py-3 sm:py-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
+      <div className="rounded-xl border border-border bg-card flex flex-col">
+        <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4">
+          <h3 className="text-sm font-medium text-muted-foreground">
             {t("budgetOverview")}
           </h3>
         </div>
         <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">
           <div className="flex h-44 sm:h-56 flex-col items-center justify-center gap-3">
-            <p className="text-3xl font-bold font-mono tabular-nums text-foreground">
+            <p className="text-3xl font-semibold tabular-nums text-foreground">
               0%
             </p>
             <p className="text-sm font-medium text-muted-foreground mt-2">
@@ -116,9 +116,9 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
   }
 
   return (
-    <div className="border-2 border-foreground bg-card flex flex-col">
-      <div className="border-b-2 border-foreground px-4 sm:px-6 py-3 sm:py-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
+    <div className="rounded-xl border border-border bg-card flex flex-col">
+      <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4">
+        <h3 className="text-sm font-medium text-muted-foreground">
           {t("budgetOverview")}
         </h3>
       </div>
@@ -170,11 +170,10 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
               <Tooltip
                 contentStyle={{
                   backgroundColor: "var(--card)",
-                  border: "2px solid var(--foreground)",
-                  borderRadius: "0",
+                  border: "1px solid var(--border)",
+                  borderRadius: "0.75rem",
                   fontSize: "0.75rem",
-                  fontFamily: "monospace",
-                  boxShadow: "4px 4px 0px var(--foreground)",
+                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                   color: "var(--foreground)",
                 }}
                 wrapperStyle={{ zIndex: 50 }}
@@ -188,7 +187,7 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
           </ResponsiveContainer>
           {/* Center text overlay */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <p className="text-3xl font-bold font-mono tabular-nums text-foreground">
+            <p className="text-3xl font-semibold tabular-nums text-foreground">
               {spentPercentage}%
             </p>
           </div>
@@ -199,13 +198,13 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
           {categoryData.map((entry) => (
             <div key={entry.name} className="flex items-center gap-2 min-h-[28px]">
               <div
-                className="h-3 w-3 shrink-0"
+                className="h-3 w-3 shrink-0 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
               <span className="truncate text-sm text-muted-foreground">
                 {entry.name}
               </span>
-              <span className="ml-auto shrink-0 whitespace-nowrap text-sm font-semibold font-mono tabular-nums text-foreground">
+              <span className="ml-auto shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
                 {formatCompact(entry.value, budget.currency)}
               </span>
             </div>

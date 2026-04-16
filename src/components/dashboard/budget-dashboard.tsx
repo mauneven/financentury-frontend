@@ -28,9 +28,9 @@ const SpendingChart = dynamic(
   () => import("./spending-chart").then((mod) => ({ default: mod.SpendingChart })),
   {
     loading: () => (
-      <div className="border-2 border-foreground bg-card p-6">
-        <div className="h-4 w-32 animate-pulse bg-muted" />
-        <div className="mt-4 h-64 animate-pulse bg-muted" />
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+        <div className="mt-4 h-64 animate-pulse rounded-lg bg-muted" />
       </div>
     ),
     ssr: false,
@@ -41,9 +41,9 @@ const BreakdownChart = dynamic(
   () => import("./breakdown-chart").then((mod) => ({ default: mod.BreakdownChart })),
   {
     loading: () => (
-      <div className="border-2 border-foreground bg-card p-6">
-        <div className="h-4 w-28 animate-pulse bg-muted" />
-        <div className="mt-4 h-64 animate-pulse bg-muted" />
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+        <div className="mt-4 h-64 animate-pulse rounded-lg bg-muted" />
       </div>
     ),
     ssr: false,
@@ -69,20 +69,20 @@ function DashboardSkeleton() {
     <div className="space-y-6">
       {/* Header skeleton */}
       <div className="space-y-2">
-        <div className="h-7 w-48 animate-pulse bg-muted" />
-        <div className="h-4 w-32 animate-pulse bg-muted" />
+        <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-32 animate-pulse rounded bg-muted" />
       </div>
 
       {/* Overview cards skeleton */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="border-2 border-foreground bg-card p-6">
+          <div key={i} className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center justify-between">
-              <div className="h-4 w-20 animate-pulse bg-muted" />
+              <div className="h-4 w-20 animate-pulse rounded bg-muted" />
             </div>
             <div className="mt-3 space-y-2">
-              <div className="h-7 w-28 animate-pulse bg-muted" />
-              <div className="h-3 w-20 animate-pulse bg-muted" />
+              <div className="h-7 w-28 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-20 animate-pulse rounded bg-muted" />
             </div>
           </div>
         ))}
@@ -90,32 +90,32 @@ function DashboardSkeleton() {
 
       {/* Chart skeleton */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="border-2 border-foreground bg-card p-6 lg:col-span-2">
-          <div className="h-4 w-32 animate-pulse bg-muted" />
-          <div className="mt-4 h-64 animate-pulse bg-muted" />
+        <div className="rounded-xl border border-border bg-card p-6 lg:col-span-2">
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          <div className="mt-4 h-64 animate-pulse rounded-lg bg-muted" />
         </div>
-        <div className="border-2 border-foreground bg-card p-6">
-          <div className="h-4 w-28 animate-pulse bg-muted" />
-          <div className="mt-4 h-64 animate-pulse bg-muted" />
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+          <div className="mt-4 h-64 animate-pulse rounded-lg bg-muted" />
         </div>
       </div>
 
       {/* Category cards skeleton */}
       <div className="space-y-4">
-        <div className="h-5 w-36 animate-pulse bg-muted" />
+        <div className="h-5 w-36 animate-pulse rounded bg-muted" />
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="border-2 border-foreground bg-card p-6">
+          <div key={i} className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 animate-pulse bg-muted" />
+                <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
                 <div className="space-y-1.5">
-                  <div className="h-4 w-24 animate-pulse bg-muted" />
-                  <div className="h-3 w-16 animate-pulse bg-muted" />
+                  <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-16 animate-pulse rounded bg-muted" />
                 </div>
               </div>
-              <div className="h-4 w-10 animate-pulse bg-muted" />
+              <div className="h-4 w-10 animate-pulse rounded bg-muted" />
             </div>
-            <div className="mt-4 h-4 w-full animate-pulse bg-muted" />
+            <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-muted" />
           </div>
         ))}
       </div>
@@ -297,10 +297,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
   if (error) {
     return (
-      <div className="border-2 border-foreground bg-card">
+      <div className="rounded-xl border border-border bg-card">
         <div className="flex flex-col items-center justify-center p-12 text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center border-2 border-red-500 bg-red-50 dark:bg-red-950/30">
-            <RefreshCw className="h-6 w-6 text-red-500" />
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-red-50 dark:bg-red-950/30">
+            <RefreshCw className="h-6 w-6 text-red-500" strokeWidth={1.8} />
           </div>
           <h3 className="mb-1 text-lg font-semibold text-foreground">
             {t("errorLoading")}
@@ -311,9 +311,9 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           <button
             type="button"
             onClick={() => setActiveBudget(budgetId)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4" strokeWidth={1.8} />
             {tc("retry")}
           </button>
         </div>
@@ -341,10 +341,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         <div className="flex items-start gap-3">
           <Link
             href="/budgets"
-            className="mt-1 flex size-8 shrink-0 items-center justify-center text-foreground transition-colors duration-200 hover:bg-foreground hover:text-background border-2 border-foreground"
+            className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors duration-200 hover:bg-muted border border-border"
             aria-label="Go back"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft className="size-4" strokeWidth={1.8} />
           </Link>
           <div>
             <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>{budget.name}</h1>
@@ -357,17 +357,17 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           <button
             type="button"
             onClick={() => setAddExpenseOpen(true)}
-            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+            className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-3.5" strokeWidth={1.8} />
             <span className="hidden sm:inline">{t("addExpense")}</span>
           </button>
           <Link
             href={`/budget/${budgetId}/settings`}
-            className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border-2 border-foreground"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground border border-border"
             aria-label="Budget settings"
           >
-            <Settings className="size-4" />
+            <Settings className="size-4" strokeWidth={1.8} />
           </Link>
         </div>
       </div>
@@ -389,10 +389,10 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         return (
           <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t("ofBudgetUsed")}</span>
-              <span className={cn("font-bold tabular-nums font-mono", tc2)}>{pct}%</span>
+              <span className="text-sm font-medium text-muted-foreground">{t("ofBudgetUsed")}</span>
+              <span className={cn("font-semibold tabular-nums", tc2)}>{pct}%</span>
             </div>
-            <div className="h-3 w-full overflow-hidden bg-muted">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
               <div className={cn("h-full transition-all duration-300", pc)} style={{ width: `${Math.min(pct, 100)}%` }} />
             </div>
           </div>
@@ -429,7 +429,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
 
       {/* Per-person spending (shared budgets only) */}
       {summary.spending_by_user && summary.spending_by_user.length > 0 && (
-        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
           <SpendingByUser
             spendingByUser={summary.spending_by_user}
             totalSpent={summary.total_spent}
@@ -467,9 +467,9 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
                   setSectionPrefillAmount(remainingAmt > 0 ? remainingAmt : undefined);
                   setAddSectionOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5" strokeWidth={1.8} />
                 {t("addSection")}
               </button>
             </div>
@@ -496,8 +496,8 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center border-2 border-foreground bg-muted">
-            <Plus className="h-8 w-8 text-muted-foreground" />
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+            <Plus className="h-8 w-8 text-muted-foreground" strokeWidth={1.8} />
           </div>
           <h3 className="mb-2 text-lg font-semibold text-foreground">
             {t("noSectionsYet")}
@@ -511,9 +511,9 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
               setSectionPrefillAmount(budget.monthly_income * 0.3);
               setAddSectionOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-3.5" strokeWidth={1.8} />
             {t("addFirstSection")}
           </button>
         </div>

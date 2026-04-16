@@ -15,14 +15,14 @@ export default function TermsPage() {
           {/* Back link */}
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground mb-8"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground mb-8"
           >
-            <ArrowLeft className="size-3.5" />
+            <ArrowLeft className="size-3.5" strokeWidth={1.8} />
             Financentury
           </Link>
 
           {/* Title */}
-          <h1 className="font-bold tracking-tight text-foreground" style={{ fontSize: 'var(--text-fluid-xl)' }}>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             {t("title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("lastUpdated")}</p>
@@ -97,8 +97,8 @@ export default function TermsPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-l-2 border-foreground pl-5">
-      <h2 className="font-bold text-foreground mb-3" style={{ fontSize: 'var(--text-fluid-lg)' }}>
+    <div className="rounded-xl border border-border p-5 sm:p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-3">
         {title}
       </h2>
       <div className="text-sm text-muted-foreground leading-relaxed space-y-4">
@@ -111,7 +111,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function BulletItem({ text }: { text: string }) {
   return (
     <li className="flex items-start gap-2">
-      <span className="mt-1.5 size-1.5 shrink-0 bg-foreground" />
+      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground/40" />
       <span>{text}</span>
     </li>
   );

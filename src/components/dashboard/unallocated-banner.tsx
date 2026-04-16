@@ -79,14 +79,14 @@ export function BudgetUnallocatedBanner({
   };
 
   return (
-    <div className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20 p-4 sm:p-5">
+    <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <AlertTriangle className="size-5 shrink-0 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+        <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" strokeWidth={1.8} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-yellow-800 dark:text-yellow-200">
+          <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
             {t("budgetTitle", { percent: String(unallocatedPercent) })}
           </p>
-          <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+          <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
             {t("budgetDescription", { amount: formatCurrency(unallocatedAmount, currency) })}
           </p>
 
@@ -96,24 +96,24 @@ export function BudgetUnallocatedBanner({
                 <button
                   type="button"
                   onClick={() => setShowRedirect(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
                 >
-                  <ArrowRight className="size-3.5" />
+                  <ArrowRight className="size-3.5" strokeWidth={1.8} />
                   {t("redirectToSection")}
                 </button>
               )}
               <button
                 type="button"
                 onClick={onCreateSection}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5" strokeWidth={1.8} />
                 {t("createSection")}
               </button>
             </div>
           ) : (
             <div className="mt-3 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-yellow-700 dark:text-yellow-300">
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
                 {t("selectTarget")}
               </p>
               <div className="space-y-1">
@@ -123,15 +123,15 @@ export function BudgetUnallocatedBanner({
                     type="button"
                     onClick={() => setSelectedId(sec.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors border-2",
+                      "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-lg border",
                       selectedId === sec.id
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-transparent bg-background text-foreground hover:border-foreground/30"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-transparent bg-background text-foreground hover:border-border"
                     )}
                   >
                     <CategoryIcon iconKey={sec.icon} className="size-4 shrink-0" />
                     <span className="text-sm font-semibold flex-1">{sec.name}</span>
-                    <span className="text-xs font-mono tabular-nums opacity-70">
+                    <span className="text-xs tabular-nums opacity-70">
                       {formatCurrency(sec.allocation_value, currency)} → {formatCurrency(sec.allocation_value + unallocatedAmount, currency)}
                     </span>
                   </button>
@@ -141,7 +141,7 @@ export function BudgetUnallocatedBanner({
                 <button
                   type="button"
                   onClick={() => { setShowRedirect(false); setSelectedId(null); }}
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
                 >
                   {t("cancel")}
                 </button>
@@ -149,7 +149,7 @@ export function BudgetUnallocatedBanner({
                   type="button"
                   onClick={handleRedirect}
                   disabled={!selectedId || redirecting}
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground disabled:opacity-50"
+                  className="px-3 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                 >
                   {redirecting ? (
                     <span className="flex items-center gap-1.5">
@@ -250,9 +250,9 @@ export function SectionUnallocatedBanner({
 
   if (compact) {
     return (
-      <div className="mt-3 flex items-center gap-2 px-1 text-yellow-600 dark:text-yellow-400">
-        <AlertTriangle className="size-3.5 shrink-0" />
-        <span className="text-xs font-bold">
+      <div className="mt-3 flex items-center gap-2 px-1 text-amber-600 dark:text-amber-400">
+        <AlertTriangle className="size-3.5 shrink-0" strokeWidth={1.8} />
+        <span className="text-xs font-medium">
           {t("sectionTitle", { percent: String(unallocatedPercent) })}
         </span>
       </div>
@@ -260,14 +260,14 @@ export function SectionUnallocatedBanner({
   }
 
   return (
-    <div className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20 p-4 sm:p-5">
+    <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <AlertTriangle className="size-5 shrink-0 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+        <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" strokeWidth={1.8} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-yellow-800 dark:text-yellow-200">
+          <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
             {t("sectionTitle", { percent: String(unallocatedPercent) })}
           </p>
-          <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+          <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
             {t("sectionDescription", { amount: formatCurrency(unallocatedAmount, currency) })}
           </p>
 
@@ -277,34 +277,34 @@ export function SectionUnallocatedBanner({
                 <button
                   type="button"
                   onClick={() => setShowRedirect(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
                 >
-                  <ArrowRight className="size-3.5" />
+                  <ArrowRight className="size-3.5" strokeWidth={1.8} />
                   {t("redirectToCategory")}
                 </button>
               )}
               <button
                 type="button"
                 onClick={onCreateCategory}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5" strokeWidth={1.8} />
                 {t("createCategory")}
               </button>
               {onTrimSection && trimTargetValue !== undefined && (
                 <button
                   type="button"
                   onClick={() => setConfirmTrim(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-red-500 bg-background text-red-600 dark:text-red-400 transition-colors hover:bg-red-500 hover:text-white"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-red-300 dark:border-red-700 bg-background text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
-                  <Minus className="size-3.5" />
+                  <Minus className="size-3.5" strokeWidth={1.8} />
                   {t("trimSection")}
                 </button>
               )}
             </div>
           ) : confirmTrim ? (
             <div className="mt-3 space-y-3">
-              <p className="text-sm font-bold text-red-700 dark:text-red-300">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                 {t("trimSectionConfirm", {
                   from: formatCurrency((trimTargetValue ?? 0) + unallocatedAmount, currency),
                   to: formatCurrency(trimTargetValue ?? 0, currency),
@@ -314,7 +314,7 @@ export function SectionUnallocatedBanner({
                 <button
                   type="button"
                   onClick={() => setConfirmTrim(false)}
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
                 >
                   {t("cancel")}
                 </button>
@@ -322,7 +322,7 @@ export function SectionUnallocatedBanner({
                   type="button"
                   onClick={handleTrim}
                   disabled={trimming}
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-red-500 bg-red-500 text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                  className="px-3 py-2 text-xs font-medium rounded-lg bg-red-500 text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                 >
                   {trimming ? (
                     <span className="flex items-center gap-1.5">
@@ -337,7 +337,7 @@ export function SectionUnallocatedBanner({
             </div>
           ) : (
             <div className="mt-3 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-yellow-700 dark:text-yellow-300">
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
                 {t("selectTarget")}
               </p>
               <div className="space-y-1">
@@ -347,15 +347,15 @@ export function SectionUnallocatedBanner({
                     type="button"
                     onClick={() => setSelectedId(cat.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors border-2",
+                      "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-lg border",
                       selectedId === cat.id
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-transparent bg-background text-foreground hover:border-foreground/30"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-transparent bg-background text-foreground hover:border-border"
                     )}
                   >
                     <CategoryIcon iconKey={cat.icon} className="size-4 shrink-0" />
                     <span className="text-sm font-semibold flex-1">{cat.name}</span>
-                    <span className="text-xs font-mono tabular-nums opacity-70">
+                    <span className="text-xs tabular-nums opacity-70">
                       {formatCurrency(cat.allocation_value, currency)} → {formatCurrency(cat.allocation_value + unallocatedAmount, currency)}
                     </span>
                   </button>
@@ -365,7 +365,7 @@ export function SectionUnallocatedBanner({
                 <button
                   type="button"
                   onClick={() => { setShowRedirect(false); setSelectedId(null); }}
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  className="px-3 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
                 >
                   {t("cancel")}
                 </button>
@@ -373,7 +373,7 @@ export function SectionUnallocatedBanner({
                   type="button"
                   onClick={handleRedirect}
                   disabled={!selectedId || redirecting}
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-foreground text-background transition-colors hover:bg-background hover:text-foreground disabled:opacity-50"
+                  className="px-3 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                 >
                   {redirecting ? (
                     <span className="flex items-center gap-1.5">

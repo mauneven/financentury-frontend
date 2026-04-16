@@ -73,7 +73,7 @@ describe("IconPicker component", () => {
     const buttons = container.querySelectorAll("button");
     // The first button (home) should have the selected border class
     const firstButton = buttons[0];
-    expect(firstButton.className).toContain("border-foreground");
+    expect(firstButton.className).toContain("border-primary");
   });
 
   it("does not highlight non-selected icons", () => {

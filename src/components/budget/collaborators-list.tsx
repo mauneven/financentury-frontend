@@ -90,7 +90,7 @@ export function CollaboratorsList({ budgetId, isOwner, onCountChange }: Collabor
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <div className="mb-3 rounded-full bg-muted p-3">
-          <Users className="size-5 text-muted-foreground" />
+          <Users className="size-5 text-muted-foreground" strokeWidth={1.8} />
         </div>
         <p className="text-sm text-muted-foreground">{t("noCollaborators")}</p>
       </div>
@@ -109,7 +109,7 @@ export function CollaboratorsList({ budgetId, isOwner, onCountChange }: Collabor
               key={collab.id}
               className="flex items-center gap-3 py-3"
             >
-              <div className="flex size-8 shrink-0 items-center justify-center border-2 border-foreground bg-muted text-xs font-bold uppercase">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-medium">
                 {getInitials(displayName)}
               </div>
 

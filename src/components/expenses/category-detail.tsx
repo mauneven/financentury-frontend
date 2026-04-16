@@ -7,7 +7,7 @@ import { Plus, ArrowLeft } from "lucide-react";
 
 const SpendingChart = dynamic(
   () => import("@/components/dashboard/spending-chart").then((mod) => ({ default: mod.SpendingChart })),
-  { ssr: false, loading: () => <div className="border-2 border-foreground bg-card p-6"><div className="h-64 animate-pulse bg-muted" /></div> }
+  { ssr: false, loading: () => <div className="border border-border rounded-lg bg-card p-6"><div className="h-64 animate-pulse rounded-md bg-muted" /></div> }
 );
 
 import type { Expense, Section, CategorySummary } from "@/types/budget";
@@ -22,11 +22,14 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { Button } from "@/components/ui/button";
 
 import { SpendingByUser } from "@/components/dashboard/spending-by-user";
 import { ExpenseList } from "./expense-list";
 import { AddExpenseDialog } from "./add-expense-dialog";
 import { EditExpenseDialog } from "./edit-expense-dialog";
+
+const ICON_STROKE = 1.8;
 
 interface CategoryDetailProps {
   categorySummary: CategorySummary;
@@ -60,7 +63,6 @@ export function CategoryDetail({
   const progressColor = getProgressColor(percentage);
   const textColor = getProgressTextColor(percentage);
   const overBudget = remaining < 0;
-  // averageExpense available if needed: expense_count > 0 ? total_spent / expense_count : 0
 
   // Build categories map for expense list
   const categoriesMap = useMemo(() => {
@@ -89,55 +91,56 @@ export function CategoryDetail({
       {/* Breadcrumbs */}
       <Breadcrumbs />
 
-      {/* Header — matches budget + section page pattern */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <button
             type="button"
             onClick={() => router.back()}
-            className="mt-1 flex size-8 shrink-0 items-center justify-center text-foreground transition-colors duration-200 hover:bg-foreground hover:text-background border-2 border-foreground"
+            className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors duration-200 hover:bg-muted border border-border"
             aria-label="Go back"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft className="size-4" strokeWidth={ICON_STROKE} />
           </button>
           <div className="flex items-center gap-3">
             <CategoryIcon iconKey={detailCategory.icon} className="size-8" />
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">{detailCategory.name}</h1>
-              <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">{detailCategory.name}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {expense_count === 1 ? t("expensesRecorded", { count: expense_count }) : t("expensesRecordedPlural", { count: expense_count })}
               </p>
             </div>
           </div>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setAddDialogOpen(true)}
-          className="inline-flex items-center gap-1.5 shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+          className="shrink-0 gap-1.5"
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-3.5" strokeWidth={ICON_STROKE} />
           <span className="hidden sm:inline">{t("addExpense")}</span>
-        </button>
+        </Button>
       </div>
 
-      {/* Stats — 3 cards like budget + section */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("budgeted")}</p>
-          <p className="text-lg font-bold tabular-nums font-mono">
+        <div className="border border-border rounded-lg bg-card p-4 text-center">
+          <p className="text-sm font-medium text-muted-foreground mb-1">{t("budgeted")}</p>
+          <p className="text-lg font-semibold tabular-nums">
             {formatCurrency(allocated_amount, currency)}
           </p>
         </div>
-        <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("spent")}</p>
-          <p className={cn("text-lg font-bold tabular-nums font-mono", textColor)}>
+        <div className="border border-border rounded-lg bg-card p-4 text-center">
+          <p className="text-sm font-medium text-muted-foreground mb-1">{t("spent")}</p>
+          <p className={cn("text-lg font-semibold tabular-nums", textColor)}>
             {formatCurrency(total_spent, currency)}
           </p>
         </div>
-        <div className="border-2 border-foreground bg-card p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-bold">{t("remaining")}</p>
+        <div className="border border-border rounded-lg bg-card p-4 text-center">
+          <p className="text-sm font-medium text-muted-foreground mb-1">{t("remaining")}</p>
           <p className={cn(
-            "text-lg font-bold tabular-nums font-mono",
+            "text-lg font-semibold tabular-nums",
             overBudget ? "text-red-600 dark:text-red-400" : "text-emerald-600"
           )}>
             {overBudget ? "-" : ""}{formatCurrency(Math.abs(remaining), currency)}
@@ -145,17 +148,17 @@ export function CategoryDetail({
         </div>
       </div>
 
-      {/* Progress — same style as section */}
+      {/* Progress */}
       <div className="space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t("budgetUsage")}</span>
-          <span className={cn("font-bold tabular-nums font-mono", textColor)}>
+          <span className="text-sm font-medium text-muted-foreground">{t("budgetUsage")}</span>
+          <span className={cn("font-semibold tabular-nums", textColor)}>
             {percentage}%
           </span>
         </div>
-        <div className="h-3 w-full overflow-hidden bg-muted">
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className={cn("h-full transition-all duration-300", progressColor)}
+            className={cn("h-full rounded-full transition-all duration-300", progressColor)}
             style={{ width: `${Math.min(percentage, 100)}%` }}
           />
         </div>
@@ -163,7 +166,7 @@ export function CategoryDetail({
 
       {/* Per-person spending (category level) */}
       {categorySummary.spending_by_user && categorySummary.spending_by_user.length > 0 && (
-        <div className="border-2 border-foreground bg-card p-5 sm:p-6">
+        <div className="border border-border rounded-lg bg-card p-5 sm:p-6">
           <SpendingByUser
             spendingByUser={categorySummary.spending_by_user}
             totalSpent={total_spent}
@@ -172,30 +175,31 @@ export function CategoryDetail({
         </div>
       )}
 
-      {/* Chart — shows only this category's spending */}
+      {/* Chart */}
       <SpendingChart expenses={filteredExpenses} currency={currency} />
 
       {/* Expense List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-2">
-          <h2 className="font-semibold text-foreground" style={{ fontSize: 'var(--text-fluid-lg)' }}>
+          <h2 className="text-lg font-semibold text-foreground">
             {t("allExpenses")}
           </h2>
         </div>
         {filteredExpenses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-foreground px-4 py-12 text-center">
-            <p className="mb-1 text-sm font-semibold">{t("noExpenses")}</p>
+          <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-lg px-4 py-12 text-center">
+            <p className="mb-1 text-sm font-medium">{t("noExpenses")}</p>
             <p className="mb-5 max-w-xs text-sm text-muted-foreground">
               {t("addExpenseHere", { name: detailCategory.name })}
             </p>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setAddDialogOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border-2 border-foreground bg-background text-foreground transition-colors hover:bg-foreground hover:text-background"
+              className="gap-1.5"
             >
-              <Plus className="size-3.5" />
+              <Plus className="size-3.5" strokeWidth={ICON_STROKE} />
               {t("addExpense")}
-            </button>
+            </Button>
           </div>
         ) : (
           <ExpenseList
@@ -231,4 +235,3 @@ export function CategoryDetail({
     </div>
   );
 }
-

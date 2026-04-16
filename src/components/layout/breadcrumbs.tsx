@@ -89,29 +89,25 @@ export function Breadcrumbs() {
 
   if (segments.length === 0) return null;
 
-  // Back href is the second-to-last segment, or home
-  const backHref = segments.length > 1 ? segments[segments.length - 2].href : "/";
-
   return (
     <div>
       <nav className="flex items-center gap-2 py-3 min-w-0" aria-label="Breadcrumb">
-          {/* Breadcrumb segments only - no back button */}
           <ol className="flex items-center gap-1 min-w-0 overflow-hidden">
             {segments.map((seg, i) => {
               const isLast = i === segments.length - 1;
               return (
                 <li key={seg.href} className="flex items-center gap-1 min-w-0">
                   {i > 0 && (
-                    <ChevronRight className="size-3 shrink-0 text-muted-foreground/50" />
+                    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" strokeWidth={1.8} />
                   )}
                   {isLast ? (
-                    <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">
+                    <span className="text-sm font-medium text-foreground truncate">
                       {seg.label}
                     </span>
                   ) : (
                     <Link
                       href={seg.href}
-                      className="text-xs font-bold uppercase tracking-widest text-muted-foreground truncate transition-colors hover:text-foreground"
+                      className="text-sm text-muted-foreground truncate transition-colors hover:text-foreground"
                     >
                       {/* On mobile, hide all but last 2 segments */}
                       <span className={i < segments.length - 2 ? "hidden sm:inline" : ""}>

@@ -120,7 +120,7 @@ function StepIndicator({
         <div
           key={i}
           className={cn(
-            "h-1.5 transition-all duration-300",
+            "h-1.5 rounded-full transition-all duration-300",
             i + 1 === current
               ? "w-6 bg-emerald-500"
               : i + 1 < current
@@ -228,7 +228,7 @@ function ModeDonutChart({
               className="flex items-center gap-1 text-[9px] leading-tight text-muted-foreground"
             >
               <span
-                className="inline-block shrink-0"
+                className="inline-block shrink-0 rounded-full"
                 style={{
                   width: 6,
                   height: 6,
@@ -236,7 +236,7 @@ function ModeDonutChart({
                 }}
               />
               <span className="truncate">{nameTranslator ? nameTranslator(section.name) : section.name}</span>
-              <span className="shrink-0 font-mono tabular-nums">({section.allocation_value}%)</span>
+              <span className="shrink-0 tabular-nums">({section.allocation_value}%)</span>
             </span>
           ))}
         </div>
@@ -399,7 +399,7 @@ export function CreateBudgetDialog({
   }[] = [
     {
       mode: "balanced",
-      icon: <Scale className="size-5" />,
+      icon: <Scale className="size-5" strokeWidth={1.8} />,
       titleKey: "balancedMode",
       descKey: "balancedDescription",
       borderColor: "hover:border-emerald-500",
@@ -409,7 +409,7 @@ export function CreateBudgetDialog({
     },
     {
       mode: "debt-free",
-      icon: <Wallet className="size-5" />,
+      icon: <Wallet className="size-5" strokeWidth={1.8} />,
       titleKey: "debtFreeMode",
       descKey: "debtFreeDescription",
       borderColor: "hover:border-blue-500",
@@ -419,7 +419,7 @@ export function CreateBudgetDialog({
     },
     {
       mode: "debt-payoff",
-      icon: <CreditCard className="size-5" />,
+      icon: <CreditCard className="size-5" strokeWidth={1.8} />,
       titleKey: "debtPayoffMode",
       descKey: "debtPayoffDescription",
       borderColor: "hover:border-rose-500",
@@ -429,7 +429,7 @@ export function CreateBudgetDialog({
     },
     {
       mode: "travel",
-      icon: <Plane className="size-5" />,
+      icon: <Plane className="size-5" strokeWidth={1.8} />,
       titleKey: "travelMode",
       descKey: "travelDescription",
       borderColor: "hover:border-sky-500",
@@ -439,7 +439,7 @@ export function CreateBudgetDialog({
     },
     {
       mode: "event",
-      icon: <PartyPopper className="size-5" />,
+      icon: <PartyPopper className="size-5" strokeWidth={1.8} />,
       titleKey: "eventMode",
       descKey: "eventDescription",
       borderColor: "hover:border-amber-500",
@@ -449,7 +449,7 @@ export function CreateBudgetDialog({
     },
     {
       mode: "manual",
-      icon: <PenLine className="size-5" />,
+      icon: <PenLine className="size-5" strokeWidth={1.8} />,
       titleKey: "manualMode",
       descKey: "manualDescription",
       borderColor: "hover:border-violet-500",
@@ -475,17 +475,17 @@ export function CreateBudgetDialog({
             type="button"
             onClick={() => selectMode(card.mode)}
             className={cn(
-              "group relative flex flex-col items-start rounded-none border-2 p-4 text-left transition-all duration-200",
+              "group relative flex flex-col items-start rounded-xl border p-4 text-left transition-all duration-200",
               card.borderColor,
               mode === card.mode
                 ? "border-emerald-500 bg-emerald-500/5"
-                : "border-foreground/20"
+                : "border-border"
             )}
           >
             <div className="flex items-center gap-3 mb-2">
               <div
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-none border-2",
+                  "flex h-10 w-10 items-center justify-center rounded-lg border",
                   card.iconBorder,
                   card.iconBg,
                   card.iconText
@@ -521,7 +521,7 @@ export function CreateBudgetDialog({
         <div className="flex items-center gap-2">
           <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
             <PopoverTrigger
-              className="flex size-10 shrink-0 items-center justify-center border-2 border-foreground bg-background transition-colors hover:bg-muted"
+              className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-muted"
               aria-label="Pick icon"
             >
               <CategoryIcon iconKey={watchIcon} className="size-5" />
@@ -666,11 +666,11 @@ export function CreateBudgetDialog({
                         }
                       }}
                       className={cn(
-                        "rounded-none border-2 px-2 py-2 text-[10px] font-bold uppercase tracking-wide leading-tight transition-all duration-150",
+                        "rounded-lg border px-2 py-2 text-[10px] font-medium leading-tight transition-all duration-150",
                         idx === periodOptions.length - 1 ? "col-span-2 sm:col-span-1" : "",
                         activeValue === opt.value
                           ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : "border-foreground/20 text-muted-foreground hover:border-foreground hover:text-foreground"
+                          : "border-border text-muted-foreground hover:border-border hover:text-foreground"
                       )}
                     >
                       {opt.label}

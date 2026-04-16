@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/i18n/client";
@@ -7,10 +7,9 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 
-const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
+const inter = Inter({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["400", "700"],
 });
 
 export const viewport: Viewport = {
@@ -36,7 +35,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${spaceMono.variable} h-full`}
+      className={`${inter.variable} h-full`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

@@ -32,15 +32,15 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-2 md:grid-cols-3">
       {/* Total Budget */}
-      <div className="border-2 border-foreground bg-card p-4 sm:p-6">
-        <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+        <p className="text-sm font-medium text-muted-foreground">
           {t("totalBudget")}
         </p>
         <div className="mt-2 sm:mt-3">
-          <p className="text-xl sm:text-4xl font-bold tabular-nums tracking-tight font-mono text-foreground">
+          <p className="text-xl sm:text-4xl font-semibold tabular-nums tracking-tight text-foreground">
             {formatCurrency(effectiveBudget, budget.currency)}
           </p>
-          <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             {(() => {
               const bp = BILLING_PERIODS.find((p) => p.value === budget.billing_period_months);
               return bp ? tc(bp.labelKey) : `${budget.billing_period_months}m`;
@@ -50,17 +50,17 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
       </div>
 
       {/* Total Spent */}
-      <div className="border-2 border-foreground bg-card p-4 sm:p-6">
-        <p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground font-bold">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+        <p className="text-sm font-medium text-muted-foreground">
           {t("totalSpent")}
         </p>
         <div className="mt-2 sm:mt-3">
-          <p className="text-xl sm:text-4xl font-bold tabular-nums tracking-tight font-mono text-foreground">
+          <p className="text-xl sm:text-4xl font-semibold tabular-nums tracking-tight text-foreground">
             {formatCurrency(total_spent, budget.currency)}
           </p>
           <div className="mt-1.5 sm:mt-2 flex items-center gap-2">
-            <span className="inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 bg-foreground/40" />
-            <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-mono">
+            <span className="inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-muted-foreground/40" />
+            <p className="text-xs sm:text-sm text-muted-foreground tabular-nums">
               {spentPercentage}% {t("ofBudgetUsed")}
             </p>
           </div>
@@ -70,19 +70,19 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
       {/* Remaining */}
       <div
         className={cn(
-          "border-2 border-foreground bg-card p-4 sm:p-6 col-span-2 md:col-span-1",
+          "rounded-xl border border-border bg-card p-4 sm:p-6 col-span-2 md:col-span-1",
           isOverBudget
             ? "border-l-4 border-l-red-500"
             : "border-l-4 border-l-emerald-500"
         )}
       >
-        <p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground font-bold">
+        <p className="text-sm font-medium text-muted-foreground">
           {t("remaining")}
         </p>
         <div className="mt-2 sm:mt-3">
           <p
             className={cn(
-              "text-xl sm:text-4xl font-bold tabular-nums tracking-tight font-mono",
+              "text-xl sm:text-4xl font-semibold tabular-nums tracking-tight",
               isOverBudget ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
             )}
           >
@@ -92,13 +92,13 @@ export function OverviewCards({ summary }: OverviewCardsProps) {
           <div className="mt-1.5 sm:mt-2 flex items-center gap-2">
             <span
               className={cn(
-                "inline-block h-2 w-2 sm:h-2.5 sm:w-2.5",
+                "inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full",
                 isOverBudget ? "bg-red-500" : "bg-emerald-500"
               )}
             />
             <p
               className={cn(
-                "text-[10px] sm:text-xs uppercase tracking-wider font-mono",
+                "text-xs sm:text-sm tabular-nums",
                 isOverBudget
                   ? "text-red-500"
                   : "text-emerald-600 dark:text-emerald-400"

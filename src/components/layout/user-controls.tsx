@@ -16,8 +16,8 @@ export function ThemeToggle() {
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       className="text-muted-foreground hover:text-foreground"
     >
-      <Sun className="size-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <Sun className="size-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" strokeWidth={1.8} />
+      <Moon className="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" strokeWidth={1.8} />
       <span className="sr-only">Toggle theme</span>
     </Button>
   );
@@ -51,10 +51,10 @@ export function UserIndicator() {
       href="/account"
       className="flex items-center gap-2 transition-colors hover:opacity-80"
     >
-      <div className="flex size-6 shrink-0 items-center justify-center bg-foreground font-mono text-[10px] font-bold text-background">
+      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
         {initials}
       </div>
-      <span className="hidden sm:block font-mono text-xs font-bold text-foreground">
+      <span className="hidden sm:block text-xs font-medium text-foreground">
         {displayName}
       </span>
     </Link>
