@@ -224,7 +224,6 @@ export function CategoryDetail({
           open={!!editingExpense}
           onOpenChange={(o) => { if (!o) setEditingExpense(null); }}
           expense={editingExpense}
-          budgetId={budgetId}
           categories={categories}
           currency={currency}
         />

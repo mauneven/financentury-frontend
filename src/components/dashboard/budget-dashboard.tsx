@@ -564,7 +564,6 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
         <EditExpenseDialog
           open={!!editingExpense}
           onOpenChange={(open) => { if (!open) setEditingExpense(null); }}
-          budgetId={budgetId}
           expense={editingExpense}
           categories={dialogCategories}
           currency={budget.currency}

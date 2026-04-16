@@ -55,7 +55,6 @@ interface EditExpenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expense: Expense;
-  budgetId: string;
   categories: Section[];
   currency: string;
 }
@@ -87,7 +86,6 @@ export function EditExpenseDialog({
   open,
   onOpenChange,
   expense,
-  budgetId,
   categories,
   currency,
 }: EditExpenseDialogProps) {
@@ -175,7 +173,7 @@ export function EditExpenseDialog({
     setSubmitError(null);
     setIsSubmitting(true);
     try {
-      await updateExpense(budgetId, expense.id, {
+      await updateExpense(expense.budget_id, expense.id, {
         category_id: data.category_id,
         amount: data.amount,
         description: data.description || undefined,

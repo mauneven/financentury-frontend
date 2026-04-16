@@ -468,7 +468,6 @@ export default function SectionPage() {
         <EditExpenseDialog
           open={!!editingExpense}
           onOpenChange={(open) => { if (!open) setEditingExpense(null); }}
-          budgetId={params.id}
           expense={editingExpense}
           categories={expenseDialogCategories}
           currency={summary.budget.currency}
