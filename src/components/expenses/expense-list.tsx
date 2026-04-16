@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { es as dateFnsEs } from "date-fns/locale";
 import {
@@ -79,7 +79,7 @@ export function ExpenseList({
   const dateFnsLocale = locale === "es" ? dateFnsEs : undefined;
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
 
-  const grouped = ((): GroupedExpenses[] => {
+  const grouped = useMemo((): GroupedExpenses[] => {
     const sorted = [...expenses].sort(
       (a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()
     );
@@ -102,7 +102,7 @@ export function ExpenseList({
       ),
       expenses: exps,
     }));
-  })();
+  }, [expenses, locale, dateFnsLocale]);
 
   const handleDeleteConfirm = () => {
     if (deleteTarget && onDelete) {

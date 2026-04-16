@@ -221,7 +221,8 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
     const expense = await expenseApi.create(activeBudgetId, data);
     set((state) => ({ expenses: [...state.expenses, expense] }));
-    await get().refreshSummaryOnly();
+    // Let the WebSocket debounce handle the summary refresh instead of
+    // eagerly calling refreshSummaryOnly() here (avoids double API calls).
     return expense;
   },
 
@@ -230,7 +231,8 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       expenses: state.expenses.map((e) => e.id === expenseId ? updated : e),
     }));
-    await get().refreshSummaryOnly();
+    // Let the WebSocket debounce handle the summary refresh instead of
+    // eagerly calling refreshSummaryOnly() here (avoids double API calls).
     return updated;
   },
 
@@ -242,7 +244,8 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       expenses: state.expenses.filter((e) => e.id !== expenseId),
     }));
-    await get().refreshSummaryOnly();
+    // Let the WebSocket debounce handle the summary refresh instead of
+    // eagerly calling refreshSummaryOnly() here (avoids double API calls).
   },
 
   addSection: async (data) => {

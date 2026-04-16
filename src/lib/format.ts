@@ -1,15 +1,33 @@
 import { CURRENCIES } from "@/types/budget";
 
+// Zero-decimal currencies where fractional digits make no sense.
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  "COP", "CLP", "ARS", "MXN", "PEN", "JPY", "KRW", "VND", "IDR",
+]);
+
+// Cache Intl.NumberFormat instances — construction is expensive (~0.1ms each).
+const formatterCache = new Map<string, Intl.NumberFormat>();
+
+function getFormatter(locale: string, currencyCode: string): Intl.NumberFormat {
+  const key = `${locale}:${currencyCode}`;
+  let fmt = formatterCache.get(key);
+  if (!fmt) {
+    const isZeroDecimal = ZERO_DECIMAL_CURRENCIES.has(currencyCode);
+    fmt = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currencyCode,
+      minimumFractionDigits: isZeroDecimal ? 0 : 2,
+      maximumFractionDigits: isZeroDecimal ? 0 : 2,
+    });
+    formatterCache.set(key, fmt);
+  }
+  return fmt;
+}
+
 export function formatCurrency(amount: number, currencyCode: string): string {
   const currency = CURRENCIES.find((c) => c.code === currencyCode);
   const locale = currency?.locale || "en-US";
-
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: currencyCode,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return getFormatter(locale, currencyCode).format(amount);
 }
 
 export function formatCompact(amount: number, currencyCode: string): string {
@@ -27,12 +45,7 @@ export function formatCompact(amount: number, currencyCode: string): string {
     return `${sign}${symbol} ${(abs / 1_000).toFixed(0)}K`;
   }
 
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: currencyCode,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return getFormatter(locale, currencyCode).format(amount);
 }
 
 export function getPercentage(spent: number, budget: number): number {

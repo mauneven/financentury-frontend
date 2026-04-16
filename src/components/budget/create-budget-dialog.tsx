@@ -17,7 +17,7 @@ import {
   PartyPopper,
 } from "lucide-react";
 
-import { PieChart, Pie, Cell } from "recharts";
+// Removed recharts PieChart/Pie/Cell — replaced with a lightweight SVG donut.
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
 import { pickRandomIcon } from "@/lib/amount-utils";
 import {
@@ -172,6 +172,45 @@ const SECTION_NAME_KEYS: Record<string, string> = {
   Gestión: "sectionManagement",
 };
 
+/** Lightweight SVG donut — replaces recharts PieChart to avoid bundling the
+ *  entire recharts library just for static preview charts in this dialog. */
+function MiniDonut({
+  data,
+  size = 60,
+}: {
+  data: { value: number; color: string }[];
+  size?: number;
+}) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  const r = size / 2 - 6;
+  const circumference = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {data.map((d, i) => {
+        const pct = total > 0 ? d.value / total : 0;
+        const dashArray = `${pct * circumference} ${circumference}`;
+        const el = (
+          <circle
+            key={i}
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={d.color}
+            strokeWidth={8}
+            strokeDasharray={dashArray}
+            strokeDashoffset={-offset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        );
+        offset += pct * circumference;
+        return el;
+      })}
+    </svg>
+  );
+}
+
 function ModeDonutChart({
   mode,
   manualLabel,
@@ -183,36 +222,17 @@ function ModeDonutChart({
 }) {
   const isManual = mode === "manual";
   const sections = isManual ? [] : (MODE_SECTIONS[mode] ?? []);
-  const chartData = isManual
-    ? [{ name: "manual", value: 1 }]
-    : sections.map((s) => ({ name: s.name, value: s.allocation_value }));
+  const donutData = isManual
+    ? [{ value: 1, color: "#9ca3af" }]
+    : sections.map((s, i) => ({
+        value: s.allocation_value,
+        color: DONUT_COLORS[i % DONUT_COLORS.length],
+      }));
 
   return (
     <div className="flex items-center gap-2 mt-3 w-full">
-      {/* Recharts donut — pointer-events-none prevents selection; extra margin prevents arc clipping */}
-      <div className="shrink-0 pointer-events-none select-none" style={{ width: 72, height: 72 }}>
-        <PieChart width={72} height={72} style={{ overflow: "visible" }}>
-          <Pie
-            data={chartData}
-            cx={36}
-            cy={36}
-            innerRadius={20}
-            outerRadius={30}
-            dataKey="value"
-            strokeWidth={2}
-            stroke="var(--background)"
-            startAngle={90}
-            endAngle={-270}
-            isAnimationActive={false}
-          >
-            {chartData.map((_, i) => (
-              <Cell
-                key={i}
-                fill={isManual ? "#9ca3af" : DONUT_COLORS[i % DONUT_COLORS.length]}
-              />
-            ))}
-          </Pie>
-        </PieChart>
+      <div className="shrink-0 pointer-events-none select-none" style={{ width: 60, height: 60 }}>
+        <MiniDonut data={donutData} size={60} />
       </div>
 
       {/* Legend to the right */}
