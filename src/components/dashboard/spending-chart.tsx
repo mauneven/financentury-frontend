@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { Expense } from "@/types/budget";
+import { CURRENCIES } from "@/types/budget";
 import { formatCompact } from "@/lib/format";
 import { useTranslations } from "@/i18n/client";
 
@@ -19,17 +20,62 @@ interface SpendingChartProps {
   currency: string;
 }
 
-function formatDayLabel(dateStr: string): string {
-  try {
-    const d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  } catch {
-    return dateStr;
-  }
+function makeDayLabelFormatter(locale: string): (dateStr: string) => string {
+  return (dateStr: string) => {
+    try {
+      const d = new Date(dateStr + "T00:00:00");
+      return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  };
+}
+
+type Range = "1M" | "3M" | "6M" | "1Y";
+
+function ChartWrapper({
+  title,
+  range,
+  onRangeChange,
+  children,
+}: {
+  title: string;
+  range: Range;
+  onRangeChange: (r: Range) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card flex flex-col">
+      <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium text-muted-foreground shrink-0">
+          {title}
+        </h3>
+        <div className="flex gap-0.5 sm:gap-1">
+          {(["1M", "3M", "6M", "1Y"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => onRangeChange(r)}
+              className={`px-2 sm:px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                range === r
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">{children}</div>
+    </div>
+  );
 }
 
 export function SpendingChart({ expenses, currency }: SpendingChartProps) {
-  const [range, setRange] = useState<"1M" | "3M" | "6M" | "1Y">("6M");
+  const currencyInfo = CURRENCIES.find((c) => c.code === currency);
+  const locale = currencyInfo?.locale || "en-US";
+  const formatDayLabel = makeDayLabelFormatter(locale);
+  const [range, setRange] = useState<Range>("6M");
   const t = useTranslations("dashboard");
 
   // Group expenses by date and sum amounts.
@@ -52,35 +98,9 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
   cutoff.setMonth(cutoff.getMonth() - rangeMonths[range]);
   const filteredData = chartData.filter((d) => new Date(d.date) >= cutoff);
 
-  const ChartWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="rounded-xl border border-border bg-card flex flex-col">
-      <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-medium text-muted-foreground shrink-0">
-          {t("spendingTrends")}
-        </h3>
-        <div className="flex gap-0.5 sm:gap-1">
-          {(["1M", "3M", "6M", "1Y"] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`px-2 sm:px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                range === r
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">{children}</div>
-    </div>
-  );
-
   if (filteredData.length === 0) {
     return (
-      <ChartWrapper>
+      <ChartWrapper title={t("spendingTrends")} range={range} onRangeChange={setRange}>
         <div className="flex h-52 sm:h-72 items-center justify-center">
           <p className="text-sm font-medium text-muted-foreground">
             {t("notEnoughData")}
@@ -91,7 +111,7 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
   }
 
   return (
-    <ChartWrapper>
+    <ChartWrapper title={t("spendingTrends")} range={range} onRangeChange={setRange}>
       <div
         className="h-52 sm:h-72 w-full [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:focus:outline-none [&_*]:focus:outline-none"
         style={{ outline: "none" }}
@@ -150,7 +170,10 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
               fill="url(#gradient-total)"
               strokeWidth={1.5}
               dot={{ fill: "var(--foreground)", r: 3, strokeWidth: 0 }}
-              isAnimationActive={false}
+              isAnimationActive
+              animationBegin={0}
+              animationDuration={700}
+              animationEasing="ease-out"
             />
           </AreaChart>
         </ResponsiveContainer>

@@ -16,45 +16,61 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onOpenChange, callbackState, callbackError }: AuthModalProps) {
   const router = useRouter();
-  const { signInWithGoogle, user, initialized, loading: authLoading } =
-    useAuthStore();
+  // Narrow selectors: destructuring the full store would re-render on unrelated
+  // changes (token rotation, justLoggedIn toggle). Zustand action refs are
+  // stable, so selecting them individually is safe.
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
+  const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
+  const authLoading = useAuthStore((s) => s.loading);
   const tLanding = useTranslations("landing");
   const tAuth = useTranslations("auth");
 
-  const [error, setError] = useState<string | null>(null);
-
-  // Callback flow state machine: idle → loading → success/error
-  const [cbState, setCbState] = useState<"idle" | "loading" | "success" | "error">(
-    callbackState === "loading" ? "loading" : callbackState === "error" ? "error" : "idle"
-  );
+  // Local override lets us move to "success"/"error" after the initial callback prop,
+  // and to "idle" on user dismiss. When null, we derive state from props + auth store.
+  const [localOverride, setLocalOverride] = useState<
+    "idle" | "success" | "error" | null
+  >(null);
+  const [localError, setLocalError] = useState<string | null>(null);
   const redirectTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // Sync callbackState prop → cbState (prop arrives after initial mount)
-  useEffect(() => {
-    if (callbackState === "loading") setCbState("loading");
-    else if (callbackState === "error") {
-      setCbState("error");
-      if (callbackError) setError(callbackError);
+  // Derive the callback flow state from props + auth store + local override.
+  // This avoids setState-in-effect cascades: the state IS the computation.
+  let cbState: "idle" | "loading" | "success" | "error";
+  if (localOverride !== null) {
+    cbState = localOverride;
+  } else if (callbackState === "error") {
+    cbState = "error";
+  } else if (callbackState === "loading") {
+    // Auth finished resolving while we're in the callback flow — derive result.
+    if (initialized && !authLoading) {
+      cbState = user ? "success" : "error";
+    } else {
+      cbState = "loading";
     }
-  }, [callbackState, callbackError]);
+  } else {
+    cbState = "idle";
+  }
 
-  // Watch auth store: when user is confirmed while in "loading" state → success
+  const error =
+    localError ??
+    (callbackState === "error" ? callbackError ?? null : null) ??
+    (cbState === "error" ? tAuth("authFailed") : null);
+
+  // Side-effect: once we derive "success", schedule the redirect exactly once.
+  // This is a real external sync (router navigation), not a setState cascade.
+  const redirectScheduled = useRef(false);
   useEffect(() => {
-    if (cbState === "loading" && initialized && !authLoading && user) {
-      setCbState("success");
+    if (cbState === "success" && !redirectScheduled.current) {
+      redirectScheduled.current = true;
       redirectTimer.current = setTimeout(() => {
-        // Clean the URL and go to budgets
         router.replace("/budgets");
       }, 1200);
     }
-    // If initialized but no user while in "loading" → auth failed
-    // Guard: only trigger when genuinely in a callback flow (callbackState prop is "loading"),
-    // not from stale state after sign-out or other navigation.
-    if (cbState === "loading" && callbackState === "loading" && initialized && !authLoading && !user) {
-      setCbState("error");
-      setError(tAuth("authFailed"));
+    if (cbState !== "success") {
+      redirectScheduled.current = false;
     }
-  }, [cbState, callbackState, initialized, authLoading, user, router, tAuth]);
+  }, [cbState, router]);
 
   // Cleanup timer
   useEffect(() => {
@@ -68,8 +84,8 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
     if (callbackState) {
       router.replace("/");
     }
-    setError(null);
-    setCbState("idle");
+    setLocalError(null);
+    setLocalOverride("idle");
     onOpenChange(false);
   };
 
@@ -129,8 +145,8 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
             <button
               type="button"
               onClick={() => {
-                setCbState("idle");
-                setError(null);
+                setLocalOverride("idle");
+                setLocalError(null);
                 router.replace("/");
               }}
               className="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

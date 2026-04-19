@@ -29,7 +29,9 @@ interface CollaboratorsListProps {
 export function CollaboratorsList({ budgetId, isOwner, onCountChange }: CollaboratorsListProps) {
   const t = useTranslations("collaborators");
   const tc = useTranslations("common");
-  const { user } = useAuthStore();
+  // Narrow selector: only `user` is read here; full-store destructure would
+  // re-render on unrelated token/loading/justLoggedIn changes.
+  const user = useAuthStore((s) => s.user);
 
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [loading, setLoading] = useState(true);

@@ -12,17 +12,15 @@ interface OverviewCardsProps {
 
 export function OverviewCards({ summary }: OverviewCardsProps) {
   const { budget, total_budget } = summary;
-  const linkedSections = summary.linked_sections ?? [];
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
 
-  // Include linked spending in totals
-  const linkedSpent = linkedSections.reduce((sum, ls) => sum + ls.total_spent, 0);
-  const linkedAllocated = linkedSections
-    .filter((ls) => !ls.link.source_category_id)
-    .reduce((sum, ls) => sum + ls.section.allocation_value, 0);
-  const total_spent = summary.total_spent + linkedSpent;
-  const effectiveBudget = total_budget + linkedAllocated;
+  // Budget total stays fixed at monthly_income. Linked categories are a
+  // SLICE of that budget (shared from other budgets), NOT extra budget.
+  // Backend already folds linked spending into `total_spent`, so use the
+  // server-provided totals directly — no client-side addition.
+  const total_spent = summary.total_spent;
+  const effectiveBudget = total_budget;
   const remaining = effectiveBudget - total_spent;
   const spentPercentage = getPercentage(total_spent, effectiveBudget);
   const isOverBudget = remaining < 0;

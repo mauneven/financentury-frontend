@@ -71,7 +71,7 @@ describe("BudgetWebSocket", () => {
     } as unknown as typeof WebSocket;
 
     // Copy static properties
-    Object.assign((globalThis as Record<string, unknown>).WebSocket, {
+    Object.assign((globalThis as Record<string, unknown>).WebSocket as object, {
       CONNECTING: 0,
       OPEN: 1,
       CLOSING: 2,

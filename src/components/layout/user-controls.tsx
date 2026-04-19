@@ -35,7 +35,9 @@ function truncateName(name: string, max: number): string {
 }
 
 export function UserIndicator() {
-  const { user } = useAuthStore();
+  // Narrow selector: this component only uses `user`. A full-store destructure
+  // would re-render on every token refresh / loading / justLoggedIn toggle.
+  const user = useAuthStore((s) => s.user);
 
   const fullName = user?.full_name || "";
   const displayName = fullName ? truncateName(fullName, 15) : (user?.email?.split("@")[0] || "User");

@@ -16,9 +16,11 @@ export function Breadcrumbs() {
   const pathname = usePathname();
   const params = useParams<{
     id?: string;
-    sectionId?: string;
     categoryId?: string;
   }>();
+  // Destructure to primitives for stable useMemo deps.
+  const paramId = params.id;
+  const paramCategoryId = params.categoryId;
   const summary = useBudgetStore((s) => s.summary);
   const budgets = useBudgetStore((s) => s.budgets);
   const t = useTranslations("navbar");
@@ -28,101 +30,90 @@ export function Breadcrumbs() {
   const segments = useMemo((): BreadcrumbSegment[] => {
     const segs: BreadcrumbSegment[] = [];
 
-    // Account page
     if (pathname === "/account") {
       segs.push({ label: t("account"), href: "/account" });
       return segs;
     }
 
-    // Not in a budget route
-    if (!params.id) return segs;
+    if (!paramId) return segs;
 
     // Budget level
     const budgetName =
       summary?.budget.name ??
-      budgets.find((b) => b.id === params.id)?.name ??
+      budgets.find((b) => b.id === paramId)?.name ??
       "...";
 
     segs.push({ label: t("budgets"), href: "/" });
-    segs.push({ label: budgetName, href: `${basePath}/${params.id}` });
+    segs.push({ label: budgetName, href: `${basePath}/${paramId}` });
 
     // Settings
     if (pathname.endsWith("/settings")) {
       segs.push({
         label: t("settings"),
-        href: `${basePath}/${params.id}/settings`,
+        href: `${basePath}/${paramId}/settings`,
       });
       return segs;
     }
 
-    // Section level
-    if (params.sectionId) {
-      const sectionName =
-        summary?.sections.find((s) => s.section.id === params.sectionId)
-          ?.section.name ?? "...";
-      segs.push({
-        label: sectionName,
-        href: `${basePath}/${params.id}/section/${params.sectionId}`,
-      });
-    }
-
-    // Category level
-    if (params.categoryId && params.sectionId) {
+    // Category level — directly under the budget (no section segment).
+    if (paramCategoryId) {
+      // Look in own categories first, then linked categories.
       let categoryName = "...";
-      const sec = summary?.sections.find(
-        (s) => s.section.id === params.sectionId
+      const ownHit = summary?.categories.find(
+        (c) => c.category.id === paramCategoryId
       );
-      if (sec) {
-        const cat = sec.categories.find(
-          (c) => c.category.id === params.categoryId
+      if (ownHit) {
+        categoryName = ownHit.category.name;
+      } else {
+        const linkedHit = summary?.linked_categories?.find(
+          (l) => l.category.category.id === paramCategoryId
         );
-        if (cat) categoryName = cat.category.name;
+        if (linkedHit) categoryName = linkedHit.category.category.name;
       }
       segs.push({
         label: categoryName,
-        href: `${basePath}/${params.id}/section/${params.sectionId}/category/${params.categoryId}`,
+        href: `${basePath}/${paramId}/category/${paramCategoryId}`,
       });
     }
 
     return segs;
-  }, [pathname, params, summary, budgets, t]);
+  }, [pathname, paramId, paramCategoryId, summary, budgets, t]);
 
   if (segments.length === 0) return null;
 
   return (
     <div>
       <nav className="flex items-center gap-2 py-3 min-w-0" aria-label="Breadcrumb">
-          <ol className="flex items-center gap-1 min-w-0 overflow-hidden">
-            {segments.map((seg, i) => {
-              const isLast = i === segments.length - 1;
-              return (
-                <li key={seg.href} className="flex items-center gap-1 min-w-0">
-                  {i > 0 && (
-                    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" strokeWidth={1.8} />
-                  )}
-                  {isLast ? (
-                    <span className="text-sm font-medium text-foreground truncate">
+        <ol className="flex items-center gap-1 min-w-0 overflow-hidden">
+          {segments.map((seg, i) => {
+            const isLast = i === segments.length - 1;
+            return (
+              <li key={seg.href} className="flex items-center gap-1 min-w-0">
+                {i > 0 && (
+                  <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" strokeWidth={1.8} />
+                )}
+                {isLast ? (
+                  <span className="text-sm font-medium text-foreground truncate">
+                    {seg.label}
+                  </span>
+                ) : (
+                  <Link
+                    href={seg.href}
+                    className="text-sm text-muted-foreground truncate transition-colors hover:text-foreground"
+                  >
+                    <span className={i < segments.length - 2 ? "hidden sm:inline" : ""}>
                       {seg.label}
                     </span>
-                  ) : (
-                    <Link
-                      href={seg.href}
-                      className="text-sm text-muted-foreground truncate transition-colors hover:text-foreground"
-                    >
-                      {/* On mobile, hide all but last 2 segments */}
-                      <span className={i < segments.length - 2 ? "hidden sm:inline" : ""}>
-                        {seg.label}
-                      </span>
-                      {i < segments.length - 2 && (
-                        <span className="sm:hidden">...</span>
-                      )}
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
+                    {i < segments.length - 2 && (
+                      <span className="sm:hidden">...</span>
+                    )}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
     </div>
   );
 }

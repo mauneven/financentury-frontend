@@ -1,9 +1,26 @@
 import { CURRENCIES } from "@/types/budget";
 
-// Zero-decimal currencies where fractional digits make no sense.
+// Zero-decimal currencies per ISO 4217 minor unit = 0.
+// JPY, KRW, VND, CLP officially have no fractional unit.
+// COP has minor unit 2 per ISO 4217 but is traditionally displayed without
+// cents at everyday price points — kept as zero-decimal for display parity
+// with local merchants.
+// MXN, PEN, ARS, IDR, BRL have 2 fractional digits and must NOT be here.
 const ZERO_DECIMAL_CURRENCIES = new Set([
-  "COP", "CLP", "ARS", "MXN", "PEN", "JPY", "KRW", "VND", "IDR",
+  "JPY", "KRW", "VND", "CLP", "COP",
 ]);
+
+// Pre-build a code→currency lookup so callers avoid scanning the 180-element
+// CURRENCIES array on every formatCurrency/formatCompact call. On a budget
+// dashboard, these run 50+ times per render across cards, lists, and charts.
+const CURRENCY_BY_CODE = new Map<string, (typeof CURRENCIES)[number]>(
+  CURRENCIES.map((c) => [c.code, c])
+);
+
+/** O(1) currency lookup — shared by callers that previously scanned CURRENCIES.find. */
+export function getCurrencyInfo(code: string) {
+  return CURRENCY_BY_CODE.get(code);
+}
 
 // Cache Intl.NumberFormat instances — construction is expensive (~0.1ms each).
 const formatterCache = new Map<string, Intl.NumberFormat>();
@@ -25,13 +42,13 @@ function getFormatter(locale: string, currencyCode: string): Intl.NumberFormat {
 }
 
 export function formatCurrency(amount: number, currencyCode: string): string {
-  const currency = CURRENCIES.find((c) => c.code === currencyCode);
+  const currency = CURRENCY_BY_CODE.get(currencyCode);
   const locale = currency?.locale || "en-US";
   return getFormatter(locale, currencyCode).format(amount);
 }
 
 export function formatCompact(amount: number, currencyCode: string): string {
-  const currency = CURRENCIES.find((c) => c.code === currencyCode);
+  const currency = CURRENCY_BY_CODE.get(currencyCode);
   const symbol = currency?.symbol || "$";
   const locale = currency?.locale || "en-US";
 

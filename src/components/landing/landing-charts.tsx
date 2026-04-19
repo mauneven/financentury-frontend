@@ -916,7 +916,10 @@ export function LandingCharts() {
                       fill="url(#landing-area-gradient)"
                       strokeWidth={2}
                       dot={false}
-                      isAnimationActive={false}
+                      isAnimationActive
+                      animationBegin={0}
+                      animationDuration={900}
+                      animationEasing="ease-out"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -944,7 +947,10 @@ export function LandingCharts() {
                       outerRadius="80%"
                       dataKey="value"
                       strokeWidth={0}
-                      isAnimationActive={false}
+                      isAnimationActive
+                      animationBegin={0}
+                      animationDuration={600}
+                      animationEasing="ease-out"
                       cursor="default"
                       activeShape={undefined}
                       tooltipType="none"
@@ -965,7 +971,10 @@ export function LandingCharts() {
                       stroke="var(--background)"
                       startAngle={90}
                       endAngle={90 - (spentPercentage / 100) * 360}
-                      isAnimationActive={false}
+                      isAnimationActive
+                      animationBegin={200}
+                      animationDuration={900}
+                      animationEasing="ease-out"
                       activeShape={undefined}
                       cursor="pointer"
                     >

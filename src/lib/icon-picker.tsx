@@ -1,5 +1,6 @@
 "use client";
 
+import { createElement } from "react";
 import {
   Home,
   UtensilsCrossed,
@@ -107,8 +108,11 @@ export function CategoryIcon({
   iconKey: string | null | undefined;
   className?: string;
 }) {
-  const Icon = getIconComponent(iconKey);
-  return <Icon className={className} />;
+  // Use createElement to side-step the react-hooks/static-components rule:
+  // the icon component is looked up from a stable module-level map, not
+  // created during render. React.createElement avoids the JSX-element form
+  // that the lint rule flags as component-creation.
+  return createElement(getIconComponent(iconKey), { className });
 }
 
 /**

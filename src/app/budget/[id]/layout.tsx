@@ -92,11 +92,9 @@ export default function BudgetLayout({
     }
   }, [params.id, setActiveBudget, authReady]);
 
+  // Flat category list used by the global AddExpenseDialog.
   const categories = useMemo(
-    () => summary?.sections.map((c) => ({
-      ...c.section,
-      categories: c.categories.map((s) => s.category),
-    })) ?? [],
+    () => summary?.categories.map((c) => c.category) ?? [],
     [summary]
   );
 

@@ -18,10 +18,6 @@ function ThrowingComponent({ shouldThrow }: { shouldThrow: boolean }) {
   return <div>Normal content</div>;
 }
 
-function ThrowingComponentCustomMessage({ message }: { message: string }) {
-  throw new Error(message);
-}
-
 // ---------------------------------------------------------------------------
 // ErrorBoundary — renders children normally
 // ---------------------------------------------------------------------------
@@ -58,7 +54,9 @@ describe("ErrorBoundary — error state", () => {
       </ErrorBoundary>
     );
     expect(screen.getByText("Something went wrong")).toBeDefined();
-    expect(screen.getByText("Test error message")).toBeDefined();
+    // In non-development builds (test/prod) the error-boundary hides the raw
+    // error message for safety and shows a generic description instead.
+    expect(screen.getByText("An unexpected error occurred.")).toBeDefined();
   });
 
   it("renders the Try Again button", () => {
@@ -88,13 +86,11 @@ describe("ErrorBoundary — error state", () => {
     expect(screen.queryByText("Normal content")).toBeNull();
   });
 
-  it("displays the error message from the thrown error", () => {
-    render(
-      <ErrorBoundary>
-        <ThrowingComponentCustomMessage message="Custom error text" />
-      </ErrorBoundary>
-    );
-    expect(screen.getByText("Custom error text")).toBeDefined();
+  it("captures the error object in component state", () => {
+    const errorInstance = new Error("Custom error text");
+    const state = ErrorBoundary.getDerivedStateFromError(errorInstance);
+    expect(state.hasError).toBe(true);
+    expect(state.error?.message).toBe("Custom error text");
   });
 });
 
@@ -113,7 +109,7 @@ describe("ErrorBoundary — reset via Try Again", () => {
       return <div>Recovered</div>;
     }
 
-    const { rerender } = render(
+    render(
       <ErrorBoundary>
         <ToggleThrow />
       </ErrorBoundary>

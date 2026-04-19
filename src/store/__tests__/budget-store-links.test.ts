@@ -11,12 +11,6 @@ vi.mock("@/lib/api", () => ({
     summary: vi.fn(),
     trends: vi.fn(),
   },
-  sectionApi: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
   expenseApi: {
     list: vi.fn(),
     create: vi.fn(),
@@ -44,7 +38,6 @@ import type {
   BudgetSummary,
   BudgetLink,
   Expense,
-  LinkedSectionSummary,
 } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
@@ -83,9 +76,7 @@ const mockLink: BudgetLink = {
   id: "link-1",
   source_budget_id: "budget-2",
   target_budget_id: "budget-1",
-  source_section_id: "section-2",
-  source_category_id: null,
-  target_section_id: null,
+  source_category_id: "cat-2",
   filter_mode: "all",
   created_by: "user-1",
   created_at: "2024-01-01T00:00:00Z",
@@ -95,9 +86,7 @@ const mockLink2: BudgetLink = {
   id: "link-2",
   source_budget_id: "budget-2",
   target_budget_id: "budget-1",
-  source_section_id: "section-3",
-  source_category_id: null,
-  target_section_id: null,
+  source_category_id: "cat-3",
   filter_mode: "mine",
   created_by: "user-1",
   created_at: "2024-02-01T00:00:00Z",
@@ -105,44 +94,32 @@ const mockLink2: BudgetLink = {
 
 const mockSummary: BudgetSummary = {
   budget: mockBudget,
-  sections: [],
+  categories: [],
   total_budget: 5000,
   total_spent: 1500,
 };
 
 const mockSummaryWithLinks: BudgetSummary = {
   budget: mockBudget,
-  sections: [],
-  linked_sections: [
+  categories: [],
+  linked_categories: [
     {
       link: mockLink,
       source_budget: mockSourceBudget,
-      section: {
-        id: "section-2",
-        budget_id: "budget-2",
-        name: "Linked Section",
-        allocation_value: 100,
-        icon: "link",
-        sort_order: 0,
-        created_at: "2024-01-01T00:00:00Z",
-      },
-      categories: [
-        {
-          category: {
-            id: "cat-linked",
-            section_id: "section-2",
-            name: "Linked Category",
-            allocation_value: 100,
-            icon: "tag",
-            sort_order: 0,
-            created_at: "2024-01-01T00:00:00Z",
-          },
-          allocated_amount: 100,
-          total_spent: 50,
-          expense_count: 2,
+      category: {
+        category: {
+          id: "cat-linked",
+          budget_id: "budget-2",
+          name: "Linked Category",
+          allocation_value: 100,
+          icon: "tag",
+          sort_order: 0,
+          created_at: "2024-01-01T00:00:00Z",
         },
-      ],
-      total_spent: 50,
+        allocated_amount: 100,
+        total_spent: 50,
+        expense_count: 2,
+      },
     },
   ],
   total_budget: 5000,
@@ -198,7 +175,7 @@ describe("budget-store link actions", () => {
 
       const result = await useBudgetStore.getState().createLink({
         source_budget_id: "budget-2",
-        source_section_id: "section-2",
+        source_category_id: "cat-2",
         filter_mode: "all",
       });
 
@@ -218,7 +195,7 @@ describe("budget-store link actions", () => {
 
       await useBudgetStore.getState().createLink({
         source_budget_id: "budget-2",
-        source_section_id: "section-3",
+        source_category_id: "cat-3",
         filter_mode: "mine",
       });
 
@@ -236,13 +213,13 @@ describe("budget-store link actions", () => {
 
       await useBudgetStore.getState().createLink({
         source_budget_id: "budget-2",
-        source_section_id: "section-2",
+        source_category_id: "cat-2",
         filter_mode: "all",
       });
 
       expect(linkApi.create).toHaveBeenCalledWith("budget-1", {
         source_budget_id: "budget-2",
-        source_section_id: "section-2",
+        source_category_id: "cat-2",
         filter_mode: "all",
       });
     });
@@ -255,7 +232,7 @@ describe("budget-store link actions", () => {
 
       await useBudgetStore.getState().createLink({
         source_budget_id: "budget-2",
-        source_section_id: "section-2",
+        source_category_id: "cat-2",
         filter_mode: "all",
       });
 
@@ -269,7 +246,7 @@ describe("budget-store link actions", () => {
       await expect(
         useBudgetStore.getState().createLink({
           source_budget_id: "budget-2",
-          source_section_id: "section-2",
+          source_category_id: "cat-2",
           filter_mode: "all",
         })
       ).rejects.toThrow("No active budget");
@@ -287,7 +264,7 @@ describe("budget-store link actions", () => {
       await expect(
         useBudgetStore.getState().createLink({
           source_budget_id: "budget-1",
-          source_section_id: "section-1",
+          source_category_id: "cat-1",
           filter_mode: "all",
         })
       ).rejects.toThrow("cannot link a budget to itself");
@@ -528,8 +505,8 @@ describe("budget-store link actions", () => {
   // -----------------------------------------------------------------------
   // refreshSummary — linked data in summary
   // -----------------------------------------------------------------------
-  describe("refreshSummary — includes linked section data", () => {
-    it("stores linked_sections from summary response", async () => {
+  describe("refreshSummary — includes linked category data", () => {
+    it("stores linked_categories from summary response", async () => {
       useBudgetStore.setState({ activeBudgetId: "budget-1" });
 
       vi.mocked(budgetApi.summary).mockResolvedValue(mockSummaryWithLinks);
@@ -538,14 +515,14 @@ describe("budget-store link actions", () => {
       await useBudgetStore.getState().refreshSummary();
 
       const summary = useBudgetStore.getState().summary;
-      expect(summary?.linked_sections).toHaveLength(1);
-      expect(summary?.linked_sections?.[0].link.id).toBe("link-1");
-      expect(summary?.linked_sections?.[0].source_budget.name).toBe(
+      expect(summary?.linked_categories).toHaveLength(1);
+      expect(summary?.linked_categories?.[0].link.id).toBe("link-1");
+      expect(summary?.linked_categories?.[0].source_budget.name).toBe(
         "Source Budget"
       );
     });
 
-    it("handles summary without linked sections", async () => {
+    it("handles summary without linked categories", async () => {
       useBudgetStore.setState({ activeBudgetId: "budget-1" });
 
       vi.mocked(budgetApi.summary).mockResolvedValue(mockSummary);
@@ -554,7 +531,7 @@ describe("budget-store link actions", () => {
       await useBudgetStore.getState().refreshSummary();
 
       const summary = useBudgetStore.getState().summary;
-      expect(summary?.linked_sections).toBeUndefined();
+      expect(summary?.linked_categories).toBeUndefined();
     });
   });
 
@@ -562,7 +539,7 @@ describe("budget-store link actions", () => {
   // refreshSummaryOnly — linked data
   // -----------------------------------------------------------------------
   describe("refreshSummaryOnly — includes linked data", () => {
-    it("updates summary with linked sections", async () => {
+    it("updates summary with linked categories", async () => {
       useBudgetStore.setState({ activeBudgetId: "budget-1" });
 
       vi.mocked(budgetApi.summary).mockResolvedValue(mockSummaryWithLinks);
@@ -570,7 +547,7 @@ describe("budget-store link actions", () => {
       await useBudgetStore.getState().refreshSummaryOnly();
 
       const summary = useBudgetStore.getState().summary;
-      expect(summary?.linked_sections).toHaveLength(1);
+      expect(summary?.linked_categories).toHaveLength(1);
       expect(summary?.total_spent).toBe(1550);
     });
   });

@@ -38,6 +38,18 @@ import {
 
 const ICON_STROKE = 1.8;
 
+// Cache Intl.DateTimeFormat — constructing it per row is expensive and the
+// expense list can render hundreds of rows. Key by locale so we keep both.
+const timeFormatterCache = new Map<string, Intl.DateTimeFormat>();
+function getTimeFormatter(locale: string): Intl.DateTimeFormat {
+  let f = timeFormatterCache.get(locale);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" });
+    timeFormatterCache.set(locale, f);
+  }
+  return f;
+}
+
 interface CategoryInfo {
   name: string;
   icon: string | null;
@@ -80,8 +92,10 @@ export function ExpenseList({
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
 
   const grouped = useMemo((): GroupedExpenses[] => {
-    const sorted = [...expenses].sort(
-      (a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()
+    // expense_date is a lexicographically sortable ISO date string
+    // (YYYY-MM-DD…), so string compare avoids per-row Date allocations.
+    const sorted = [...expenses].sort((a, b) =>
+      a.expense_date < b.expense_date ? 1 : a.expense_date > b.expense_date ? -1 : 0
     );
 
     const groups = new Map<string, Expense[]>();
@@ -254,7 +268,7 @@ function ExpenseRow({
           {formatCurrency(expense.amount, currency)}
         </p>
         <p className="text-xs text-muted-foreground tabular-nums">
-          {new Date(expense.created_at).toLocaleTimeString(locale === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" })}
+          {getTimeFormatter(locale === "es" ? "es" : "en").format(new Date(expense.created_at))}
           {expense.updated_at && new Date(expense.updated_at).getTime() - new Date(expense.created_at).getTime() > 60000 && (
             <span className="ml-1 text-muted-foreground/60">· {t("edited")}</span>
           )}

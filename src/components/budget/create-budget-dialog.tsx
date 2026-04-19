@@ -19,21 +19,21 @@ import {
 
 // Removed recharts PieChart/Pie/Cell — replaced with a lightweight SVG donut.
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
-import { pickRandomIcon } from "@/lib/amount-utils";
+import { pickRandomIcon, maskAmountInput, parseAmount } from "@/lib/amount-utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import type { Budget } from "@/types/budget";
+import type { Budget, CategoryTemplate } from "@/types/budget";
 import {
   CURRENCIES,
-  BALANCED_SECTIONS,
-  DEBT_FREE_SECTIONS,
-  DEBT_PAYOFF_SECTIONS,
-  TRAVEL_SECTIONS,
-  EVENT_SECTIONS,
+  BALANCED_CATEGORIES,
+  DEBT_FREE_CATEGORIES,
+  DEBT_PAYOFF_CATEGORIES,
+  TRAVEL_CATEGORIES,
+  EVENT_CATEGORIES,
 } from "@/types/budget";
 import { detectCurrency } from "@/lib/format";
 import { useBudgetStore } from "@/store/budget-store";
@@ -146,30 +146,34 @@ const DONUT_COLORS = [
   "#06b6d4", // cyan-500
 ];
 
-const MODE_SECTIONS: Record<
-  string,
-  readonly { name: string; allocation_value: number }[]
-> = {
-  balanced: BALANCED_SECTIONS,
-  "debt-free": DEBT_FREE_SECTIONS,
-  "debt-payoff": DEBT_PAYOFF_SECTIONS,
-  travel: TRAVEL_SECTIONS,
-  event: EVENT_SECTIONS,
+const MODE_CATEGORIES: Record<string, CategoryTemplate> = {
+  balanced: BALANCED_CATEGORIES,
+  "debt-free": DEBT_FREE_CATEGORIES,
+  "debt-payoff": DEBT_PAYOFF_CATEGORIES,
+  travel: TRAVEL_CATEGORIES,
+  event: EVENT_CATEGORIES,
 };
 
-// Maps the Spanish hardcoded name in budget.ts constants to a budget i18n key
-const SECTION_NAME_KEYS: Record<string, string> = {
-  Necesidades: "sectionNeeds",
-  Deseos: "sectionWants",
-  Deudas: "sectionDebts",
-  Ahorro: "sectionSavings",
-  Deuda: "sectionDebt",
-  Vuelos: "sectionFlights",
-  Hospedaje: "sectionAccommodation",
-  Salidas: "sectionOutings",
-  Comida: "sectionFood",
-  Bebidas: "sectionDrinks",
-  Gestión: "sectionManagement",
+// Maps the Spanish hardcoded name in budget.ts constants to a budget i18n key.
+// Category names (not section names — sections are gone).
+const CATEGORY_NAME_KEYS: Record<string, string> = {
+  Vivienda: "categoryHousing",
+  Comida: "categoryFood",
+  Transporte: "categoryTransport",
+  Servicios: "categoryUtilities",
+  Salidas: "categoryOutings",
+  Entretenimiento: "categoryEntertainment",
+  Tarjetas: "categoryCards",
+  "Pr\u00e9stamos": "categoryLoans",
+  "Fondo de emergencia": "categoryEmergencyFund",
+  "Inversi\u00f3n": "categoryInvestment",
+  Vuelos: "categoryFlights",
+  Hospedaje: "categoryAccommodation",
+  Actividades: "categoryActivities",
+  "Transporte local": "categoryLocalTransport",
+  Bebidas: "categoryDrinks",
+  "Decoraci\u00f3n": "categoryDecoration",
+  "Log\u00edstica": "categoryLogistics",
 };
 
 /** Lightweight SVG donut — replaces recharts PieChart to avoid bundling the
@@ -184,13 +188,19 @@ function MiniDonut({
   const total = data.reduce((s, d) => s + d.value, 0);
   const r = size / 2 - 6;
   const circumference = 2 * Math.PI * r;
-  let offset = 0;
+  // Precompute cumulative offsets so the map callback is pure (no reassign).
+  const offsets = data.reduce<number[]>((acc, d) => {
+    const prev = acc[acc.length - 1] ?? 0;
+    const pct = total > 0 ? d.value / total : 0;
+    acc.push(prev + pct * circumference);
+    return acc;
+  }, [0]);
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {data.map((d, i) => {
         const pct = total > 0 ? d.value / total : 0;
         const dashArray = `${pct * circumference} ${circumference}`;
-        const el = (
+        return (
           <circle
             key={i}
             cx={size / 2}
@@ -200,12 +210,10 @@ function MiniDonut({
             stroke={d.color}
             strokeWidth={8}
             strokeDasharray={dashArray}
-            strokeDashoffset={-offset}
+            strokeDashoffset={-offsets[i]}
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
         );
-        offset += pct * circumference;
-        return el;
       })}
     </svg>
   );
@@ -221,11 +229,11 @@ function ModeDonutChart({
   nameTranslator?: (name: string) => string;
 }) {
   const isManual = mode === "manual";
-  const sections = isManual ? [] : (MODE_SECTIONS[mode] ?? []);
+  const categories = isManual ? [] : (MODE_CATEGORIES[mode] ?? []);
   const donutData = isManual
     ? [{ value: 1, color: "#9ca3af" }]
-    : sections.map((s, i) => ({
-        value: s.allocation_value,
+    : categories.map((c, i) => ({
+        value: c.pct,
         color: DONUT_COLORS[i % DONUT_COLORS.length],
       }));
 
@@ -235,16 +243,16 @@ function ModeDonutChart({
         <MiniDonut data={donutData} size={60} />
       </div>
 
-      {/* Legend to the right */}
+      {/* Legend to the right — flat list of categories */}
       {isManual ? (
         <p className="text-[10px] text-muted-foreground leading-tight">
           {manualLabel}
         </p>
       ) : (
         <div className="flex flex-col gap-[3px] flex-1 min-w-0 overflow-hidden">
-          {sections.map((section, i) => (
+          {categories.map((category, i) => (
             <span
-              key={section.name}
+              key={`${category.name}-${i}`}
               className="flex items-center gap-1 text-[9px] leading-tight text-muted-foreground"
             >
               <span
@@ -255,8 +263,8 @@ function ModeDonutChart({
                   backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length],
                 }}
               />
-              <span className="truncate">{nameTranslator ? nameTranslator(section.name) : section.name}</span>
-              <span className="shrink-0 tabular-nums">({section.allocation_value}%)</span>
+              <span className="truncate">{nameTranslator ? nameTranslator(category.name) : category.name}</span>
+              <span className="shrink-0 tabular-nums">({category.pct}%)</span>
             </span>
           ))}
         </div>
@@ -294,13 +302,8 @@ export function CreateBudgetDialog({
     return detectCurrency();
   })();
 
-  // Currency input formatting
-  const formatInputValue = (val: string) => {
-    const nums = val.replace(/[^\d.]/g, "");
-    const parts = nums.split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  };
+  // Locale-aware formatting happens per-change via maskAmountInput; no local
+  // helper needed here.
 
   // Form
   const {
@@ -330,9 +333,10 @@ export function CreateBudgetDialog({
   // Always 2 steps for all modes (mode selection -> details)
   const totalSteps = 2;
 
-  // Currency symbol
+  // Currency symbol + locale
   const currencyInfo = CURRENCIES.find((c) => c.code === watchCurrency);
   const currencySymbol = currencyInfo?.symbol || "$";
+  const currencyLocale = currencyInfo?.locale || "en-US";
 
   // Reset when dialog closes
   React.useEffect(() => {
@@ -521,7 +525,11 @@ export function CreateBudgetDialog({
             <ModeDonutChart
               mode={card.mode}
               manualLabel={t("manualChartLabel")}
-              nameTranslator={(name) => t((SECTION_NAME_KEYS[name] ?? name) as any)}
+              nameTranslator={(name) => {
+                const key = CATEGORY_NAME_KEYS[name];
+                // Fall back to the literal name if translation key not found.
+                return key ? t(key) : name;
+              }}
             />
           </button>
         ))}
@@ -585,9 +593,9 @@ export function CreateBudgetDialog({
             value={incomeDisplay}
             aria-invalid={!!errors.monthly_income}
             onChange={(e) => {
-              const formatted = formatInputValue(e.target.value);
+              const formatted = maskAmountInput(e.target.value, currencyLocale);
               setIncomeDisplay(formatted);
-              const num = parseFloat(formatted.replace(/,/g, ""));
+              const num = parseAmount(formatted, currencyLocale);
               setValue(
                 "monthly_income",
                 isNaN(num) ? (undefined as unknown as number) : num,

@@ -12,9 +12,6 @@ export interface WSMessage {
     | "expense_created"
     | "expense_updated"
     | "expense_deleted"
-    | "section_created"
-    | "section_updated"
-    | "section_deleted"
     | "category_created"
     | "category_updated"
     | "category_deleted"
@@ -27,21 +24,41 @@ export interface WSMessage {
 
 type MessageHandler = (msg: WSMessage) => void;
 
+/**
+ * Validates that a WebSocket URL uses ws:// or wss:// (never javascript:,
+ * data:, or other dangerous schemes). The URL is baked at build time from
+ * env vars so it's trusted, but a defensive check protects against a
+ * misconfigured deployment sending the auth token to a surprise endpoint.
+ */
+function sanitizeWsUrl(candidate: string): string {
+  try {
+    const u = new URL(candidate);
+    if (u.protocol !== "ws:" && u.protocol !== "wss:") {
+      return "ws://localhost:8080/ws";
+    }
+    return candidate;
+  } catch {
+    return "ws://localhost:8080/ws";
+  }
+}
+
 const WS_BASE =
   typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_WS_URL ||
-        (() => {
-          // Derive WS URL from the API URL: http(s)://host:port/api -> ws(s)://host:port/ws
-          const apiUrl =
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-          try {
-            const url = new URL(apiUrl);
-            const protocol = url.protocol === "https:" ? "wss:" : "ws:";
-            return `${protocol}//${url.host}/ws`;
-          } catch {
-            return "ws://localhost:8080/ws";
-          }
-        })())
+    ? sanitizeWsUrl(
+        process.env.NEXT_PUBLIC_WS_URL ||
+          (() => {
+            // Derive WS URL from the API URL: http(s)://host:port/api -> ws(s)://host:port/ws
+            const apiUrl =
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+            try {
+              const url = new URL(apiUrl);
+              const protocol = url.protocol === "https:" ? "wss:" : "ws:";
+              return `${protocol}//${url.host}/ws`;
+            } catch {
+              return "ws://localhost:8080/ws";
+            }
+          })()
+      )
     : "";
 
 class BudgetWebSocket {

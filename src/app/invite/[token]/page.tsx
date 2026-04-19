@@ -26,7 +26,10 @@ export default function InviteAcceptPage() {
   const router = useRouter();
   const t = useTranslations("invite");
   const tAuth = useTranslations("auth");
-  const { user, signInWithGoogle, initialized } = useAuthStore();
+  // Narrow selectors — avoid re-renders on unrelated auth-store changes.
+  const user = useAuthStore((s) => s.user);
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
+  const initialized = useAuthStore((s) => s.initialized);
 
   const [info, setInfo] = useState<InviteInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,13 +71,37 @@ export default function InviteAcceptPage() {
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     if (initialized && user && info && !info.is_expired && !info.is_used && !accepted && !accepting) {
-      // Check if we were redirected back after login
-      const pending = typeof window !== "undefined" && sessionStorage.getItem("pending_invite");
-      if (pending === params.token) {
-        sessionStorage.removeItem("pending_invite");
-        timeoutId = setTimeout(() => {
-          void handleAccept();
-        }, 0);
+      // Check if we were redirected back after login. We store the token +
+      // a timestamp so stale pending-invite entries (e.g. stored days ago)
+      // can't auto-accept without the user re-initiating the flow.
+      if (typeof window !== "undefined") {
+        const raw = sessionStorage.getItem("pending_invite");
+        if (raw) {
+          let pendingToken: string | null = null;
+          let pendingAt = 0;
+          try {
+            const parsed = JSON.parse(raw) as { token?: unknown; at?: unknown };
+            if (typeof parsed.token === "string") pendingToken = parsed.token;
+            if (typeof parsed.at === "number") pendingAt = parsed.at;
+          } catch {
+            // Ignore malformed entries.
+          }
+          // Accept only if: token matches, timestamp is fresh (<10 min),
+          // and params.token looks like a plausible invite token (guards
+          // against weird path values being auto-executed).
+          const isFresh = pendingAt > 0 && Date.now() - pendingAt < 10 * 60 * 1000;
+          const tokenLooksValid =
+            typeof params.token === "string" &&
+            params.token.length > 0 &&
+            params.token.length < 512 &&
+            /^[A-Za-z0-9_.\-~]+$/.test(params.token);
+          sessionStorage.removeItem("pending_invite");
+          if (pendingToken === params.token && isFresh && tokenLooksValid) {
+            timeoutId = setTimeout(() => {
+              void handleAccept();
+            }, 0);
+          }
+        }
       }
     }
     return () => {
@@ -86,7 +113,10 @@ export default function InviteAcceptPage() {
 
   const handleSignInAndAccept = () => {
     if (typeof window !== "undefined") {
-      sessionStorage.setItem("pending_invite", params.token);
+      sessionStorage.setItem(
+        "pending_invite",
+        JSON.stringify({ token: params.token, at: Date.now() })
+      );
     }
     signInWithGoogle();
   };

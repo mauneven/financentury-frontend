@@ -38,7 +38,6 @@ describe("api.ts — exported API modules", () => {
   let budgetApi: typeof import("@/lib/api").budgetApi;
   let expenseApi: typeof import("@/lib/api").expenseApi;
   let authApi: typeof import("@/lib/api").authApi;
-  let sectionApi: typeof import("@/lib/api").sectionApi;
   let categoryApi: typeof import("@/lib/api").categoryApi;
   let inviteApi: typeof import("@/lib/api").inviteApi;
   let collaboratorApi: typeof import("@/lib/api").collaboratorApi;
@@ -52,7 +51,6 @@ describe("api.ts — exported API modules", () => {
     budgetApi = api.budgetApi;
     expenseApi = api.expenseApi;
     authApi = api.authApi;
-    sectionApi = api.sectionApi;
     categoryApi = api.categoryApi;
     inviteApi = api.inviteApi;
     collaboratorApi = api.collaboratorApi;
@@ -441,66 +439,10 @@ describe("api.ts — exported API modules", () => {
   });
 
   // -----------------------------------------------------------------------
-  // sectionApi
-  // -----------------------------------------------------------------------
-  describe("sectionApi", () => {
-    it("sectionApi.list calls GET /budgets/:id/sections", async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve([]),
-      });
-      vi.stubGlobal("fetch", mockFetch);
-
-      await sectionApi.list("budget-1");
-
-      expect(mockFetch.mock.calls[0][0]).toContain("/budgets/budget-1/sections");
-    });
-
-    it("sectionApi.create calls POST", async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({}),
-      });
-      vi.stubGlobal("fetch", mockFetch);
-
-      await sectionApi.create("b-1", { name: "Needs", allocation_percent: 50 });
-
-      expect(mockFetch.mock.calls[0][1].method).toBe("POST");
-    });
-
-    it("sectionApi.update calls PUT", async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({}),
-      });
-      vi.stubGlobal("fetch", mockFetch);
-
-      await sectionApi.update("b-1", "s-1", { name: "Updated" });
-
-      expect(mockFetch.mock.calls[0][1].method).toBe("PUT");
-    });
-
-    it("sectionApi.delete calls DELETE", async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 204,
-      });
-      vi.stubGlobal("fetch", mockFetch);
-
-      await sectionApi.delete("b-1", "s-1");
-
-      expect(mockFetch.mock.calls[0][1].method).toBe("DELETE");
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // categoryApi
+  // categoryApi (flat under budget)
   // -----------------------------------------------------------------------
   describe("categoryApi", () => {
-    it("categoryApi.create calls POST with correct path", async () => {
+    it("categoryApi.create calls POST /budgets/:id/categories", async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
@@ -508,18 +450,19 @@ describe("api.ts — exported API modules", () => {
       });
       vi.stubGlobal("fetch", mockFetch);
 
-      await categoryApi.create("b-1", "s-1", {
+      await categoryApi.create("b-1", {
         name: "Housing",
-        allocation_percent: 45,
+        allocation_value: 45,
       });
 
       expect(mockFetch.mock.calls[0][0]).toContain(
-        "/budgets/b-1/sections/s-1/categories"
+        "/budgets/b-1/categories"
       );
+      expect(mockFetch.mock.calls[0][0]).not.toContain("/sections/");
       expect(mockFetch.mock.calls[0][1].method).toBe("POST");
     });
 
-    it("categoryApi.update calls PUT", async () => {
+    it("categoryApi.update calls PUT /budgets/:id/categories/:catId", async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
@@ -527,20 +470,28 @@ describe("api.ts — exported API modules", () => {
       });
       vi.stubGlobal("fetch", mockFetch);
 
-      await categoryApi.update("b-1", "s-1", "c-1", { name: "Rent" });
+      await categoryApi.update("b-1", "c-1", { name: "Rent" });
 
+      expect(mockFetch.mock.calls[0][0]).toContain(
+        "/budgets/b-1/categories/c-1"
+      );
+      expect(mockFetch.mock.calls[0][0]).not.toContain("/sections/");
       expect(mockFetch.mock.calls[0][1].method).toBe("PUT");
     });
 
-    it("categoryApi.delete calls DELETE", async () => {
+    it("categoryApi.delete calls DELETE /budgets/:id/categories/:catId", async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 204,
       });
       vi.stubGlobal("fetch", mockFetch);
 
-      await categoryApi.delete("b-1", "s-1", "c-1");
+      await categoryApi.delete("b-1", "c-1");
 
+      expect(mockFetch.mock.calls[0][0]).toContain(
+        "/budgets/b-1/categories/c-1"
+      );
+      expect(mockFetch.mock.calls[0][0]).not.toContain("/sections/");
       expect(mockFetch.mock.calls[0][1].method).toBe("DELETE");
     });
   });

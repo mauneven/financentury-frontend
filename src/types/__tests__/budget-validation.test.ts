@@ -2,11 +2,13 @@ import { describe, it, expect } from "vitest";
 import {
   CURRENCIES,
   BILLING_PERIODS,
-  BALANCED_SECTIONS,
-  DEBT_FREE_SECTIONS,
-  DEBT_PAYOFF_SECTIONS,
-  TRAVEL_SECTIONS,
-  EVENT_SECTIONS,
+  BALANCED_CATEGORIES,
+  DEBT_FREE_CATEGORIES,
+  DEBT_PAYOFF_CATEGORIES,
+  TRAVEL_CATEGORIES,
+  EVENT_CATEGORIES,
+  MAX_CATEGORIES_PER_BUDGET,
+  type CategoryTemplate,
 } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
@@ -60,100 +62,75 @@ describe("BILLING_PERIODS — value validation", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Helper: validate any preset section array
+// MAX_CATEGORIES_PER_BUDGET
 // ---------------------------------------------------------------------------
-type PresetSection = {
-  readonly name: string;
-  readonly allocation_percent: number;
-  readonly icon: string;
-  readonly categories: ReadonlyArray<{
-    readonly name: string;
-    readonly allocation_percent: number;
-    readonly icon: string;
-  }>;
-};
-
-function validatePreset(label: string, sections: readonly PresetSection[]) {
-  describe(`${label} — section names`, () => {
-    it("all section names are non-empty strings", () => {
-      sections.forEach((s) => {
-        expect(typeof s.name).toBe("string");
-        expect(s.name.trim().length).toBeGreaterThan(0);
-      });
-    });
+describe("MAX_CATEGORIES_PER_BUDGET", () => {
+  it("is a positive integer", () => {
+    expect(Number.isInteger(MAX_CATEGORIES_PER_BUDGET)).toBe(true);
+    expect(MAX_CATEGORIES_PER_BUDGET).toBeGreaterThan(0);
   });
 
+  it("is exactly 50", () => {
+    expect(MAX_CATEGORIES_PER_BUDGET).toBe(50);
+  });
+
+  it("every seed template fits within the limit", () => {
+    expect(BALANCED_CATEGORIES.length).toBeLessThanOrEqual(
+      MAX_CATEGORIES_PER_BUDGET
+    );
+    expect(DEBT_FREE_CATEGORIES.length).toBeLessThanOrEqual(
+      MAX_CATEGORIES_PER_BUDGET
+    );
+    expect(DEBT_PAYOFF_CATEGORIES.length).toBeLessThanOrEqual(
+      MAX_CATEGORIES_PER_BUDGET
+    );
+    expect(TRAVEL_CATEGORIES.length).toBeLessThanOrEqual(
+      MAX_CATEGORIES_PER_BUDGET
+    );
+    expect(EVENT_CATEGORIES.length).toBeLessThanOrEqual(
+      MAX_CATEGORIES_PER_BUDGET
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helper: validate any flat category template
+// ---------------------------------------------------------------------------
+function validatePreset(label: string, template: CategoryTemplate) {
   describe(`${label} — category names`, () => {
-    it("all category names within sections are non-empty strings", () => {
-      sections.forEach((s) => {
-        s.categories.forEach((c) => {
-          expect(typeof c.name).toBe("string");
-          expect(c.name.trim().length).toBeGreaterThan(0);
-        });
+    it("all category names are non-empty strings", () => {
+      template.forEach((c) => {
+        expect(typeof c.name).toBe("string");
+        expect(c.name.trim().length).toBeGreaterThan(0);
       });
     });
-  });
 
-  describe(`${label} — no duplicate category names within a section`, () => {
-    it("category names are unique per section", () => {
-      sections.forEach((s) => {
-        const names = s.categories.map((c) => c.name);
-        expect(new Set(names).size).toBe(names.length);
-      });
+    it("category names are unique within the template", () => {
+      const names = template.map((c) => c.name);
+      expect(new Set(names).size).toBe(names.length);
     });
   });
 
   describe(`${label} — icons`, () => {
-    it("all section icons are non-empty strings", () => {
-      sections.forEach((s) => {
-        expect(typeof s.icon).toBe("string");
-        expect(s.icon.length).toBeGreaterThan(0);
-      });
-    });
-
     it("all category icons are non-empty strings", () => {
-      sections.forEach((s) => {
-        s.categories.forEach((c) => {
-          expect(typeof c.icon).toBe("string");
-          expect(c.icon.length).toBeGreaterThan(0);
-        });
+      template.forEach((c) => {
+        expect(typeof c.icon).toBe("string");
+        expect(c.icon.length).toBeGreaterThan(0);
       });
     });
   });
 
-  describe(`${label} — allocation_percent values`, () => {
-    it("all category allocation_percent values are between 0 and 100", () => {
-      sections.forEach((s) => {
-        s.categories.forEach((c) => {
-          expect(c.allocation_percent).toBeGreaterThanOrEqual(0);
-          expect(c.allocation_percent).toBeLessThanOrEqual(100);
-        });
+  describe(`${label} — pct values`, () => {
+    it("all pct values are between 0 and 100", () => {
+      template.forEach((c) => {
+        expect(c.pct).toBeGreaterThan(0);
+        expect(c.pct).toBeLessThanOrEqual(100);
       });
     });
 
-    it("all section allocation_percent values are between 0 and 100", () => {
-      sections.forEach((s) => {
-        expect(s.allocation_percent).toBeGreaterThanOrEqual(0);
-        expect(s.allocation_percent).toBeLessThanOrEqual(100);
-      });
-    });
-
-    it("section allocations sum to exactly 100", () => {
-      const total = sections.reduce(
-        (sum, s) => sum + s.allocation_percent,
-        0
-      );
+    it("pct values sum to exactly 100", () => {
+      const total = template.reduce((sum, c) => sum + c.pct, 0);
       expect(total).toBe(100);
-    });
-
-    it("category allocations within each section sum to exactly 100", () => {
-      sections.forEach((s) => {
-        const total = s.categories.reduce(
-          (sum, c) => sum + c.allocation_percent,
-          0
-        );
-        expect(total).toBe(100);
-      });
     });
   });
 }
@@ -161,8 +138,8 @@ function validatePreset(label: string, sections: readonly PresetSection[]) {
 // ---------------------------------------------------------------------------
 // Run validation for every preset
 // ---------------------------------------------------------------------------
-validatePreset("BALANCED_SECTIONS", BALANCED_SECTIONS);
-validatePreset("DEBT_FREE_SECTIONS", DEBT_FREE_SECTIONS);
-validatePreset("DEBT_PAYOFF_SECTIONS", DEBT_PAYOFF_SECTIONS);
-validatePreset("TRAVEL_SECTIONS", TRAVEL_SECTIONS);
-validatePreset("EVENT_SECTIONS", EVENT_SECTIONS);
+validatePreset("BALANCED_CATEGORIES", BALANCED_CATEGORIES);
+validatePreset("DEBT_FREE_CATEGORIES", DEBT_FREE_CATEGORIES);
+validatePreset("DEBT_PAYOFF_CATEGORIES", DEBT_PAYOFF_CATEGORIES);
+validatePreset("TRAVEL_CATEGORIES", TRAVEL_CATEGORIES);
+validatePreset("EVENT_CATEGORIES", EVENT_CATEGORIES);

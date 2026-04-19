@@ -9,8 +9,8 @@ import { Loader2, Check, ChevronRight, ArrowLeft, Link2 } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
 import { cn } from "@/lib/utils";
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
-import { CURRENCIES } from "@/types/budget";
-import type { LinkableBudget, Section, Category } from "@/types/budget";
+import { CURRENCIES, MAX_CATEGORIES_PER_BUDGET } from "@/types/budget";
+import type { LinkableBudget, Category } from "@/types/budget";
 import { formatAmount, parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
 import { linkApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
@@ -55,8 +55,6 @@ type CategoryFormValues = z.infer<typeof categorySchema>;
 // ---------------------------------------------------------------------------
 
 interface AddCategoryDialogProps {
-  sectionId: string;
-  existingCategoryIcons?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   prefillAmount?: number;
@@ -67,28 +65,36 @@ interface AddCategoryDialogProps {
 // ---------------------------------------------------------------------------
 
 type DialogMode = "create" | "link";
-type LinkStep = "budget" | "section" | "category" | "filter";
+type LinkStep = "budget" | "category" | "filter";
 
 export function AddCategoryDialog({
-  sectionId,
-  existingCategoryIcons = [],
   open,
   onOpenChange,
   prefillAmount,
 }: AddCategoryDialogProps) {
-  const t = useTranslations("section");
+  const t = useTranslations("category");
   const tl = useTranslations("links");
   const addCategory = useBudgetStore((s) => s.addCategory);
   const createLink = useBudgetStore((s) => s.createLink);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
-  const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
+  const currencyInfo = CURRENCIES.find((c) => c.code === summary?.budget.currency);
+  const currencySymbol = currencyInfo?.symbol || "$";
+  const currencyLocale = currencyInfo?.locale || "en-US";
 
-  const sectionBudget = React.useMemo(() => {
-    if (!summary) return 0;
-    const sec = summary.sections.find((s) => s.section.id === sectionId);
-    return sec?.allocated_amount ?? 0;
-  }, [summary, sectionId]);
+  // Allocation percent is now relative to monthly_income, not a parent section.
+  const monthlyIncome = summary?.budget.monthly_income ?? 0;
+
+  // Existing category icons — used to pick a distinct random icon for new entries.
+  const existingCategoryIcons = React.useMemo(
+    () => (summary?.categories ?? []).map((c) => c.category.icon),
+    [summary]
+  );
+
+  // Count caps: own + linked
+  const currentCount =
+    (summary?.categories?.length ?? 0) + (summary?.linked_categories?.length ?? 0);
+  const atCap = currentCount >= MAX_CATEGORIES_PER_BUDGET;
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -104,7 +110,6 @@ export function AddCategoryDialog({
   const [linkableBudgets, setLinkableBudgets] = React.useState<LinkableBudget[] | null>(null);
   const [linkLoading, setLinkLoading] = React.useState(false);
   const [selectedBudget, setSelectedBudget] = React.useState<LinkableBudget | null>(null);
-  const [selectedSection, setSelectedSection] = React.useState<(Section & { categories: Category[] }) | null>(null);
   const [selectedCategory, setSelectedCategory] = React.useState<Category | null>(null);
   const [filterMode, setFilterMode] = React.useState<"all" | "mine">("all");
 
@@ -127,8 +132,8 @@ export function AddCategoryDialog({
   const watchIcon = watch("icon");
 
   const computedPercent =
-    sectionBudget > 0 ? (rawAmount / sectionBudget) * 100 : 0;
-  const percentOverBudget = rawAmount > sectionBudget && sectionBudget > 0;
+    monthlyIncome > 0 ? (rawAmount / monthlyIncome) * 100 : 0;
+  const percentOverBudget = rawAmount > monthlyIncome && monthlyIncome > 0;
 
   // On open: reset everything (no eager fetch)
   React.useEffect(() => {
@@ -136,7 +141,7 @@ export function AddCategoryDialog({
       const randomIcon = pickRandomIcon(existingCategoryIcons);
       if (prefillAmount && prefillAmount > 0) {
         reset({ name: "", allocation_value: prefillAmount, icon: randomIcon });
-        setAmountInput(formatAmount(prefillAmount));
+        setAmountInput(formatAmount(prefillAmount, currencyLocale));
         setRawAmount(prefillAmount);
       } else {
         reset({ name: "", allocation_value: 0, icon: randomIcon });
@@ -147,14 +152,13 @@ export function AddCategoryDialog({
       setMode("create");
       setLinkStep("budget");
       setSelectedBudget(null);
-      setSelectedSection(null);
       setSelectedCategory(null);
       setFilterMode("all");
       setSubmitError(null);
       setLinkableBudgets(null);
       setLinkLoading(false);
     }
-  }, [open, reset, existingCategoryIcons, prefillAmount, sectionBudget]);
+  }, [open, reset, existingCategoryIcons, prefillAmount, monthlyIncome, currencyLocale]);
 
   // Fetch linkable budgets lazily when entering link mode
   const enterLinkMode = () => {
@@ -176,9 +180,9 @@ export function AddCategoryDialog({
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const masked = maskAmountInput(e.target.value);
+    const masked = maskAmountInput(e.target.value, currencyLocale);
     setAmountInput(masked);
-    const parsed = parseAmount(masked);
+    const parsed = parseAmount(masked, currencyLocale);
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
     setValue("allocation_value", numericValue, { shouldValidate: true });
@@ -186,9 +190,13 @@ export function AddCategoryDialog({
 
   const onSubmit = async (values: CategoryFormValues) => {
     setSubmitError(null);
+    if (atCap) {
+      setSubmitError(t("maxCategoriesReached", { max: String(MAX_CATEGORIES_PER_BUDGET) }));
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await addCategory(sectionId, {
+      await addCategory({
         name: values.name,
         allocation_value: values.allocation_value,
         icon: values.icon,
@@ -206,13 +214,6 @@ export function AddCategoryDialog({
   // Link flow handlers
   const handleSelectBudget = (b: LinkableBudget) => {
     setSelectedBudget(b);
-    setSelectedSection(null);
-    setSelectedCategory(null);
-    setLinkStep("section");
-  };
-
-  const handleSelectSection = (sec: Section & { categories: Category[] }) => {
-    setSelectedSection(sec);
     setSelectedCategory(null);
     setLinkStep("category");
   };
@@ -223,15 +224,17 @@ export function AddCategoryDialog({
   };
 
   const handleCreateLink = async () => {
-    if (!selectedBudget || !selectedSection || !selectedCategory) return;
+    if (!selectedBudget || !selectedCategory) return;
+    if (atCap) {
+      setSubmitError(t("maxCategoriesReached", { max: String(MAX_CATEGORIES_PER_BUDGET) }));
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError(null);
     try {
       await createLink({
         source_budget_id: selectedBudget.id,
-        source_section_id: selectedSection.id,
         source_category_id: selectedCategory.id,
-        target_section_id: sectionId,
         filter_mode: filterMode,
       });
       onOpenChange(false);
@@ -244,8 +247,7 @@ export function AddCategoryDialog({
 
   const handleBack = () => {
     if (linkStep === "filter") setLinkStep("category");
-    else if (linkStep === "category") setLinkStep("section");
-    else if (linkStep === "section") setLinkStep("budget");
+    else if (linkStep === "category") setLinkStep("budget");
     else setMode("create");
   };
 
@@ -315,46 +317,8 @@ export function AddCategoryDialog({
       );
     }
 
-    // Section picker
-    if (linkStep === "section" && selectedBudget) {
-      return (
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            {t("back")}
-          </button>
-          <p className="text-sm text-muted-foreground">{t("pickSection")}</p>
-          {selectedBudget.sections.map((sec) => (
-            <button
-              key={sec.id}
-              type="button"
-              onClick={() => handleSelectSection(sec)}
-              className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left border border-border transition-colors hover:bg-muted"
-            >
-              <div className="flex items-center gap-2">
-                <CategoryIcon iconKey={sec.icon} className="size-5" />
-                <div>
-                  <p className="font-semibold">{sec.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {sec.categories.length === 1
-                      ? t("categorySummarySingular", { count: String(sec.categories.length) })
-                      : t("categorySummary", { count: String(sec.categories.length) })}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="size-4 shrink-0" />
-            </button>
-          ))}
-        </div>
-      );
-    }
-
-    // Category picker
-    if (linkStep === "category" && selectedBudget && selectedSection) {
+    // Category picker (directly from the linkable budget's flat category list)
+    if (linkStep === "category" && selectedBudget) {
       return (
         <div className="space-y-3">
           <button
@@ -366,7 +330,7 @@ export function AddCategoryDialog({
             {t("back")}
           </button>
           <p className="text-sm text-muted-foreground">{t("pickCategory")}</p>
-          {selectedSection.categories.map((cat) => (
+          {selectedBudget.categories.map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -380,9 +344,9 @@ export function AddCategoryDialog({
               <ChevronRight className="size-4 shrink-0" />
             </button>
           ))}
-          {selectedSection.categories.length === 0 && (
+          {selectedBudget.categories.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              {t("categorySummary", { count: "0" })}
+              {t("noCategoriesInBudget")}
             </p>
           )}
         </div>
@@ -390,7 +354,7 @@ export function AddCategoryDialog({
     }
 
     // Filter mode
-    if (linkStep === "filter" && selectedBudget && selectedSection && selectedCategory) {
+    if (linkStep === "filter" && selectedBudget && selectedCategory) {
       return (
         <div className="space-y-4">
           <button
@@ -404,7 +368,7 @@ export function AddCategoryDialog({
 
           <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm">
             <p className="font-medium">
-              {selectedBudget.name} &rarr; {selectedSection.name} &rarr; {selectedCategory.name}
+              {selectedBudget.name} &rarr; {selectedCategory.name}
             </p>
           </div>
 
@@ -454,7 +418,7 @@ export function AddCategoryDialog({
             <Button
               type="button"
               onClick={handleCreateLink}
-              disabled={isSubmitting}
+              disabled={isSubmitting || atCap}
               className="bg-emerald-600 text-white hover:bg-emerald-700 min-h-[44px]"
             >
               {isSubmitting ? (
@@ -490,6 +454,12 @@ export function AddCategoryDialog({
               : t("addCategoryDescription")}
           </DialogDescription>
         </DialogHeader>
+
+        {atCap && (
+          <p className="text-xs text-destructive px-1">
+            {t("maxCategoriesReached", { max: String(MAX_CATEGORIES_PER_BUDGET) })}
+          </p>
+        )}
 
         {mode === "link" ? (
           renderLinkMode()
@@ -533,7 +503,7 @@ export function AddCategoryDialog({
               )}
             </div>
 
-            {/* Allocation */}
+            {/* Allocation — now relative to monthly_income */}
             <div className="space-y-1.5">
               <Label htmlFor="add-cat-allocation">{t("allocationPercent")}</Label>
               <div className="flex items-center gap-2">
@@ -575,7 +545,7 @@ export function AddCategoryDialog({
             <div className="flex justify-end pt-2">
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || atCap}
                 className="bg-emerald-600 text-white hover:bg-emerald-700 min-h-[44px]"
               >
                 {isSubmitting ? (
@@ -597,7 +567,8 @@ export function AddCategoryDialog({
               <button
                 type="button"
                 onClick={enterLinkMode}
-                className="flex w-full items-center justify-center gap-2 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                disabled={atCap}
+                className="flex w-full items-center justify-center gap-2 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Link2 className="size-4" />
                 {t("orLinkCategory")}

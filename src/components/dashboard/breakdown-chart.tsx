@@ -22,43 +22,21 @@ const CATEGORY_COLORS = [
 
 interface BreakdownChartProps {
   summary: BudgetSummary;
-  sectionId?: string;
 }
 
-export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
-  const { budget, sections, total_budget, total_spent } = summary;
-  const linkedSections = summary.linked_sections ?? [];
-  const filteredSections = sectionId
-    ? sections.filter((s) => s.section.id === sectionId)
-    : sections;
+export function BreakdownChart({ summary }: BreakdownChartProps) {
+  const { budget, categories, total_budget, total_spent } = summary;
+  const linkedCategories = summary.linked_categories ?? [];
 
-  // Linked categories in scope for chart slices
-  const linkedCatsInScope = sectionId
-    ? linkedSections
-        .filter((ls) => ls.link.source_category_id && ls.link.target_section_id === sectionId)
-        .flatMap((ls) => ls.categories)
-    : linkedSections.flatMap((ls) => ls.categories);
-
-  const linkedSpent = linkedCatsInScope.reduce((sum, c) => sum + c.total_spent, 0);
-
-  // Budget total: only add section-level link allocations (not category-level).
-  // Category-level links live inside existing sections and don't inflate the total.
-  const linkedSectionAlloc = linkedSections
-    .filter((ls) => !ls.link.source_category_id)
-    .reduce((sum, ls) => sum + ls.section.allocation_value, 0);
-
-  const scopedSpent = (sectionId
-    ? filteredSections.reduce((sum, s) => sum + s.total_spent, 0)
-    : total_spent) + linkedSpent;
-  const scopedBudget = sectionId
-    ? filteredSections.reduce((sum, s) => sum + s.allocated_amount, 0)
-      + linkedCatsInScope.reduce((sum, c) => sum + c.allocated_amount, 0)
-    : total_budget + linkedSectionAlloc;
+  // Budget envelope is fixed at monthly_income. Linked categories are slices
+  // of it, not additions. Backend `total_spent` already includes linked spend.
+  const scopedSpent = total_spent;
+  const scopedBudget = total_budget;
   const spentPercentage = getPercentage(scopedSpent, scopedBudget);
   const remaining = Math.max(scopedBudget - scopedSpent, 0);
   const t = useTranslations("dashboard");
 
-  // Collect all child categories with spending (own + linked)
+  // Collect each category with spending > 0 (own + linked, flat).
   const categoryData: {
     name: string;
     value: number;
@@ -67,32 +45,29 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
   }[] = [];
 
   let colorIdx = 0;
-  for (const section of filteredSections) {
-    for (const cat of section.categories) {
-      if (cat.total_spent > 0) {
-        categoryData.push({
-          name: cat.category.name,
-          value: cat.total_spent,
-          allocated: cat.allocated_amount,
-          color: CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length],
-        });
-        colorIdx++;
-      }
+  for (const c of categories) {
+    if (c.total_spent > 0) {
+      categoryData.push({
+        name: c.category.name,
+        value: c.total_spent,
+        allocated: c.allocated_amount,
+        color: CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length],
+      });
+      colorIdx++;
     }
   }
-  for (const cat of linkedCatsInScope) {
-    if (cat.total_spent > 0) {
+  for (const l of linkedCategories) {
+    if (l.category.total_spent > 0) {
       categoryData.push({
-        name: cat.category.name,
-        value: cat.total_spent,
-        allocated: cat.allocated_amount,
+        name: l.category.category.name,
+        value: l.category.total_spent,
+        allocated: l.category.allocated_amount,
         color: CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length],
       });
       colorIdx++;
     }
   }
 
-  // If nothing spent, show empty state
   if (categoryData.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card flex flex-col">
@@ -131,7 +106,6 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              {/* Background ring for total budget — shows "Not used yet" on hover */}
               <Pie
                 data={[{ name: t("notUsedYet"), value: remaining || 1 }]}
                 cx="50%"
@@ -140,13 +114,15 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
                 outerRadius="80%"
                 dataKey="value"
                 strokeWidth={0}
-                isAnimationActive={false}
+                isAnimationActive
+                animationBegin={0}
+                animationDuration={600}
+                animationEasing="ease-out"
                 cursor="default"
                 activeShape={undefined}
               >
                 <Cell fill="var(--muted)" />
               </Pie>
-              {/* Category spending slices */}
               <Pie
                 data={categoryData}
                 cx="50%"
@@ -159,7 +135,10 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
                 stroke="var(--background)"
                 startAngle={90}
                 endAngle={90 - (spentPercentage / 100) * 360}
-                isAnimationActive={false}
+                isAnimationActive
+                animationBegin={150}
+                animationDuration={800}
+                animationEasing="ease-out"
                 cursor="default"
                 activeShape={undefined}
               >
@@ -185,7 +164,6 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
               />
             </PieChart>
           </ResponsiveContainer>
-          {/* Center text overlay */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <p className="text-3xl font-semibold tabular-nums text-foreground">
               {spentPercentage}%
@@ -193,7 +171,6 @@ export function BreakdownChart({ summary, sectionId }: BreakdownChartProps) {
           </div>
         </div>
 
-        {/* Legend */}
         <div className="mt-4 grid grid-cols-2 gap-2.5">
           {categoryData.map((entry) => (
             <div key={entry.name} className="flex items-center gap-2 min-h-[28px]">

@@ -11,6 +11,7 @@ import { categoryApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
 import { formatAmount, parseAmount, maskAmountInput } from "@/lib/amount-utils";
+import { formatCurrency } from "@/lib/format";
 
 import {
   Dialog,
@@ -29,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useTranslations } from "@/i18n/client";
-import type { Section, Category, BudgetLink } from "@/types/budget";
+import type { Category, BudgetLink } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
@@ -51,36 +52,29 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
 // ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Parent impact preview — shown when category allocation changes
+// Impact preview — shown when allocation changes vs. total monthly_income
 // ---------------------------------------------------------------------------
 
 interface CategoryImpactPreviewProps {
-  parentSection: Section;
-  siblingCategories: Category[];
-  currentCategoryId: string;
+  monthlyIncome: number;
+  otherCategoriesTotal: number;
   newAllocationValue: number;
   originalAllocationValue: number;
+  currency: string;
 }
 
 function CategoryImpactPreview({
-  parentSection,
-  siblingCategories,
-  currentCategoryId,
+  monthlyIncome,
+  otherCategoriesTotal,
   newAllocationValue,
   originalAllocationValue,
+  currency,
 }: CategoryImpactPreviewProps) {
-  const t = useTranslations("section");
+  const t = useTranslations("category");
   const [expanded, setExpanded] = React.useState(true);
 
-  // siblings = all categories except the one being edited
-  const siblings = siblingCategories.filter((s) => s.id !== currentCategoryId);
-  const siblingsTotal = siblings.reduce((sum, s) => sum + s.allocation_value, 0);
-  const newTotal = siblingsTotal + newAllocationValue;
-  const parentAlloc = parentSection.allocation_value;
-  const isOverflow = newTotal > parentAlloc;
-
+  const newTotal = otherCategoriesTotal + newAllocationValue;
+  const isOverflow = newTotal > monthlyIncome;
   const direction = newAllocationValue > originalAllocationValue ? "increase" : "decrease";
 
   return (
@@ -92,7 +86,6 @@ function CategoryImpactPreview({
           : "border-amber-400 bg-amber-50/60 dark:bg-amber-900/10"
       )}
     >
-      {/* Header row — clickable to collapse */}
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
@@ -113,25 +106,22 @@ function CategoryImpactPreview({
       </button>
 
       {expanded && (
-        <>
-          {/* Parent summary */}
-          <p
-            className={cn(
-              "font-medium",
-              isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
-            )}
-          >
-            {`"${parentSection.name}" total would ${direction}: `}
-            <span className="tabular-nums">
-              {originalAllocationValue !== newAllocationValue
-                ? `${formatAmount(siblingsTotal + originalAllocationValue)} → ${formatAmount(newTotal)}`
-                : formatAmount(newTotal)}
-            </span>
-            {isOverflow && (
-              <span className="ml-1">{`(section budget: ${formatAmount(parentAlloc)})`}</span>
-            )}
-          </p>
-        </>
+        <p
+          className={cn(
+            "font-medium",
+            isOverflow ? "text-destructive" : "text-amber-700 dark:text-amber-400"
+          )}
+        >
+          {`Budget total would ${direction}: `}
+          <span className="tabular-nums">
+            {originalAllocationValue !== newAllocationValue
+              ? `${formatCurrency(otherCategoriesTotal + originalAllocationValue, currency)} → ${formatCurrency(newTotal, currency)}`
+              : formatCurrency(newTotal, currency)}
+          </span>
+          {isOverflow && (
+            <span className="ml-1">{`(income: ${formatCurrency(monthlyIncome, currency)})`}</span>
+          )}
+        </p>
       )}
     </div>
   );
@@ -142,10 +132,7 @@ function CategoryImpactPreview({
 // ---------------------------------------------------------------------------
 
 interface EditCategoryDialogProps {
-  sectionId: string;
   category: Category;
-  parentSection?: Section;
-  siblingCategories?: Category[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** When provided, the dialog manages a linked category instead of an owned one. */
@@ -157,15 +144,12 @@ interface EditCategoryDialogProps {
 // ---------------------------------------------------------------------------
 
 export function EditCategoryDialog({
-  sectionId,
   category,
-  parentSection,
-  siblingCategories,
   open,
   onOpenChange,
   link,
 }: EditCategoryDialogProps) {
-  const t = useTranslations("section");
+  const t = useTranslations("category");
   const tc = useTranslations("common");
   const tl = useTranslations("links");
   const updateCategory = useBudgetStore((s) => s.updateCategory);
@@ -174,16 +158,26 @@ export function EditCategoryDialog({
   const deleteLink = useBudgetStore((s) => s.deleteLink);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
   const summary = useBudgetStore((s) => s.summary);
-  const currencySymbol = CURRENCIES.find((c) => c.code === summary?.budget.currency)?.symbol || "$";
+  const currencyInfo = CURRENCIES.find((c) => c.code === summary?.budget.currency);
+  const currencySymbol = currencyInfo?.symbol || "$";
+  const currencyLocale = currencyInfo?.locale || "en-US";
+  const currency = summary?.budget.currency ?? "USD";
   const isLinked = !!link;
 
-  // Category allocation_value is relative to the parent *section* allocation,
-  // not the total budget. Find the section's allocated dollar amount.
-  const sectionBudget = React.useMemo(() => {
+  // Allocation is now checked against monthly_income (no section parent).
+  const monthlyIncome = summary?.budget.monthly_income ?? 0;
+
+  // Sum of other own categories' allocations (for overflow preview).
+  const otherCategoriesTotal = React.useMemo(() => {
     if (!summary) return 0;
-    const sec = summary.sections.find((s) => s.section.id === sectionId);
-    return sec?.allocated_amount ?? 0;
-  }, [summary, sectionId]);
+    let total = 0;
+    for (const c of summary.categories) {
+      if (c.category.id !== category.id) {
+        total += c.category.allocation_value;
+      }
+    }
+    return total;
+  }, [summary, category.id]);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -191,7 +185,6 @@ export function EditCategoryDialog({
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [filterMode, setFilterMode] = React.useState<"all" | "mine">(link?.filter_mode ?? "all");
 
-  // Dollar amount state — managed independently from RHF
   const [amountInput, setAmountInput] = React.useState<string>("");
   const [rawAmount, setRawAmount] = React.useState<number>(0);
 
@@ -214,12 +207,10 @@ export function EditCategoryDialog({
   const watchIcon = watch("icon");
   const watchAllocation = watch("allocation_value");
 
-  // Compute displayed percentage from current rawAmount
   const computedPercent =
-    sectionBudget > 0 ? (rawAmount / sectionBudget) * 100 : 0;
-  const percentOverBudget = rawAmount > sectionBudget && sectionBudget > 0;
+    monthlyIncome > 0 ? (rawAmount / monthlyIncome) * 100 : 0;
+  const percentOverBudget = rawAmount > monthlyIncome && monthlyIncome > 0;
 
-  // Reset form and amount input when category changes or dialog opens
   React.useEffect(() => {
     if (open) {
       reset({
@@ -228,25 +219,22 @@ export function EditCategoryDialog({
         icon: category.icon || "tag",
       });
 
-      // allocation_value is already an absolute amount
       setRawAmount(category.allocation_value);
-      setAmountInput(formatAmount(category.allocation_value));
+      setAmountInput(formatAmount(category.allocation_value, currencyLocale));
 
       setShowDeleteConfirm(false);
       setIsSubmitting(false);
       setIsDeleting(false);
       setFilterMode(link?.filter_mode ?? "all");
     }
-  }, [open, category, reset, sectionBudget, link]);
+  }, [open, category, reset, monthlyIncome, link, currencyLocale]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const masked = maskAmountInput(e.target.value);
+    const masked = maskAmountInput(e.target.value, currencyLocale);
     setAmountInput(masked);
-    const parsed = parseAmount(masked);
+    const parsed = parseAmount(masked, currencyLocale);
     const numericValue = isNaN(parsed) ? 0 : parsed;
     setRawAmount(numericValue);
-
-    // Store absolute amount — backend expects the raw value, not a percentage.
     setValue("allocation_value", numericValue, { shouldValidate: true });
   };
 
@@ -261,19 +249,17 @@ export function EditCategoryDialog({
       };
 
       if (isLinked && link) {
-        // Update category in the source budget
+        // Update the category in the source budget (we don't own it).
         await categoryApi.update(
           link.source_budget_id,
-          link.source_section_id,
           category.id,
           catPayload
         );
-        // Update filter mode if changed
         if (filterMode !== link.filter_mode) {
           await updateLink(link.id, { filter_mode: filterMode });
         }
       } else {
-        await updateCategory(sectionId, category.id, catPayload);
+        await updateCategory(category.id, catPayload);
       }
 
       await refreshSummary();
@@ -292,7 +278,7 @@ export function EditCategoryDialog({
       if (isLinked && link) {
         await deleteLink(link.id);
       } else {
-        await deleteCategoryAction(sectionId, category.id);
+        await deleteCategoryAction(category.id);
       }
       await refreshSummary();
       onOpenChange(false);
@@ -303,10 +289,9 @@ export function EditCategoryDialog({
     }
   };
 
-  // Show impact preview only when allocation has actually changed
   const allocationChanged =
     Math.abs(watchAllocation - category.allocation_value) > 0.001;
-  const showImpact = allocationChanged;
+  const showImpact = allocationChanged && !isLinked;
 
   return (
     <Dialog open={open} onOpenChange={(val) => onOpenChange(val)}>
@@ -319,7 +304,6 @@ export function EditCategoryDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Name with icon button */}
           <div className="space-y-1.5">
             <Label htmlFor="edit-sub-name">{t("categoryName")}</Label>
             <div className="flex items-center gap-2">
@@ -354,7 +338,6 @@ export function EditCategoryDialog({
             )}
           </div>
 
-          {/* Allocation — dollar amount with live % indicator */}
           <div className="space-y-1.5">
             <Label htmlFor="edit-sub-allocation">{t("allocationPercent")}</Label>
             <div className="flex items-center gap-2">
@@ -391,14 +374,14 @@ export function EditCategoryDialog({
             )}
           </div>
 
-          {/* Parent impact preview — own categories only */}
-          {showImpact && parentSection && siblingCategories && (
+          {/* Impact preview — own categories only */}
+          {showImpact && (
             <CategoryImpactPreview
-              parentSection={parentSection}
-              siblingCategories={siblingCategories}
-              currentCategoryId={category.id}
+              monthlyIncome={monthlyIncome}
+              otherCategoriesTotal={otherCategoriesTotal}
               newAllocationValue={watchAllocation}
               originalAllocationValue={category.allocation_value}
+              currency={currency}
             />
           )}
 
@@ -451,7 +434,6 @@ export function EditCategoryDialog({
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-2">
-            {/* Delete / Remove Link */}
             {!showDeleteConfirm ? (
               <Button
                 type="button"
@@ -492,7 +474,6 @@ export function EditCategoryDialog({
               </div>
             )}
 
-            {/* Save */}
             <Button
               type="submit"
               disabled={isSubmitting || isDeleting}

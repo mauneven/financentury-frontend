@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import type { Budget } from "@/types/budget";
 import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
 import { budgetApi } from "@/lib/api";
+import { maskAmountInput, parseAmount, formatAmount } from "@/lib/amount-utils";
 import { useBudgetStore } from "@/store/budget-store";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -86,7 +87,8 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const router = useRouter();
   const deleteBudget = useBudgetStore((s) => s.deleteBudget);
   const refreshSummary = useBudgetStore((s) => s.refreshSummary);
-  const { user } = useAuthStore();
+  // Narrow selector: only `user` used here.
+  const user = useAuthStore((s) => s.user);
   const isOwner = budget.user_id === user?.id;
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -98,20 +100,13 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
     return !BILLING_PERIODS.some((p) => p.value === budget.billing_period_months);
   });
 
-  const formatInputValue = (val: string) => {
-    const nums = val.replace(/[^\d.]/g, "");
-    const parts = nums.split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  };
-
-  const numberToDisplay = (num: number): string => {
-    if (!num) return "";
-    return formatInputValue(num.toString());
-  };
+  // Locale derived from the selected currency so the numeric separators on
+  // the income input match the user's expectations for that currency.
+  const currentLocale =
+    CURRENCIES.find((c) => c.code === budget.currency)?.locale || "en-US";
 
   const [incomeDisplay, setIncomeDisplay] = React.useState(() =>
-    numberToDisplay(budget.monthly_income)
+    formatAmount(budget.monthly_income, currentLocale)
   );
 
   const {
@@ -135,6 +130,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const watchCurrency = watch("currency");
   const currencyInfo = CURRENCIES.find((c) => c.code === watchCurrency);
   const currencySymbol = currencyInfo?.symbol || "$";
+  const currencyLocale = currencyInfo?.locale || "en-US";
 
   const onSubmit = async (values: SettingsFormValues) => {
     setSubmitError(null);
@@ -200,9 +196,9 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
               value={incomeDisplay}
               aria-invalid={!!errors.monthly_income}
               onChange={(e) => {
-                const formatted = formatInputValue(e.target.value);
+                const formatted = maskAmountInput(e.target.value, currencyLocale);
                 setIncomeDisplay(formatted);
-                const num = parseFloat(formatted.replace(/,/g, ""));
+                const num = parseAmount(formatted, currencyLocale);
                 setValue("monthly_income", isNaN(num) ? (undefined as unknown as number) : num, { shouldValidate: true, shouldDirty: true });
               }}
             />

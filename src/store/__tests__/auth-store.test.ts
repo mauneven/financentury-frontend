@@ -15,6 +15,9 @@ vi.mock("@/lib/api", () => ({
     register: vi.fn(),
     me: vi.fn(),
     googleLogin: vi.fn(),
+    signOut: vi.fn().mockResolvedValue(undefined),
+    deleteAccount: vi.fn().mockResolvedValue(undefined),
+    updateProfile: vi.fn(),
   },
 }));
 
@@ -342,6 +345,10 @@ describe("useAuthStore", () => {
   // -----------------------------------------------------------------------
   describe("signInWithGoogle", () => {
     it("stores oauth_state in sessionStorage and redirects", () => {
+      // The store bails out without setting state if the client ID is missing,
+      // so inject a value for this test.
+      vi.stubEnv("NEXT_PUBLIC_GOOGLE_CLIENT_ID", "test-client-id");
+
       // Mock window.location.href assignment
       const hrefSetter = vi.fn();
       Object.defineProperty(window, "location", {
@@ -367,6 +374,8 @@ describe("useAuthStore", () => {
       expect(storedState).toBeDefined();
       expect(storedState!.length).toBe(64); // 32 bytes * 2 hex chars
       expect(storedState).toMatch(/^[0-9a-f]{64}$/);
+
+      vi.unstubAllEnvs();
     });
   });
 

@@ -3,11 +3,12 @@ import type { BudgetMode } from "@/types/budget";
 import {
   CURRENCIES,
   BILLING_PERIODS,
-  BALANCED_SECTIONS,
-  DEBT_FREE_SECTIONS,
-  DEBT_PAYOFF_SECTIONS,
-  TRAVEL_SECTIONS,
-  EVENT_SECTIONS,
+  BALANCED_CATEGORIES,
+  DEBT_FREE_CATEGORIES,
+  DEBT_PAYOFF_CATEGORIES,
+  TRAVEL_CATEGORIES,
+  EVENT_CATEGORIES,
+  MAX_CATEGORIES_PER_BUDGET,
 } from "@/types/budget";
 
 describe("BudgetMode type", () => {
@@ -122,132 +123,80 @@ describe("BILLING_PERIODS", () => {
   });
 });
 
-describe("BALANCED_SECTIONS preset", () => {
-  it("section allocations sum to 100%", () => {
-    const total = BALANCED_SECTIONS.reduce(
-      (sum, s) => sum + s.allocation_percent,
-      0
-    );
+describe("MAX_CATEGORIES_PER_BUDGET", () => {
+  it("is 50", () => {
+    expect(MAX_CATEGORIES_PER_BUDGET).toBe(50);
+  });
+});
+
+describe("BALANCED_CATEGORIES preset", () => {
+  it("percentages sum to 100", () => {
+    const total = BALANCED_CATEGORIES.reduce((sum, c) => sum + c.pct, 0);
     expect(total).toBe(100);
   });
 
-  it("has 4 sections", () => {
-    expect(BALANCED_SECTIONS).toHaveLength(4);
+  it("contains 10 categories (4 + 2 + 2 + 2 flattened)", () => {
+    expect(BALANCED_CATEGORIES).toHaveLength(10);
   });
 
-  it("each section has categories", () => {
-    BALANCED_SECTIONS.forEach((section) => {
-      expect(section.categories.length).toBeGreaterThan(0);
-    });
-  });
-
-  it("category allocations within each section sum to 100%", () => {
-    BALANCED_SECTIONS.forEach((section) => {
-      const total = section.categories.reduce(
-        (sum, c) => sum + c.allocation_percent,
-        0
-      );
-      expect(total).toBe(100);
-    });
-  });
-
-  it("each section has name, allocation_percent, and icon", () => {
-    BALANCED_SECTIONS.forEach((section) => {
-      expect(typeof section.name).toBe("string");
-      expect(typeof section.allocation_percent).toBe("number");
-      expect(typeof section.icon).toBe("string");
+  it("each entry has name, icon, and pct", () => {
+    BALANCED_CATEGORIES.forEach((c) => {
+      expect(typeof c.name).toBe("string");
+      expect(typeof c.icon).toBe("string");
+      expect(typeof c.pct).toBe("number");
+      expect(c.pct).toBeGreaterThan(0);
     });
   });
 });
 
-describe("DEBT_FREE_SECTIONS preset", () => {
-  it("section allocations sum to 100%", () => {
-    const total = DEBT_FREE_SECTIONS.reduce(
-      (sum, s) => sum + s.allocation_percent,
-      0
-    );
+describe("DEBT_FREE_CATEGORIES preset", () => {
+  it("percentages sum to 100", () => {
+    const total = DEBT_FREE_CATEGORIES.reduce((sum, c) => sum + c.pct, 0);
     expect(total).toBe(100);
   });
 
-  it("has 3 sections (no debt section)", () => {
-    expect(DEBT_FREE_SECTIONS).toHaveLength(3);
-  });
-
-  it("category allocations within each section sum to 100%", () => {
-    DEBT_FREE_SECTIONS.forEach((section) => {
-      const total = section.categories.reduce(
-        (sum, c) => sum + c.allocation_percent,
-        0
-      );
-      expect(total).toBe(100);
-    });
+  it("contains 8 categories (4 + 2 + 2 flattened, no debt)", () => {
+    expect(DEBT_FREE_CATEGORIES).toHaveLength(8);
   });
 });
 
-describe("DEBT_PAYOFF_SECTIONS preset", () => {
-  it("section allocations sum to 100%", () => {
-    const total = DEBT_PAYOFF_SECTIONS.reduce(
-      (sum, s) => sum + s.allocation_percent,
-      0
-    );
+describe("DEBT_PAYOFF_CATEGORIES preset", () => {
+  it("percentages sum to 100", () => {
+    const total = DEBT_PAYOFF_CATEGORIES.reduce((sum, c) => sum + c.pct, 0);
     expect(total).toBe(100);
   });
 
-  it("has 3 sections", () => {
-    expect(DEBT_PAYOFF_SECTIONS).toHaveLength(3);
+  it("contains 8 categories (4 + 2 + 2 flattened)", () => {
+    expect(DEBT_PAYOFF_CATEGORIES).toHaveLength(8);
   });
 
-  it("debt section gets 30% (largest allocation for payoff mode)", () => {
-    const debtSection = DEBT_PAYOFF_SECTIONS.find((s) => s.name === "Deuda");
-    expect(debtSection).toBeDefined();
-    expect(debtSection!.allocation_percent).toBe(30);
+  it("debt categories (Tarjetas + Pr\u00e9stamos) together sum to 30% of the budget", () => {
+    const debtCats = DEBT_PAYOFF_CATEGORIES.filter(
+      (c) => c.name === "Tarjetas" || c.name === "Pr\u00e9stamos"
+    );
+    const debtTotal = debtCats.reduce((s, c) => s + c.pct, 0);
+    expect(debtTotal).toBe(30);
   });
 });
 
-describe("TRAVEL_SECTIONS preset", () => {
-  it("section allocations sum to 100%", () => {
-    const total = TRAVEL_SECTIONS.reduce(
-      (sum, s) => sum + s.allocation_percent,
-      0
-    );
+describe("TRAVEL_CATEGORIES preset", () => {
+  it("percentages sum to 100", () => {
+    const total = TRAVEL_CATEGORIES.reduce((sum, c) => sum + c.pct, 0);
     expect(total).toBe(100);
   });
 
-  it("has 3 sections", () => {
-    expect(TRAVEL_SECTIONS).toHaveLength(3);
-  });
-
-  it("category allocations within each section sum to 100%", () => {
-    TRAVEL_SECTIONS.forEach((section) => {
-      const total = section.categories.reduce(
-        (sum, c) => sum + c.allocation_percent,
-        0
-      );
-      expect(total).toBe(100);
-    });
+  it("contains 5 categories (1 + 1 + 3 flattened)", () => {
+    expect(TRAVEL_CATEGORIES).toHaveLength(5);
   });
 });
 
-describe("EVENT_SECTIONS preset", () => {
-  it("section allocations sum to 100%", () => {
-    const total = EVENT_SECTIONS.reduce(
-      (sum, s) => sum + s.allocation_percent,
-      0
-    );
+describe("EVENT_CATEGORIES preset", () => {
+  it("percentages sum to 100", () => {
+    const total = EVENT_CATEGORIES.reduce((sum, c) => sum + c.pct, 0);
     expect(total).toBe(100);
   });
 
-  it("has 3 sections", () => {
-    expect(EVENT_SECTIONS).toHaveLength(3);
-  });
-
-  it("category allocations within each section sum to 100%", () => {
-    EVENT_SECTIONS.forEach((section) => {
-      const total = section.categories.reduce(
-        (sum, c) => sum + c.allocation_percent,
-        0
-      );
-      expect(total).toBe(100);
-    });
+  it("contains 4 categories (1 + 1 + 2 flattened)", () => {
+    expect(EVENT_CATEGORIES).toHaveLength(4);
   });
 });

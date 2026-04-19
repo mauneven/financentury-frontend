@@ -11,12 +11,6 @@ vi.mock("@/lib/api", () => ({
     summary: vi.fn(),
     trends: vi.fn(),
   },
-  sectionApi: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
   expenseApi: {
     list: vi.fn(),
     create: vi.fn(),
@@ -28,22 +22,18 @@ vi.mock("@/lib/api", () => ({
     update: vi.fn(),
     delete: vi.fn(),
   },
+  linkApi: {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    linkableBudgets: vi.fn(),
+  },
 }));
 
 import { useBudgetStore } from "@/store/budget-store";
-import {
-  budgetApi,
-  sectionApi,
-  expenseApi,
-  categoryApi,
-} from "@/lib/api";
-import type {
-  Budget,
-  BudgetSummary,
-  Expense,
-  Section,
-  Category,
-} from "@/types/budget";
+import { budgetApi, expenseApi, categoryApi } from "@/lib/api";
+import type { Budget, BudgetSummary, Expense, Category } from "@/types/budget";
 
 const mockBudget: Budget = {
   id: "budget-1",
@@ -61,7 +51,7 @@ const mockBudget: Budget = {
 
 const mockSummary: BudgetSummary = {
   budget: mockBudget,
-  sections: [],
+  categories: [],
   total_budget: 5000,
   total_spent: 1500,
 };
@@ -76,21 +66,11 @@ const mockExpense: Expense = {
   created_at: "2024-01-15T00:00:00Z",
 };
 
-const mockSection: Section = {
-  id: "section-1",
-  budget_id: "budget-1",
-  name: "Needs",
-  allocation_percent: 50,
-  icon: "home",
-  sort_order: 0,
-  created_at: "2024-01-01T00:00:00Z",
-};
-
 const mockCategory: Category = {
   id: "cat-1",
-  section_id: "section-1",
+  budget_id: "budget-1",
   name: "Housing",
-  allocation_percent: 45,
+  allocation_value: 45,
   icon: "home",
   sort_order: 0,
   created_at: "2024-01-01T00:00:00Z",
@@ -154,95 +134,6 @@ describe("budget-store additional actions", () => {
   });
 
   // -----------------------------------------------------------------------
-  // addSection
-  // -----------------------------------------------------------------------
-  describe("addSection", () => {
-    it("calls sectionApi.create and returns the section", async () => {
-      useBudgetStore.setState({ activeBudgetId: "budget-1" });
-
-      vi.mocked(sectionApi.create).mockResolvedValue(mockSection);
-
-      const result = await useBudgetStore.getState().addSection({
-        name: "Needs",
-        allocation_percent: 50,
-        icon: "home",
-      });
-
-      expect(result).toEqual(mockSection);
-      expect(sectionApi.create).toHaveBeenCalledWith("budget-1", {
-        name: "Needs",
-        allocation_percent: 50,
-        icon: "home",
-      });
-    });
-
-    it("throws when no active budget", async () => {
-      useBudgetStore.setState({ activeBudgetId: null });
-
-      await expect(
-        useBudgetStore.getState().addSection({
-          name: "Needs",
-          allocation_percent: 50,
-        })
-      ).rejects.toThrow("No active budget");
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // updateSection
-  // -----------------------------------------------------------------------
-  describe("updateSection", () => {
-    it("calls sectionApi.update and returns updated section", async () => {
-      useBudgetStore.setState({ activeBudgetId: "budget-1" });
-
-      const updated: Section = { ...mockSection, name: "Updated Needs" };
-      vi.mocked(sectionApi.update).mockResolvedValue(updated);
-
-      const result = await useBudgetStore
-        .getState()
-        .updateSection("section-1", { name: "Updated Needs" });
-
-      expect(result.name).toBe("Updated Needs");
-      expect(sectionApi.update).toHaveBeenCalledWith(
-        "budget-1",
-        "section-1",
-        { name: "Updated Needs" }
-      );
-    });
-
-    it("throws when no active budget", async () => {
-      useBudgetStore.setState({ activeBudgetId: null });
-
-      await expect(
-        useBudgetStore.getState().updateSection("section-1", { name: "x" })
-      ).rejects.toThrow("No active budget");
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // deleteSection
-  // -----------------------------------------------------------------------
-  describe("deleteSection", () => {
-    it("calls sectionApi.delete", async () => {
-      useBudgetStore.setState({ activeBudgetId: "budget-1" });
-
-      vi.mocked(sectionApi.delete).mockResolvedValue(undefined);
-
-      await useBudgetStore.getState().deleteSection("section-1");
-
-      expect(sectionApi.delete).toHaveBeenCalledWith("budget-1", "section-1");
-    });
-
-    it("throws when no active budget", async () => {
-      useBudgetStore.setState({ activeBudgetId: null });
-
-      await expect(
-        useBudgetStore.getState().deleteSection("section-1")
-      ).rejects.toThrow("No active budget");
-    });
-  });
-
-  // -----------------------------------------------------------------------
   // addCategory
   // -----------------------------------------------------------------------
   describe("addCategory", () => {
@@ -251,16 +142,16 @@ describe("budget-store additional actions", () => {
 
       vi.mocked(categoryApi.create).mockResolvedValue(mockCategory);
 
-      const result = await useBudgetStore.getState().addCategory("section-1", {
+      const result = await useBudgetStore.getState().addCategory({
         name: "Housing",
-        allocation_percent: 45,
+        allocation_value: 45,
         icon: "home",
       });
 
       expect(result).toEqual(mockCategory);
-      expect(categoryApi.create).toHaveBeenCalledWith("budget-1", "section-1", {
+      expect(categoryApi.create).toHaveBeenCalledWith("budget-1", {
         name: "Housing",
-        allocation_percent: 45,
+        allocation_value: 45,
         icon: "home",
       });
     });
@@ -269,9 +160,9 @@ describe("budget-store additional actions", () => {
       useBudgetStore.setState({ activeBudgetId: null });
 
       await expect(
-        useBudgetStore.getState().addCategory("section-1", {
+        useBudgetStore.getState().addCategory({
           name: "Housing",
-          allocation_percent: 45,
+          allocation_value: 45,
         })
       ).rejects.toThrow("No active budget");
     });
@@ -289,12 +180,11 @@ describe("budget-store additional actions", () => {
 
       const result = await useBudgetStore
         .getState()
-        .updateCategory("section-1", "cat-1", { name: "Rent" });
+        .updateCategory("cat-1", { name: "Rent" });
 
       expect(result.name).toBe("Rent");
       expect(categoryApi.update).toHaveBeenCalledWith(
         "budget-1",
-        "section-1",
         "cat-1",
         { name: "Rent" }
       );
@@ -304,9 +194,7 @@ describe("budget-store additional actions", () => {
       useBudgetStore.setState({ activeBudgetId: null });
 
       await expect(
-        useBudgetStore
-          .getState()
-          .updateCategory("section-1", "cat-1", { name: "x" })
+        useBudgetStore.getState().updateCategory("cat-1", { name: "x" })
       ).rejects.toThrow("No active budget");
     });
   });
@@ -320,20 +208,16 @@ describe("budget-store additional actions", () => {
 
       vi.mocked(categoryApi.delete).mockResolvedValue(undefined);
 
-      await useBudgetStore.getState().deleteCategory("section-1", "cat-1");
+      await useBudgetStore.getState().deleteCategory("cat-1");
 
-      expect(categoryApi.delete).toHaveBeenCalledWith(
-        "budget-1",
-        "section-1",
-        "cat-1"
-      );
+      expect(categoryApi.delete).toHaveBeenCalledWith("budget-1", "cat-1");
     });
 
     it("throws when no active budget", async () => {
       useBudgetStore.setState({ activeBudgetId: null });
 
       await expect(
-        useBudgetStore.getState().deleteCategory("section-1", "cat-1")
+        useBudgetStore.getState().deleteCategory("cat-1")
       ).rejects.toThrow("No active budget");
     });
   });

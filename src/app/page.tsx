@@ -40,24 +40,43 @@ const HOW_IT_WORKS = [
 
 export default function LandingPage() {
   const router = useRouter();
-  const { user, initialized, loading } = useAuthStore();
-  const [authOpen, setAuthOpen] = useState(false);
+  // Narrow selectors — full destructure re-renders on unrelated auth fields
+  // (token rotation, justLoggedIn toggles) on every landing render.
+  const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
+  const loading = useAuthStore((s) => s.loading);
   const t = useTranslations("landing");
 
-  // Read auth callback state from URL on mount (safe in client component)
-  const [authParam, setAuthParam] = useState<"loading" | "error" | null>(null);
-  const [authMessage, setAuthMessage] = useState<string | null>(null);
-
-  useEffect(() => {
+  // Read auth callback state from URL on mount using a lazy initializer so
+  // we don't call setState synchronously inside an effect (which triggers
+  // cascading renders). The callback never runs during SSR.
+  const initialAuthState = (): {
+    authParam: "loading" | "error" | null;
+    authMessage: string | null;
+    authOpen: boolean;
+  } => {
+    if (typeof window === "undefined")
+      return { authParam: null, authMessage: null, authOpen: false };
     const params = new URLSearchParams(window.location.search);
-    const a = params.get("auth") as "loading" | "error" | null;
-    const m = params.get("message");
-    if (a) {
-      setAuthParam(a);
-      setAuthMessage(m);
-      setAuthOpen(true);
-    }
-  }, []);
+    const rawA = params.get("auth");
+    const rawM = params.get("message");
+    // Only accept known values for `auth`; reject anything else to avoid
+    // attacker-crafted URLs that force the app into arbitrary states.
+    const a: "loading" | "error" | null =
+      rawA === "loading" || rawA === "error" ? rawA : null;
+    // Strip any HTML-ish characters and hard-cap length. React escapes
+    // children already — this is defense-in-depth against phishing-style
+    // messages that try to show attacker-crafted prompts to the user.
+    const m =
+      rawM && typeof rawM === "string"
+        ? rawM.replace(/[<>]/g, "").slice(0, 200)
+        : null;
+    return { authParam: a, authMessage: m, authOpen: a !== null };
+  };
+  const [authState, setAuthState] = useState(initialAuthState);
+  const { authParam, authMessage, authOpen } = authState;
+  const setAuthOpen = (open: boolean) =>
+    setAuthState((prev) => ({ ...prev, authOpen: open }));
 
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroVisible, setHeroVisible] = useState(false);
@@ -69,21 +88,8 @@ export default function LandingPage() {
   }, [initialized, loading, user, router, authParam]);
 
   useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setHeroVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
+    const id = requestAnimationFrame(() => setHeroVisible(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   // Show a minimal loader while auth resolves — prevents landing flash for logged-in users.

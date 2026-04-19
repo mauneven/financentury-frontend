@@ -21,7 +21,8 @@ import { Button } from "@/components/ui/button";
 interface ManageLinkDialogProps {
   link: BudgetLink;
   sourceBudgetName: string;
-  sectionName: string;
+  /** Name of the linked category (replaces the old sectionName prop). */
+  categoryName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -29,7 +30,7 @@ interface ManageLinkDialogProps {
 export function ManageLinkDialog({
   link,
   sourceBudgetName,
-  sectionName,
+  categoryName,
   open,
   onOpenChange,
 }: ManageLinkDialogProps) {
@@ -72,7 +73,7 @@ export function ManageLinkDialog({
         <DialogHeader>
           <DialogTitle>{t("manageLink")}</DialogTitle>
           <DialogDescription>
-            {sourceBudgetName} &rarr; {sectionName}
+            {sourceBudgetName} &rarr; {categoryName}
           </DialogDescription>
         </DialogHeader>
 

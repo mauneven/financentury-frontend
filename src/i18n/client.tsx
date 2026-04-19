@@ -4,10 +4,10 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
-import type { Locale } from "./locale";
 import { useLocaleStore } from "./locale";
 
 type Messages = Record<string, unknown>;
@@ -21,35 +21,46 @@ export function useMessages(): Messages {
 /**
  * Simple translation hook. Supports dot-notation keys.
  * Example: t("sidebar.myBudgets") -> looks up messages.sidebar.myBudgets
+ *
+ * The returned `t` function is memoized on `messages` + `namespace` so
+ * downstream React Compiler / hand-written memos don't see a new reference
+ * every render. That matters because many components call
+ * `useTranslations()` repeatedly and pass `t` into child props.
  */
 export function useTranslations(namespace?: string) {
   const messages = useMessages();
 
-  return function t(key: string, params?: Record<string, string | number>): string {
-    const fullKey = namespace ? `${namespace}.${key}` : key;
-    const parts = fullKey.split(".");
-    let value: unknown = messages;
+  return useMemo(() => {
+    return function t(
+      key: string,
+      params?: Record<string, string | number>
+    ): string {
+      const fullKey = namespace ? `${namespace}.${key}` : key;
+      const parts = fullKey.split(".");
+      let value: unknown = messages;
 
-    for (const part of parts) {
-      if (value && typeof value === "object" && part in value) {
-        value = (value as Record<string, unknown>)[part];
-      } else {
-        return fullKey; // Fallback to key
+      for (const part of parts) {
+        if (value && typeof value === "object" && part in value) {
+          value = (value as Record<string, unknown>)[part];
+        } else {
+          return fullKey; // Fallback to key
+        }
       }
-    }
 
-    if (typeof value !== "string") return fullKey;
+      if (typeof value !== "string") return fullKey;
 
-    // Replace {param} placeholders
-    if (params) {
-      return Object.entries(params).reduce(
-        (str, [k, v]) => str.replace(new RegExp(`\\{${k}\\}`, "g"), String(v)),
-        value
-      );
-    }
+      // Replace {param} placeholders. We avoid the per-param RegExp
+      // allocation of the previous implementation by scanning the string
+      // once with a shared placeholder pattern.
+      if (params) {
+        return value.replace(/\{(\w+)\}/g, (_m, k: string) =>
+          k in params ? String(params[k]) : `{${k}}`
+        );
+      }
 
-    return value;
-  };
+      return value;
+    };
+  }, [messages, namespace]);
 }
 
 // Client-side provider that loads messages based on locale

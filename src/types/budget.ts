@@ -20,20 +20,9 @@ export interface Budget {
   updated_at: string;
 }
 
-export interface Section {
-  id: string;
-  budget_id: string;
-  name: string;
-  allocation_value: number;
-  icon: string;
-  sort_order: number;
-  created_at: string;
-  categories?: Category[];
-}
-
 export interface Category {
   id: string;
-  section_id: string;
+  budget_id: string;
   name: string;
   allocation_value: number;
   icon: string;
@@ -78,48 +67,33 @@ export interface BudgetLink {
   id: string;
   source_budget_id: string;
   target_budget_id: string;
-  source_section_id: string;
-  source_category_id?: string | null;
-  target_section_id?: string | null;
+  source_category_id: string;
   filter_mode: "all" | "mine";
   created_by: string;
   created_at: string;
 }
 
-export interface LinkedSectionSummary {
+export interface LinkedCategorySummary {
   link: BudgetLink;
   source_budget: Budget;
-  section: Section;
-  categories: CategorySummary[];
-  total_spent: number;
-  spending_by_user?: UserSpending[];
+  category: CategorySummary;
 }
 
 export interface LinkableBudget extends Budget {
-  sections: (Section & { categories: Category[] })[];
+  categories: Category[];
 }
 
 export interface CreateBudgetLinkInput {
   source_budget_id: string;
-  source_section_id: string;
-  source_category_id?: string;
-  target_section_id?: string;
+  source_category_id: string;
   filter_mode: "all" | "mine";
 }
 
 export interface BudgetSummary {
   budget: Budget;
-  sections: SectionSummary[];
-  linked_sections?: LinkedSectionSummary[];
-  total_budget: number;
-  total_spent: number;
-  spending_by_user?: UserSpending[];
-}
-
-export interface SectionSummary {
-  section: Section;
   categories: CategorySummary[];
-  allocated_amount: number;
+  linked_categories?: LinkedCategorySummary[];
+  total_budget: number;
   total_spent: number;
   spending_by_user?: UserSpending[];
 }
@@ -137,7 +111,7 @@ export interface MonthlyTrend {
   total_spent: number;
 }
 
-export interface SectionTrend {
+export interface CategoryTrend {
   category_id: string;
   category_name: string;
   months: MonthlyTrend[];
@@ -145,7 +119,7 @@ export interface SectionTrend {
 
 export interface TrendsResponse {
   budget_id: string;
-  categories: SectionTrend[];
+  categories: CategoryTrend[];
 }
 
 export interface BudgetResumePeriod {
@@ -194,13 +168,6 @@ export interface CreateBudgetInput {
   mode: BudgetMode;
 }
 
-export interface CreateSectionInput {
-  name: string;
-  allocation_value: number;
-  icon?: string;
-  sort_order?: number;
-}
-
 export interface CreateCategoryInput {
   name: string;
   allocation_value: number;
@@ -235,164 +202,90 @@ export const BILLING_PERIODS = [
   { value: 12, labelKey: "annual" },
 ] as const;
 
-export const BALANCED_SECTIONS = [
-  {
-    name: "Necesidades",
-    allocation_value: 50,
-    icon: "sprout",
-    categories: [
-      { name: "Vivienda", allocation_value: 45, icon: "home" },
-      { name: "Comida", allocation_value: 25, icon: "utensils" },
-      { name: "Transporte", allocation_value: 18, icon: "car" },
-      { name: "Servicios", allocation_value: 12, icon: "lightbulb" },
-    ],
-  },
-  {
-    name: "Deseos",
-    allocation_value: 30,
-    icon: "party",
-    categories: [
-      { name: "Salidas", allocation_value: 50, icon: "party" },
-      { name: "Entretenimiento", allocation_value: 50, icon: "clapperboard" },
-    ],
-  },
-  {
-    name: "Deudas",
-    allocation_value: 10,
-    icon: "credit-card",
-    categories: [
-      { name: "Tarjetas", allocation_value: 50, icon: "credit-card" },
-      { name: "Pr\u00e9stamos", allocation_value: 50, icon: "landmark" },
-    ],
-  },
-  {
-    name: "Ahorro",
-    allocation_value: 10,
-    icon: "coins",
-    categories: [
-      { name: "Fondo de emergencia", allocation_value: 50, icon: "landmark" },
-      { name: "Inversi\u00f3n", allocation_value: 50, icon: "trending" },
-    ],
-  },
-] as const;
+/** Maximum number of flat categories any single budget can hold. */
+export const MAX_CATEGORIES_PER_BUDGET = 50;
 
-export const DEBT_FREE_SECTIONS = [
-  {
-    name: "Necesidades",
-    allocation_value: 50,
-    icon: "sprout",
-    categories: [
-      { name: "Vivienda", allocation_value: 45, icon: "home" },
-      { name: "Comida", allocation_value: 25, icon: "utensils" },
-      { name: "Transporte", allocation_value: 18, icon: "car" },
-      { name: "Servicios", allocation_value: 12, icon: "lightbulb" },
-    ],
-  },
-  {
-    name: "Deseos",
-    allocation_value: 30,
-    icon: "party",
-    categories: [
-      { name: "Salidas", allocation_value: 50, icon: "party" },
-      { name: "Entretenimiento", allocation_value: 50, icon: "clapperboard" },
-    ],
-  },
-  {
-    name: "Ahorro",
-    allocation_value: 20,
-    icon: "coins",
-    categories: [
-      { name: "Fondo de emergencia", allocation_value: 50, icon: "landmark" },
-      { name: "Inversi\u00f3n", allocation_value: 50, icon: "trending" },
-    ],
-  },
-] as const;
+/**
+ * Flat category template used to seed a new budget. Allocation values
+ * are expressed as percentages of the budget's monthly_income. Each
+ * template's percentages sum to 100.
+ */
+export type CategoryTemplate = {
+  name: string;
+  icon: string;
+  pct: number;
+}[];
 
-export const DEBT_PAYOFF_SECTIONS = [
-  {
-    name: "Necesidades",
-    allocation_value: 50,
-    icon: "sprout",
-    categories: [
-      { name: "Vivienda", allocation_value: 45, icon: "home" },
-      { name: "Comida", allocation_value: 25, icon: "utensils" },
-      { name: "Transporte", allocation_value: 18, icon: "car" },
-      { name: "Servicios", allocation_value: 12, icon: "lightbulb" },
-    ],
-  },
-  {
-    name: "Deseos",
-    allocation_value: 20,
-    icon: "party",
-    categories: [
-      { name: "Salidas", allocation_value: 50, icon: "party" },
-      { name: "Entretenimiento", allocation_value: 50, icon: "clapperboard" },
-    ],
-  },
-  {
-    name: "Deuda",
-    allocation_value: 30,
-    icon: "credit-card",
-    categories: [
-      { name: "Tarjetas", allocation_value: 50, icon: "credit-card" },
-      { name: "Pr\u00e9stamos", allocation_value: 50, icon: "landmark" },
-    ],
-  },
-] as const;
+// ---------------------------------------------------------------------------
+// Template seeds
+//
+// Each entry's `pct` is the product of the previous `section_pct *
+// category_pct` expressed as a percentage of the full budget, so every
+// template still sums to exactly 100.
+// ---------------------------------------------------------------------------
 
-export const TRAVEL_SECTIONS = [
-  {
-    name: "Vuelos",
-    allocation_value: 30,
-    icon: "plane",
-    categories: [
-      { name: "Vuelos", allocation_value: 100, icon: "plane" },
-    ],
-  },
-  {
-    name: "Hospedaje",
-    allocation_value: 30,
-    icon: "bed",
-    categories: [
-      { name: "Hospedaje", allocation_value: 100, icon: "bed" },
-    ],
-  },
-  {
-    name: "Salidas",
-    allocation_value: 40,
-    icon: "party",
-    categories: [
-      { name: "Comida", allocation_value: 40, icon: "utensils" },
-      { name: "Actividades", allocation_value: 35, icon: "map-pin" },
-      { name: "Transporte local", allocation_value: 25, icon: "car" },
-    ],
-  },
-] as const;
+export const BALANCED_CATEGORIES: CategoryTemplate = [
+  // Necesidades (50%)
+  { name: "Vivienda", icon: "home", pct: 22.5 },
+  { name: "Comida", icon: "utensils", pct: 12.5 },
+  { name: "Transporte", icon: "car", pct: 9 },
+  { name: "Servicios", icon: "lightbulb", pct: 6 },
+  // Deseos (30%)
+  { name: "Salidas", icon: "party", pct: 15 },
+  { name: "Entretenimiento", icon: "clapperboard", pct: 15 },
+  // Deudas (10%)
+  { name: "Tarjetas", icon: "credit-card", pct: 5 },
+  { name: "Pr\u00e9stamos", icon: "landmark", pct: 5 },
+  // Ahorro (10%)
+  { name: "Fondo de emergencia", icon: "landmark", pct: 5 },
+  { name: "Inversi\u00f3n", icon: "trending", pct: 5 },
+];
 
-export const EVENT_SECTIONS = [
-  {
-    name: "Comida",
-    allocation_value: 50,
-    icon: "utensils",
-    categories: [
-      { name: "Comida", allocation_value: 100, icon: "utensils" },
-    ],
-  },
-  {
-    name: "Bebidas",
-    allocation_value: 30,
-    icon: "wine",
-    categories: [
-      { name: "Bebidas", allocation_value: 100, icon: "wine" },
-    ],
-  },
-  {
-    name: "Gesti\u00f3n",
-    allocation_value: 20,
-    icon: "settings",
-    categories: [
-      { name: "Decoraci\u00f3n", allocation_value: 40, icon: "sparkles" },
-      { name: "Log\u00edstica", allocation_value: 60, icon: "truck" },
-    ],
-  },
-] as const;
+export const DEBT_FREE_CATEGORIES: CategoryTemplate = [
+  // Necesidades (50%)
+  { name: "Vivienda", icon: "home", pct: 22.5 },
+  { name: "Comida", icon: "utensils", pct: 12.5 },
+  { name: "Transporte", icon: "car", pct: 9 },
+  { name: "Servicios", icon: "lightbulb", pct: 6 },
+  // Deseos (30%)
+  { name: "Salidas", icon: "party", pct: 15 },
+  { name: "Entretenimiento", icon: "clapperboard", pct: 15 },
+  // Ahorro (20%)
+  { name: "Fondo de emergencia", icon: "landmark", pct: 10 },
+  { name: "Inversi\u00f3n", icon: "trending", pct: 10 },
+];
+
+export const DEBT_PAYOFF_CATEGORIES: CategoryTemplate = [
+  // Necesidades (50%)
+  { name: "Vivienda", icon: "home", pct: 22.5 },
+  { name: "Comida", icon: "utensils", pct: 12.5 },
+  { name: "Transporte", icon: "car", pct: 9 },
+  { name: "Servicios", icon: "lightbulb", pct: 6 },
+  // Deseos (20%)
+  { name: "Salidas", icon: "party", pct: 10 },
+  { name: "Entretenimiento", icon: "clapperboard", pct: 10 },
+  // Deuda (30%)
+  { name: "Tarjetas", icon: "credit-card", pct: 15 },
+  { name: "Pr\u00e9stamos", icon: "landmark", pct: 15 },
+];
+
+export const TRAVEL_CATEGORIES: CategoryTemplate = [
+  // Vuelos (30%)
+  { name: "Vuelos", icon: "plane", pct: 30 },
+  // Hospedaje (30%)
+  { name: "Hospedaje", icon: "bed", pct: 30 },
+  // Salidas (40%)
+  { name: "Comida", icon: "utensils", pct: 16 },
+  { name: "Actividades", icon: "map-pin", pct: 14 },
+  { name: "Transporte local", icon: "car", pct: 10 },
+];
+
+export const EVENT_CATEGORIES: CategoryTemplate = [
+  // Comida (50%)
+  { name: "Comida", icon: "utensils", pct: 50 },
+  // Bebidas (30%)
+  { name: "Bebidas", icon: "wine", pct: 30 },
+  // Gesti\u00f3n (20%)
+  { name: "Decoraci\u00f3n", icon: "sparkles", pct: 8 },
+  { name: "Log\u00edstica", icon: "truck", pct: 12 },
+];

@@ -124,6 +124,71 @@ describe("maskAmountInput", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Locale-aware parsing: decimal-comma locales (es-CO, de-DE) and default en-US.
+// Critical path — wrong separator means a user typing "1,5" in Colombian
+// Spanish lands a 15-peso expense instead of 1.5.
+// ---------------------------------------------------------------------------
+describe("parseAmount — locale-aware", () => {
+  it('parses "1.234,56" as 1234.56 in es-CO', () => {
+    expect(parseAmount("1.234,56", "es-CO")).toBe(1234.56);
+  });
+
+  it('parses "1.234,56" as 1234.56 in de-DE', () => {
+    expect(parseAmount("1.234,56", "de-DE")).toBe(1234.56);
+  });
+
+  it('parses "1,5" as 1.5 in es-CO (comma is decimal)', () => {
+    expect(parseAmount("1,5", "es-CO")).toBe(1.5);
+  });
+
+  it('parses "1,5" as 15 in en-US (comma is group separator)', () => {
+    expect(parseAmount("1,5", "en-US")).toBe(15);
+  });
+
+  it('strips currency symbols before parsing in de-DE', () => {
+    expect(parseAmount("1.234,56 €", "de-DE")).toBe(1234.56);
+  });
+
+  it("returns NaN on empty string regardless of locale", () => {
+    expect(parseAmount("", "de-DE")).toBeNaN();
+    expect(parseAmount("", "es-CO")).toBeNaN();
+  });
+});
+
+describe("maskAmountInput — locale-aware", () => {
+  it("formats 1234.56 with de-DE separators (dot group, comma decimal)", () => {
+    expect(maskAmountInput("1234,56", "de-DE")).toBe("1.234,56");
+  });
+
+  it("accepts '.' on numeric keypads even in de-DE and treats as decimal", () => {
+    // Numeric keypad always emits ".". Must map to locale decimal.
+    expect(maskAmountInput("1234.56", "de-DE")).toBe("1.234,56");
+  });
+
+  it("formats 1234567 with es-CO group separator (dot)", () => {
+    expect(maskAmountInput("1234567", "es-CO")).toBe("1.234.567");
+  });
+
+  it("preserves existing en-US behavior with default locale", () => {
+    expect(maskAmountInput("1234567")).toBe("1,234,567");
+  });
+});
+
+describe("formatAmount — locale-aware", () => {
+  it("formats 1234.56 in de-DE with comma decimal", () => {
+    expect(formatAmount(1234.56, "de-DE")).toBe("1.234,56");
+  });
+
+  it("formats 1234.56 in es-CO with comma decimal", () => {
+    expect(formatAmount(1234.56, "es-CO")).toBe("1.234,56");
+  });
+
+  it("keeps en-US default back-compat", () => {
+    expect(formatAmount(1234.56)).toBe("1,234.56");
+  });
+});
+
 describe("pickRandomIcon", () => {
   it("returns a string", () => {
     expect(typeof pickRandomIcon([])).toBe("string");

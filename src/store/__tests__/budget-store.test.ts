@@ -11,12 +11,6 @@ vi.mock("@/lib/api", () => ({
     summary: vi.fn(),
     trends: vi.fn(),
   },
-  sectionApi: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
   expenseApi: {
     list: vi.fn(),
     create: vi.fn(),
@@ -27,6 +21,13 @@ vi.mock("@/lib/api", () => ({
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+  },
+  linkApi: {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    linkableBudgets: vi.fn(),
   },
 }));
 
@@ -50,7 +51,7 @@ const mockBudget: Budget = {
 
 const mockSummary: BudgetSummary = {
   budget: mockBudget,
-  sections: [],
+  categories: [],
   total_budget: 5000,
   total_spent: 1500,
 };

@@ -40,9 +40,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         case "expense_created":
         case "expense_updated":
         case "expense_deleted":
-        case "section_created":
-        case "section_updated":
-        case "section_deleted":
         case "category_created":
         case "category_updated":
         case "category_deleted":

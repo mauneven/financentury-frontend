@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,10 +14,10 @@ import {
 
 const ICON_STROKE = 1.8;
 
-import type { Expense, Section } from "@/types/budget";
+import type { Expense, Category } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 import { useBudgetStore } from "@/store/budget-store";
-import { cn } from "@/lib/utils";
+import { maskAmountInput, parseAmount, formatAmount } from "@/lib/amount-utils";
 import { useTranslations } from "@/i18n/client";
 import { CategoryIcon } from "@/lib/icon-picker";
 
@@ -57,31 +57,9 @@ interface EditExpenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expense: Expense;
-  categories: Section[];
+  /** Flat list of all categories (own + linked) the expense can be moved to. */
+  categories: Category[];
   currency: string;
-}
-
-function formatAmountDisplay(value: string): string {
-  const cleaned = value.replace(/[^\d.]/g, "");
-  const parts = cleaned.split(".");
-  const integerPart = parts[0] || "";
-  const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  if (parts.length > 1) {
-    return `${formatted}.${parts[1].slice(0, 2)}`;
-  }
-  return formatted;
-}
-
-function parseAmountString(value: string): number {
-  const cleaned = value.replace(/,/g, "");
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
-}
-
-function numberToDisplay(num: number): string {
-  if (num === 0) return "";
-  const str = num.toString();
-  return formatAmountDisplay(str);
 }
 
 export function EditExpenseDialog({
@@ -96,7 +74,6 @@ export function EditExpenseDialog({
   const updateExpense = useBudgetStore((s) => s.updateExpense);
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [amountDisplay, setAmountDisplay] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -106,6 +83,7 @@ export function EditExpenseDialog({
 
   const currencyInfo = CURRENCIES.find((c) => c.code === currency);
   const currencySymbol = currencyInfo?.symbol || "$";
+  const currencyLocale = currencyInfo?.locale || "en-US";
 
   const {
     register,
@@ -121,26 +99,9 @@ export function EditExpenseDialog({
   const watchedCategoryId = watch("category_id");
   const watchedDate = watch("expense_date");
 
-  const selectedSection = categories.find((c) => c.id === selectedCategoryId);
-
-  const sectionCategories = selectedSection?.categories || [];
-
-  // Find which section owns the expense's category
-  const findSectionForCategory = useCallback((categoryId: string): string | null => {
-    for (const sec of categories) {
-      if (sec.categories?.some((s) => s.id === categoryId)) {
-        return sec.id;
-      }
-    }
-    return null;
-  }, [categories]);
-
-  // Populate form when dialog opens
   useEffect(() => {
     if (open && expense) {
-      const sectionId = findSectionForCategory(expense.category_id);
-      setSelectedCategoryId(sectionId);
-      setAmountDisplay(numberToDisplay(expense.amount));
+      setAmountDisplay(formatAmount(expense.amount, currencyLocale));
       setShowDeleteConfirm(false);
 
       reset({
@@ -150,18 +111,14 @@ export function EditExpenseDialog({
         expense_date: expense.expense_date,
       });
     }
-  }, [open, expense, reset, findSectionForCategory]);
-
-  const handleCategoryChange = (value: string | null) => {
-    setSelectedCategoryId(value);
-    setValue("category_id", "");
-  };
+  }, [open, expense, reset, currencyLocale]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const formatted = formatAmountDisplay(raw);
+    const formatted = maskAmountInput(raw, currencyLocale);
     setAmountDisplay(formatted);
-    setValue("amount", parseAmountString(formatted), { shouldValidate: true });
+    const parsed = parseAmount(formatted, currencyLocale);
+    setValue("amount", isNaN(parsed) ? 0 : parsed, { shouldValidate: true });
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -201,6 +158,7 @@ export function EditExpenseDialog({
   };
 
   const selectedDate = watchedDate ? new Date(watchedDate + "T00:00:00") : new Date();
+  const selectedCategory = categories.find((c) => c.id === watchedCategoryId);
 
   return (
     <Dialog open={open} onOpenChange={(o) => onOpenChange(o)}>
@@ -211,35 +169,7 @@ export function EditExpenseDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Section Select */}
-          <div className="space-y-2">
-            <Label>{t("section")}</Label>
-            <Select
-              value={selectedCategoryId}
-              onValueChange={handleCategoryChange}
-            >
-              <SelectTrigger className="w-full">
-                {selectedCategoryId ? (
-                  <span className="flex flex-1 items-center gap-1.5 text-left">
-                    <CategoryIcon iconKey={categories.find((c) => c.id === selectedCategoryId)?.icon} className="size-4" />
-                    {categories.find((c) => c.id === selectedCategoryId)?.name}
-                  </span>
-                ) : (
-                  <SelectValue placeholder={t("selectSection")} />
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <CategoryIcon iconKey={cat.icon} className="mr-1.5 inline size-4" />
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category Select */}
+          {/* Category — flat single select */}
           <div className="space-y-2">
             <Label>{t("category")}</Label>
             <Select
@@ -247,28 +177,22 @@ export function EditExpenseDialog({
               onValueChange={(val) => {
                 if (val) setValue("category_id", val, { shouldValidate: true });
               }}
-              disabled={!selectedCategoryId}
             >
-              <SelectTrigger className={cn("w-full", !selectedCategoryId && "opacity-50")}>
-                {watchedCategoryId ? (() => {
-                  const sub = sectionCategories.find((s) => s.id === watchedCategoryId);
-                  return sub ? (
-                    <span className="flex flex-1 items-center gap-1.5 text-left">
-                      <CategoryIcon iconKey={sub.icon} className="size-4" />
-                      {sub.name}
-                    </span>
-                  ) : (
-                    <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
-                  );
-                })() : (
-                  <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
+              <SelectTrigger className="w-full">
+                {selectedCategory ? (
+                  <span className="flex flex-1 items-center gap-1.5 text-left">
+                    <CategoryIcon iconKey={selectedCategory.icon} className="size-4" />
+                    {selectedCategory.name}
+                  </span>
+                ) : (
+                  <SelectValue placeholder={t("selectCategory")} />
                 )}
               </SelectTrigger>
               <SelectContent>
-                {sectionCategories.map((sub) => (
-                  <SelectItem key={sub.id} value={sub.id}>
-                    <CategoryIcon iconKey={sub.icon} className="mr-1.5 inline size-4" />
-                    {sub.name}
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    <CategoryIcon iconKey={cat.icon} className="mr-1.5 inline size-4" />
+                    {cat.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -358,7 +282,6 @@ export function EditExpenseDialog({
 
           {submitError && <p className="text-xs text-destructive">{submitError}</p>}
 
-          {/* Footer */}
           <DialogFooter>
             {!showDeleteConfirm ? (
               <>

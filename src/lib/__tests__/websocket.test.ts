@@ -17,12 +17,12 @@ describe("WSMessage type — valid event types", () => {
     "expense_created",
     "expense_updated",
     "expense_deleted",
-    "section_created",
-    "section_updated",
-    "section_deleted",
     "category_created",
     "category_updated",
     "category_deleted",
+    "link_created",
+    "link_updated",
+    "link_deleted",
   ];
 
   it("includes all 10 expected event types", () => {
@@ -43,16 +43,23 @@ describe("WSMessage type — valid event types", () => {
     expect(VALID_TYPES).not.toContain(oldName);
   });
 
-  it("includes all CRUD events for sections", () => {
-    expect(VALID_TYPES).toContain("section_created");
-    expect(VALID_TYPES).toContain("section_updated");
-    expect(VALID_TYPES).toContain("section_deleted");
+  it("does NOT include any section_* event (sections were removed)", () => {
+    const removed = ["section_created", "section_updated", "section_deleted"];
+    removed.forEach((name) => {
+      expect(VALID_TYPES as unknown as string[]).not.toContain(name);
+    });
   });
 
   it("includes all CRUD events for categories", () => {
     expect(VALID_TYPES).toContain("category_created");
     expect(VALID_TYPES).toContain("category_updated");
     expect(VALID_TYPES).toContain("category_deleted");
+  });
+
+  it("includes all CRUD events for links", () => {
+    expect(VALID_TYPES).toContain("link_created");
+    expect(VALID_TYPES).toContain("link_updated");
+    expect(VALID_TYPES).toContain("link_deleted");
   });
 });
 
@@ -86,7 +93,7 @@ describe("WSMessage parsing — malformed JSON", () => {
     const parsed = parseWSMessage('[1,2,3]');
     // Parses fine but is not a valid WSMessage (no type field).
     if (parsed) {
-      expect((parsed as Record<string, unknown>).type).toBeUndefined();
+      expect((parsed as unknown as Record<string, unknown>).type).toBeUndefined();
     }
   });
 });
@@ -122,7 +129,7 @@ describe("WSMessage parsing — extra unexpected fields", () => {
     expect(msg!.type).toBe("expense_deleted");
     expect(msg!.budget_id).toBe("b-1");
     // Extra fields are accessible on the object but harmless.
-    expect((msg as Record<string, unknown>).extra_field).toBe("should be fine");
+    expect((msg as unknown as Record<string, unknown>).extra_field).toBe("should be fine");
   });
 
   it("deeply nested extra payload does not break parsing", () => {

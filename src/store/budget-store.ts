@@ -5,33 +5,29 @@ import type {
   Budget,
   BudgetSummary,
   BudgetLink,
-  Section,
   CreateBudgetInput,
   CreateBudgetLinkInput,
-  CreateSectionInput,
   CreateExpenseInput,
   CreateCategoryInput,
   Expense,
   Category,
 } from "@/types/budget";
-import { budgetApi, sectionApi, expenseApi, categoryApi, linkApi } from "@/lib/api";
+import { budgetApi, expenseApi, categoryApi, linkApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
 /** Fetch expenses from linked source budgets, filtered to linked categories only. */
 async function fetchLinkedExpenses(summary: BudgetSummary): Promise<Expense[]> {
-  const linkedSections = summary.linked_sections ?? [];
-  if (linkedSections.length === 0) return [];
+  const linkedCategories = summary.linked_categories ?? [];
+  if (linkedCategories.length === 0) return [];
 
   const currentUserId = useAuthStore.getState().user?.id;
 
   // Map each linked category to its filter_mode
   const categoryFilter = new Map<string, "all" | "mine">();
   const sourceBudgetIds = new Set<string>();
-  for (const ls of linkedSections) {
-    sourceBudgetIds.add(ls.link.source_budget_id);
-    for (const cat of ls.categories) {
-      categoryFilter.set(cat.category.id, ls.link.filter_mode);
-    }
+  for (const lc of linkedCategories) {
+    sourceBudgetIds.add(lc.link.source_budget_id);
+    categoryFilter.set(lc.category.category.id, lc.link.filter_mode);
   }
 
   // Fetch expenses from each source budget in parallel
@@ -72,12 +68,9 @@ interface BudgetState {
   addExpense: (data: CreateExpenseInput) => Promise<Expense>;
   updateExpense: (budgetId: string, expenseId: string, data: Partial<CreateExpenseInput>) => Promise<Expense>;
   deleteExpense: (expenseId: string) => Promise<void>;
-  addSection: (data: CreateSectionInput) => Promise<Section>;
-  updateSection: (sectionId: string, data: Partial<CreateSectionInput>) => Promise<Section>;
-  deleteSection: (sectionId: string) => Promise<void>;
-  addCategory: (sectionId: string, data: CreateCategoryInput) => Promise<Category>;
-  updateCategory: (sectionId: string, categoryId: string, data: Partial<CreateCategoryInput>) => Promise<Category>;
-  deleteCategory: (sectionId: string, categoryId: string) => Promise<void>;
+  addCategory: (data: CreateCategoryInput) => Promise<Category>;
+  updateCategory: (categoryId: string, data: Partial<CreateCategoryInput>) => Promise<Category>;
+  deleteCategory: (categoryId: string) => Promise<void>;
   createLink: (data: CreateBudgetLinkInput) => Promise<BudgetLink>;
   updateLink: (linkId: string, data: { filter_mode: string }) => Promise<BudgetLink>;
   deleteLink: (linkId: string) => Promise<void>;
@@ -248,55 +241,29 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     // eagerly calling refreshSummaryOnly() here (avoids double API calls).
   },
 
-  addSection: async (data) => {
+  addCategory: async (data) => {
     const { activeBudgetId } = get();
     if (!activeBudgetId) throw new Error("No active budget");
 
-    const section = await sectionApi.create(activeBudgetId, data);
-    // WS broadcast will trigger refreshSummary via ws-provider
-    return section;
-  },
-
-  updateSection: async (sectionId, data) => {
-    const { activeBudgetId } = get();
-    if (!activeBudgetId) throw new Error("No active budget");
-
-    const section = await sectionApi.update(activeBudgetId, sectionId, data);
-    // WS broadcast will trigger refreshSummary via ws-provider
-    return section;
-  },
-
-  deleteSection: async (sectionId) => {
-    const { activeBudgetId } = get();
-    if (!activeBudgetId) throw new Error("No active budget");
-
-    await sectionApi.delete(activeBudgetId, sectionId);
-    // WS broadcast will trigger refreshSummary via ws-provider
-  },
-
-  addCategory: async (sectionId, data) => {
-    const { activeBudgetId } = get();
-    if (!activeBudgetId) throw new Error("No active budget");
-
-    const category = await categoryApi.create(activeBudgetId, sectionId, data);
+    const category = await categoryApi.create(activeBudgetId, data);
     // WS broadcast will trigger refreshSummary via ws-provider
     return category;
   },
 
-  updateCategory: async (sectionId, categoryId, data) => {
+  updateCategory: async (categoryId, data) => {
     const { activeBudgetId } = get();
     if (!activeBudgetId) throw new Error("No active budget");
 
-    const category = await categoryApi.update(activeBudgetId, sectionId, categoryId, data);
+    const category = await categoryApi.update(activeBudgetId, categoryId, data);
     // WS broadcast will trigger refreshSummary via ws-provider
     return category;
   },
 
-  deleteCategory: async (sectionId, categoryId) => {
+  deleteCategory: async (categoryId) => {
     const { activeBudgetId } = get();
     if (!activeBudgetId) throw new Error("No active budget");
 
-    await categoryApi.delete(activeBudgetId, sectionId, categoryId);
+    await categoryApi.delete(activeBudgetId, categoryId);
     // WS broadcast will trigger refreshSummary via ws-provider
   },
 

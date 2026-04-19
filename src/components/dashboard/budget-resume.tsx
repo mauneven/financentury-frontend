@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, getCurrencyInfo } from "@/lib/format";
 import { budgetApi } from "@/lib/api";
 import { useTranslations } from "@/i18n/client";
 import { cn } from "@/lib/utils";
@@ -13,9 +13,19 @@ interface BudgetResumeProps {
   currency: string;
 }
 
-function formatDate(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-");
-  return `${d}/${m}/${y}`;
+function makeDateFormatter(locale: string): (dateStr: string) => string {
+  return (dateStr: string) => {
+    try {
+      const d = new Date(dateStr + "T00:00:00");
+      return d.toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 }
 
 function BalanceIndicator({ balance }: { balance: number }) {
@@ -31,10 +41,12 @@ function BalanceIndicator({ balance }: { balance: number }) {
 function PeriodRow({
   period,
   currency,
+  formatDate,
   t,
 }: {
   period: BudgetResumePeriod;
   currency: string;
+  formatDate: (dateStr: string) => string;
   t: ReturnType<typeof useTranslations>;
 }) {
   const isPositive = period.balance > 0;
@@ -102,14 +114,20 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
   const [data, setData] = useState<BudgetResumeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [refetchNonce, setRefetchNonce] = useState(0);
 
-  const fetchResume = useCallback((id: string) => {
+  const locale = getCurrencyInfo(currency)?.locale || "en-US";
+  const formatDate = makeDateFormatter(locale);
+
+  useEffect(() => {
     let cancelled = false;
-    setError(false);
     budgetApi
-      .budgetResume(id)
+      .budgetResume(budgetId)
       .then((res) => {
-        if (!cancelled) setData(res);
+        if (!cancelled) {
+          setData(res);
+          setError(false);
+        }
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -120,11 +138,7 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  useEffect(() => {
-    return fetchResume(budgetId);
-  }, [budgetId, fetchResume]);
+  }, [budgetId, refetchNonce]);
 
   if (loading) {
     return (
@@ -156,7 +170,7 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
               onClick={() => {
                 setLoading(true);
                 setError(false);
-                fetchResume(budgetId);
+                setRefetchNonce((n) => n + 1);
               }}
               className="mt-3 px-4 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
             >
@@ -193,6 +207,7 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
                 key={period.period_start}
                 period={period}
                 currency={currency}
+                formatDate={formatDate}
                 t={t}
               />
             ))}

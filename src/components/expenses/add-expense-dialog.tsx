@@ -13,11 +13,12 @@ import {
 
 const ICON_STROKE = 1.8;
 
-import type { Section, CategorySummary } from "@/types/budget";
+import type { Category, CategorySummary } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 import { useBudgetStore } from "@/store/budget-store";
 import { expenseApi } from "@/lib/api";
 import { formatCurrency, getPercentage, getProgressTextColor } from "@/lib/format";
+import { maskAmountInput, parseAmount } from "@/lib/amount-utils";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/client";
 import { CategoryIcon } from "@/lib/icon-picker";
@@ -57,37 +58,28 @@ type ExpenseFormValues = z.infer<typeof expenseSchema>;
 interface AddExpenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Budget the dialog is opened from. Kept for API continuity — the actual
+   * target budget is resolved per-category via `linkedCategoryBudgetMap`
+   * (for linked categories) or falls back to the store's active budget.
+   */
   budgetId: string;
-  categories: Section[];
+  /**
+   * Flat list of categories the user can pick from. With sections gone
+   * we no longer nest a category picker — it's a single select.
+   */
+  categories: Category[];
   currency: string;
   preselectedCategoryId?: string;
-  /** When set, expense is routed to this budget (for linked sections). */
+  /** When set, expense is routed to this budget (for linked categories). */
   sourceBudgetId?: string;
   /** Maps category IDs to their source budget ID for category-level links. */
   linkedCategoryBudgetMap?: Map<string, string>;
 }
 
-function formatAmountDisplay(value: string): string {
-  const cleaned = value.replace(/[^\d.]/g, "");
-  const parts = cleaned.split(".");
-  const integerPart = parts[0] || "";
-  const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  if (parts.length > 1) {
-    return `${formatted}.${parts[1].slice(0, 2)}`;
-  }
-  return formatted;
-}
-
-function parseAmountString(value: string): number {
-  const cleaned = value.replace(/,/g, "");
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
-}
-
 export function AddExpenseDialog({
   open,
   onOpenChange,
-  budgetId,
   categories,
   currency,
   preselectedCategoryId,
@@ -100,7 +92,6 @@ export function AddExpenseDialog({
   const refreshSummaryOnly = useBudgetStore((s) => s.refreshSummaryOnly);
   const summary = useBudgetStore((s) => s.summary);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [amountDisplay, setAmountDisplay] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -108,6 +99,7 @@ export function AddExpenseDialog({
 
   const currencyInfo = CURRENCIES.find((c) => c.code === currency);
   const currencySymbol = currencyInfo?.symbol || "$";
+  const currencyLocale = currencyInfo?.locale || "en-US";
 
   const {
     register,
@@ -129,41 +121,17 @@ export function AddExpenseDialog({
   const watchedCategoryId = watch("category_id");
   const watchedDate = watch("expense_date");
 
-  const selectedSection = categories.find((c) => c.id === selectedCategoryId);
-
-  const sectionCategories = selectedSection?.categories || [];
-
   const categorySummary = useMemo((): CategorySummary | null => {
     if (!summary || !watchedCategoryId) return null;
-    for (const sec of summary.sections) {
-      for (const cat of sec.categories) {
-        if (cat.category.id === watchedCategoryId) return cat;
-      }
+    for (const c of summary.categories) {
+      if (c.category.id === watchedCategoryId) return c;
     }
-    // Also check linked sections for category-level links
-    for (const ls of summary.linked_sections ?? []) {
-      for (const cat of ls.categories) {
-        if (cat.category.id === watchedCategoryId) return cat;
-      }
+    for (const l of summary.linked_categories ?? []) {
+      if (l.category.category.id === watchedCategoryId) return l.category;
     }
     return null;
   }, [summary, watchedCategoryId]);
 
-  // Auto-select section and category when preselected
-  useEffect(() => {
-    if (open && preselectedCategoryId) {
-      for (const sec of categories) {
-        const cat = sec.categories?.find((s) => s.id === preselectedCategoryId);
-        if (cat) {
-          setSelectedCategoryId(sec.id);
-          setValue("category_id", cat.id);
-          break;
-        }
-      }
-    }
-  }, [open, preselectedCategoryId, categories, setValue]);
-
-  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       reset({
@@ -175,22 +143,15 @@ export function AddExpenseDialog({
       setAmountDisplay("");
       setIsSubmitting(false);
       setSubmitError(null);
-      if (!preselectedCategoryId) {
-        setSelectedCategoryId(null);
-      }
     }
   }, [open, reset, preselectedCategoryId]);
 
-  const handleCategoryChange = (value: string | null) => {
-    setSelectedCategoryId(value);
-    setValue("category_id", "");
-  };
-
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const formatted = formatAmountDisplay(raw);
+    const formatted = maskAmountInput(raw, currencyLocale);
     setAmountDisplay(formatted);
-    setValue("amount", parseAmountString(formatted), { shouldValidate: true });
+    const parsed = parseAmount(formatted, currencyLocale);
+    setValue("amount", isNaN(parsed) ? 0 : parsed, { shouldValidate: true });
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -209,7 +170,6 @@ export function AddExpenseDialog({
         description: data.description || undefined,
         expense_date: data.expense_date,
       };
-      // Determine target budget: per-category override → dialog-level override → current budget
       const categorySourceBudget = linkedCategoryBudgetMap?.get(data.category_id);
       const targetBudget = categorySourceBudget || sourceBudgetId;
       if (targetBudget) {
@@ -226,6 +186,7 @@ export function AddExpenseDialog({
   };
 
   const selectedDate = watchedDate ? new Date(watchedDate + "T00:00:00") : new Date();
+  const selectedCategory = categories.find((c) => c.id === watchedCategoryId);
 
   return (
     <Dialog open={open} onOpenChange={(o) => onOpenChange(o)}>
@@ -236,35 +197,7 @@ export function AddExpenseDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Section Select */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">{t("section")}</Label>
-            <Select
-              value={selectedCategoryId}
-              onValueChange={handleCategoryChange}
-            >
-              <SelectTrigger className="w-full">
-                {selectedCategoryId ? (
-                  <span className="flex flex-1 items-center gap-1.5 text-left">
-                    <CategoryIcon iconKey={categories.find((c) => c.id === selectedCategoryId)?.icon} className="size-4" />
-                    {categories.find((c) => c.id === selectedCategoryId)?.name}
-                  </span>
-                ) : (
-                  <SelectValue placeholder={t("selectSection")} />
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <CategoryIcon iconKey={cat.icon} className="mr-1.5 inline size-4" />
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category Select */}
+          {/* Category — flat single select */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">{t("category")}</Label>
             <Select
@@ -272,28 +205,22 @@ export function AddExpenseDialog({
               onValueChange={(val) => {
                 if (val) setValue("category_id", val, { shouldValidate: true });
               }}
-              disabled={!selectedCategoryId}
             >
-              <SelectTrigger className={cn("w-full", !selectedCategoryId && "opacity-50")}>
-                {watchedCategoryId ? (() => {
-                  const sub = sectionCategories.find((s) => s.id === watchedCategoryId);
-                  return sub ? (
-                    <span className="flex flex-1 items-center gap-1.5 text-left">
-                      <CategoryIcon iconKey={sub.icon} className="size-4" />
-                      {sub.name}
-                    </span>
-                  ) : (
-                    <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
-                  );
-                })() : (
-                  <SelectValue placeholder={selectedCategoryId ? t("selectCategory") : t("selectSectionFirst")} />
+              <SelectTrigger className="w-full">
+                {selectedCategory ? (
+                  <span className="flex flex-1 items-center gap-1.5 text-left">
+                    <CategoryIcon iconKey={selectedCategory.icon} className="size-4" />
+                    {selectedCategory.name}
+                  </span>
+                ) : (
+                  <SelectValue placeholder={t("selectCategory")} />
                 )}
               </SelectTrigger>
               <SelectContent>
-                {sectionCategories.map((sub) => (
-                  <SelectItem key={sub.id} value={sub.id}>
-                    <CategoryIcon iconKey={sub.icon} className="mr-1.5 inline size-4" />
-                    {sub.name}
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    <CategoryIcon iconKey={cat.icon} className="mr-1.5 inline size-4" />
+                    {cat.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -310,7 +237,9 @@ export function AddExpenseDialog({
           {categorySummary && (() => {
             const remaining = Math.max(0, categorySummary.allocated_amount - categorySummary.total_spent);
             const spentPct = getPercentage(categorySummary.total_spent, categorySummary.allocated_amount);
-            const remainingPct = categorySummary.allocated_amount > 0 ? 100 - spentPct : 0;
+            const remainingPct = categorySummary.allocated_amount > 0
+              ? Math.max(0, 100 - spentPct)
+              : 0;
             return (
               <div className="flex items-center justify-between bg-muted/30 px-4 py-2.5 text-sm rounded-md">
                 <span className="text-muted-foreground">{t("remainingBudget")}</span>
@@ -401,7 +330,6 @@ export function AddExpenseDialog({
             )}
           </div>
 
-          {/* Footer */}
           <DialogFooter className="pt-2">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" strokeWidth={ICON_STROKE} />}

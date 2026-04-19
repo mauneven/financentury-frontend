@@ -26,8 +26,22 @@ interface AuthState {
   updateName: (name: string) => Promise<void>;
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+// Mirror the sanitization in src/lib/api.ts so a misconfigured
+// NEXT_PUBLIC_API_URL can't cause this module to send the bearer token to
+// a javascript:/data: URL.
+const API_BASE = (() => {
+  const candidate =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+  try {
+    const u = new URL(candidate);
+    if (u.protocol !== "http:" && u.protocol !== "https:") {
+      return "http://localhost:8080/api";
+    }
+    return candidate;
+  } catch {
+    return "http://localhost:8080/api";
+  }
+})();
 
 /**
  * Validates that a token looks like a well-formed JWT (3 base64url segments).
@@ -117,6 +131,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signInWithGoogle: () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId || typeof clientId !== "string") {
+      // Don't build a broken OAuth URL that exposes "client_id=undefined" in
+      // server logs / browser history. Bail out and surface a friendly error.
+      if (process.env.NODE_ENV !== "production") {
+        console.error(
+          "NEXT_PUBLIC_GOOGLE_CLIENT_ID is not configured. OAuth sign-in is disabled."
+        );
+      }
+      window.location.href =
+        "/?auth=error&message=" +
+        encodeURIComponent("Sign-in is temporarily unavailable. Please try again later.");
+      return;
+    }
     const redirectUri = `${window.location.origin}/auth/callback`;
     const scope = "openid email profile";
 
@@ -124,7 +151,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const state = generateOAuthState();
     sessionStorage.setItem("oauth_state", state);
 
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
     window.location.href = url;
   },
 
@@ -150,7 +177,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: "Auth failed" }));
-      throw new Error(err.error || err.message || "Auth failed");
+      // Sanitize server-provided error text: strip tags and cap length so
+      // untrusted payloads can't smuggle phishing content back to the UI.
+      const raw = (err.error || err.message || "Auth failed") as string;
+      const safe = (typeof raw === "string" ? raw : "Auth failed")
+        .replace(/<[^>]*>/g, "")
+        .slice(0, 300);
+      throw new Error(safe);
     }
 
     const data: { token: string; user: AuthUser } = await res.json();
@@ -158,6 +191,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Validate token format before storing in localStorage.
     if (!isValidJWTFormat(data.token)) {
       throw new Error("Received invalid token from server");
+    }
+
+    // Also reject tokens whose exp has already passed — a malicious / broken
+    // backend shouldn't be able to persist a dead token that would later be
+    // treated as a logged-in session.
+    if (isTokenExpired(data.token)) {
+      throw new Error("Received expired token from server");
     }
 
     localStorage.setItem("financentury_token", data.token);

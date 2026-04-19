@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Link2, ChevronRight, Check } from "lucide-react";
-import type { LinkableBudget, Section, Category } from "@/types/budget";
+import type { LinkableBudget, Category } from "@/types/budget";
 import { linkApi } from "@/lib/api";
 import { useBudgetStore } from "@/store/budget-store";
 import { useTranslations } from "@/i18n/client";
@@ -27,70 +27,74 @@ interface CreateLinkDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Step = "budget" | "section" | "filter";
+type Step = "budget" | "category" | "filter";
 
 export function CreateLinkDialog({
   budgetId,
   open,
   onOpenChange,
 }: CreateLinkDialogProps) {
+  // Mount the inner component only when open — state is reset per open.
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open && (
+        <CreateLinkDialogBody budgetId={budgetId} onOpenChange={onOpenChange} />
+      )}
+    </Dialog>
+  );
+}
+
+function CreateLinkDialogBody({
+  budgetId,
+  onOpenChange,
+}: {
+  budgetId: string;
+  onOpenChange: (open: boolean) => void;
+}) {
   const t = useTranslations("links");
   const tc = useTranslations("common");
   const createLink = useBudgetStore((s) => s.createLink);
 
   const [step, setStep] = useState<Step>("budget");
   const [linkableBudgets, setLinkableBudgets] = useState<LinkableBudget[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Selected values
   const [selectedBudget, setSelectedBudget] = useState<LinkableBudget | null>(null);
-  const [selectedSection, setSelectedSection] = useState<Section & { categories: Category[] } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [filterMode, setFilterMode] = useState<"all" | "mine">("all");
 
-  // Reset on open
   useEffect(() => {
-    if (open) {
-      setStep("budget");
-      setSelectedBudget(null);
-      setSelectedSection(null);
-      setSelectedCategory(null);
-      setFilterMode("all");
-      setError(null);
-      setSubmitting(false);
-      setLoading(true);
-      linkApi
-        .linkableBudgets(budgetId)
-        .then(setLinkableBudgets)
-        .catch(() => setLinkableBudgets([]))
-        .finally(() => setLoading(false));
-    }
-  }, [open, budgetId]);
+    let cancelled = false;
+    linkApi
+      .linkableBudgets(budgetId)
+      .then((res) => { if (!cancelled) setLinkableBudgets(res); })
+      .catch(() => { if (!cancelled) setLinkableBudgets([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [budgetId]);
 
   const handleSelectBudget = (b: LinkableBudget) => {
     setSelectedBudget(b);
-    setSelectedSection(null);
     setSelectedCategory(null);
-    setStep("section");
+    setStep("category");
   };
 
-  const handleSelectSection = (sec: Section & { categories: Category[] }, cat?: Category) => {
-    setSelectedSection(sec);
-    setSelectedCategory(cat || null);
+  const handleSelectCategory = (cat: Category) => {
+    setSelectedCategory(cat);
     setStep("filter");
   };
 
   const handleCreate = async () => {
-    if (!selectedBudget || !selectedSection) return;
+    if (!selectedBudget || !selectedCategory) return;
     setSubmitting(true);
     setError(null);
     try {
       await createLink({
         source_budget_id: selectedBudget.id,
-        source_section_id: selectedSection.id,
-        ...(selectedCategory ? { source_category_id: selectedCategory.id } : {}),
+        source_category_id: selectedCategory.id,
         filter_mode: filterMode,
       });
       onOpenChange(false);
@@ -102,17 +106,17 @@ export function CreateLinkDialog({
 
   const stepTitle = step === "budget"
     ? t("pickBudget")
-    : step === "section"
-      ? t("pickSection")
+    : step === "category"
+      ? t("pickCategory")
       : t("filterMode");
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Link2 className="size-5" strokeWidth={1.8} />
-            {t("linkSection")}
+            {t("linkCategory")}
           </DialogTitle>
           <DialogDescription>{stepTitle}</DialogDescription>
         </DialogHeader>
@@ -146,61 +150,37 @@ export function CreateLinkDialog({
               ))
             )}
           </div>
-        ) : step === "section" && selectedBudget ? (
+        ) : step === "category" && selectedBudget ? (
           <div className="space-y-2">
-            {selectedBudget.sections.map((sec) => (
-              <div key={sec.id} className="rounded-lg border border-border overflow-hidden">
-                {/* Whole section option */}
+            {selectedBudget.categories.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("noCategoriesInBudget")}
+              </p>
+            ) : (
+              selectedBudget.categories.map((cat) => (
                 <button
+                  key={cat.id}
                   type="button"
-                  onClick={() => handleSelectSection(sec)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+                  onClick={() => handleSelectCategory(cat)}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left border border-border transition-colors hover:bg-muted"
                 >
                   <div className="flex items-center gap-2">
-                    <CategoryIcon iconKey={sec.icon} className="size-5" />
-                    <div>
-                      <p className="font-semibold">{sec.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("entireSection")} &middot; {sec.categories.length}{" "}
-                        {sec.categories.length === 1 ? "category" : "categories"}
-                      </p>
-                    </div>
+                    <CategoryIcon iconKey={cat.icon} className="size-4" />
+                    <span className="font-semibold">{cat.name}</span>
                   </div>
                   <ChevronRight className="size-4 shrink-0" />
                 </button>
-                {/* Individual categories */}
-                {sec.categories.length > 0 && (
-                  <div className="border-t border-border">
-                    {sec.categories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => handleSelectSection(sec, cat)}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 pl-10 text-left text-sm transition-colors hover:bg-muted"
-                      >
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon iconKey={cat.icon} className="size-4" />
-                          <span>{cat.name}</span>
-                        </div>
-                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
         ) : step === "filter" ? (
           <div className="space-y-4">
-            {/* Summary of what's being linked */}
             <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm">
               <p className="font-medium">
-                {selectedBudget?.name} &rarr; {selectedSection?.name}
-                {selectedCategory ? ` / ${selectedCategory.name}` : ""}
+                {selectedBudget?.name} &rarr; {selectedCategory?.name}
               </p>
             </div>
 
-            {/* Filter mode selection */}
             <div className="space-y-2">
               <button
                 type="button"
@@ -260,6 +240,6 @@ export function CreateLinkDialog({
           </div>
         ) : null}
       </DialogContent>
-    </Dialog>
+    </>
   );
 }

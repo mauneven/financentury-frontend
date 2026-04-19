@@ -6,6 +6,23 @@ import { Button } from "@/components/ui/button";
 
 const ICON_STROKE = 1.8;
 
+/**
+ * Only show the raw error.message to the user in development. In production
+ * unknown errors could contain stack fragments, PII, or server internals that
+ * leaked into the client error. Next.js replaces Server Component errors
+ * with a generic message + digest, but Client Component errors reach us raw.
+ */
+function displayMessage(error: Error & { digest?: string }): string {
+  if (process.env.NODE_ENV === "development") {
+    return (error.message || "").slice(0, 500) || "An unexpected error occurred.";
+  }
+  // In prod, show a generic message. The `digest` lets support correlate
+  // this render with the server log entry without exposing details.
+  return error.digest
+    ? `An unexpected error occurred. (Ref: ${error.digest})`
+    : "An unexpected error occurred.";
+}
+
 export default function Error({
   error,
   reset,
@@ -25,7 +42,7 @@ export default function Error({
         </h1>
 
         <p className="mt-3 text-sm text-muted-foreground">
-          {error.message || "An unexpected error occurred."}
+          {displayMessage(error)}
         </p>
 
         <div className="mt-8 flex flex-col gap-3">

@@ -1,10 +1,8 @@
 import type {
   Budget,
   BudgetSummary,
-  Section,
   Collaborator,
   CreateBudgetInput,
-  CreateSectionInput,
   CreateExpenseInput,
   CreateCategoryInput,
   CreateBudgetLinkInput,
@@ -19,14 +17,34 @@ import type {
 } from "@/types/budget";
 import type { AuthUser } from "@/store/auth-store";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (() => {
-    if (process.env.NODE_ENV === "production") {
-      console.error("NEXT_PUBLIC_API_URL is not set in production!");
+/**
+ * Validates that the configured API base uses http/https. The URL is baked
+ * at build time from a trusted env var, but a defensive check protects
+ * against a misconfigured deployment accidentally sending the bearer token
+ * to a javascript:/data: URL or similar. Falls back to localhost on any
+ * malformed value.
+ */
+function sanitizeApiBase(candidate: string): string {
+  try {
+    const u = new URL(candidate);
+    if (u.protocol !== "http:" && u.protocol !== "https:") {
+      return "http://localhost:8080/api";
     }
+    return candidate;
+  } catch {
     return "http://localhost:8080/api";
-  })();
+  }
+}
+
+const API_BASE = sanitizeApiBase(
+  process.env.NEXT_PUBLIC_API_URL ||
+    (() => {
+      if (process.env.NODE_ENV === "production") {
+        console.error("NEXT_PUBLIC_API_URL is not set in production!");
+      }
+      return "http://localhost:8080/api";
+    })()
+);
 
 /**
  * Checks whether the stored token's exp claim is still in the future.
@@ -197,61 +215,28 @@ export const linkApi = {
     request<LinkableBudget[]>(`/budgets/${budgetId}/linkable`),
 };
 
-// Sections (was Categories)
-export const sectionApi = {
-  list: (budgetId: string) =>
-    request<Section[]>(`/budgets/${budgetId}/sections`),
-
-  create: (budgetId: string, data: CreateSectionInput) =>
-    request<Section>(`/budgets/${budgetId}/sections`, {
+// Categories (flat under Budget)
+export const categoryApi = {
+  create: (budgetId: string, data: CreateCategoryInput) =>
+    request<Category>(`/budgets/${budgetId}/categories`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   update: (
     budgetId: string,
-    sectionId: string,
-    data: Partial<CreateSectionInput>
-  ) =>
-    request<Section>(`/budgets/${budgetId}/sections/${sectionId}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
-
-  delete: (budgetId: string, sectionId: string) =>
-    request<void>(`/budgets/${budgetId}/sections/${sectionId}`, {
-      method: "DELETE",
-    }),
-};
-
-// Categories
-export const categoryApi = {
-  create: (
-    budgetId: string,
-    sectionId: string,
-    data: CreateCategoryInput
-  ) =>
-    request<Category>(
-      `/budgets/${budgetId}/sections/${sectionId}/categories`,
-      { method: "POST", body: JSON.stringify(data) }
-    ),
-
-  update: (
-    budgetId: string,
-    sectionId: string,
     catId: string,
     data: Partial<CreateCategoryInput>
   ) =>
-    request<Category>(
-      `/budgets/${budgetId}/sections/${sectionId}/categories/${catId}`,
-      { method: "PUT", body: JSON.stringify(data) }
-    ),
+    request<Category>(`/budgets/${budgetId}/categories/${catId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 
-  delete: (budgetId: string, sectionId: string, catId: string) =>
-    request<void>(
-      `/budgets/${budgetId}/sections/${sectionId}/categories/${catId}`,
-      { method: "DELETE" }
-    ),
+  delete: (budgetId: string, catId: string) =>
+    request<void>(`/budgets/${budgetId}/categories/${catId}`, {
+      method: "DELETE",
+    }),
 };
 
 // Invites

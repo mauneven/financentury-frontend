@@ -176,7 +176,13 @@ export default function AccountPage() {
   const t = useTranslations("account");
   const tCommon = useTranslations("common");
   const router = useRouter();
-  const { user, signOut, deleteAccount, updateName } = useAuthStore();
+  // Narrow selectors: actions are stable refs, `user` is the only reactive
+  // field needed. Full-store destructure would re-render on token/loading
+  // changes unrelated to this page.
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+  const updateName = useAuthStore((s) => s.updateName);
 
   const [dangerOpen, setDangerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

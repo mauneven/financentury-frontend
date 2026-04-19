@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft, Settings } from "lucide-react";
 
 const SpendingChart = dynamic(
   () => import("@/components/dashboard/spending-chart").then((mod) => ({ default: mod.SpendingChart })),
   { ssr: false, loading: () => <div className="border border-border rounded-lg bg-card p-6"><div className="h-64 animate-pulse rounded-md bg-muted" /></div> }
 );
 
-import type { Expense, Section, CategorySummary } from "@/types/budget";
+import type { Expense, Category, CategorySummary } from "@/types/budget";
 import {
   formatCurrency,
   getPercentage,
@@ -28,6 +28,7 @@ import { SpendingByUser } from "@/components/dashboard/spending-by-user";
 import { ExpenseList } from "./expense-list";
 import { AddExpenseDialog } from "./add-expense-dialog";
 import { EditExpenseDialog } from "./edit-expense-dialog";
+import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 
 const ICON_STROKE = 1.8;
 
@@ -36,8 +37,10 @@ interface CategoryDetailProps {
   expenses: Expense[];
   currency: string;
   budgetId: string;
-  categories: Section[];
-  sectionId: string;
+  /** Flat list of all categories (own + linked) for expense picker. */
+  categories: Category[];
+  /** Optional: when the category is linked, edits route through this budget. */
+  linkedCategoryBudgetMap?: Map<string, string>;
 }
 
 export function CategoryDetail({
@@ -46,15 +49,17 @@ export function CategoryDetail({
   currency,
   budgetId,
   categories,
-  sectionId,
+  linkedCategoryBudgetMap,
 }: CategoryDetailProps) {
   const t = useTranslations("expense");
   const tDash = useTranslations("dashboard");
+  const tActions = useTranslations("dashboard.categoryActions");
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
 
   const router = useRouter();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
 
   const { category: detailCategory, allocated_amount, total_spent, expense_count } = categorySummary;
 
@@ -64,22 +69,18 @@ export function CategoryDetail({
   const textColor = getProgressTextColor(percentage);
   const overBudget = remaining < 0;
 
-  // Build categories map for expense list
   const categoriesMap = useMemo(() => {
     const map = new Map<string, { name: string; icon: string | null; categoryName: string }>();
-    for (const sec of categories) {
-      for (const cat of sec.categories || []) {
-        map.set(cat.id, {
-          name: cat.name,
-          icon: cat.icon,
-          categoryName: sec.name,
-        });
-      }
+    for (const cat of categories) {
+      map.set(cat.id, {
+        name: cat.name,
+        icon: cat.icon,
+        categoryName: cat.name,
+      });
     }
     return map;
   }, [categories]);
 
-  // Filter expenses for this category
   const filteredExpenses = expenses.filter((e) => e.category_id === detailCategory.id);
 
   const handleDelete = async (expenseId: string) => {
@@ -88,7 +89,6 @@ export function CategoryDetail({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Breadcrumbs */}
       <Breadcrumbs />
 
       {/* Header */}
@@ -96,7 +96,7 @@ export function CategoryDetail({
         <div className="flex items-start gap-3">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => router.push(`/budget/${budgetId}`)}
             className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors duration-200 hover:bg-muted border border-border"
             aria-label="Go back"
           >
@@ -112,15 +112,26 @@ export function CategoryDetail({
             </div>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setAddDialogOpen(true)}
-          className="shrink-0 gap-1.5"
-        >
-          <Plus className="size-3.5" strokeWidth={ICON_STROKE} />
-          <span className="hidden sm:inline">{t("addExpense")}</span>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setEditCategoryOpen(true)}
+            className="gap-1.5"
+          >
+            <Settings className="size-3.5" strokeWidth={ICON_STROKE} />
+            <span className="hidden sm:inline">{tActions("adjust")}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAddDialogOpen(true)}
+            className="gap-1.5"
+          >
+            <Plus className="size-3.5" strokeWidth={ICON_STROKE} />
+            <span className="hidden sm:inline">{t("addExpense")}</span>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -212,7 +223,7 @@ export function CategoryDetail({
         )}
       </div>
 
-      {/* Add Expense Dialog */}
+      {/* Dialogs */}
       <AddExpenseDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
@@ -220,9 +231,9 @@ export function CategoryDetail({
         categories={categories}
         currency={currency}
         preselectedCategoryId={detailCategory.id}
+        linkedCategoryBudgetMap={linkedCategoryBudgetMap}
       />
 
-      {/* Edit Expense Dialog */}
       {editingExpense && (
         <EditExpenseDialog
           open={!!editingExpense}
@@ -232,6 +243,17 @@ export function CategoryDetail({
           currency={currency}
         />
       )}
+
+      {editCategoryOpen && (
+        <EditCategoryDialog
+          category={detailCategory}
+          open={editCategoryOpen}
+          onOpenChange={(o) => setEditCategoryOpen(o)}
+        />
+      )}
+
+      {/* Tip for linked-category: reports section (spacing) */}
+      <div className="sr-only">{tDash("categoryBreakdown")}</div>
     </div>
   );
 }
