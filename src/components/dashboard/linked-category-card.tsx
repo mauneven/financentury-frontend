@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Settings, Link2, GripVertical } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Settings, Link2, GripVertical } from "lucide-react";
 import type { LinkedCategorySummary } from "@/types/budget";
 import {
   formatCurrency,
@@ -16,6 +17,8 @@ import { ManageLinkDialog } from "@/components/budget/manage-link-dialog";
 interface LinkedCategoryCardProps {
   linked: LinkedCategorySummary;
   currency: string;
+  /** Target budget id — we keep the URL scoped to the viewer's budget. */
+  budgetId: string;
   onAddExpense: (sourceBudgetId: string, preselectedCategoryId?: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
@@ -65,12 +68,12 @@ function SemicircleGauge({
 export function LinkedCategoryCard({
   linked,
   currency,
-  onAddExpense,
+  budgetId,
   dragHandleProps,
 }: LinkedCategoryCardProps) {
   const [manageLinkOpen, setManageLinkOpen] = useState(false);
+  const router = useRouter();
   const t = useTranslations("dashboard");
-  const tl = useTranslations("links");
   const tActions = useTranslations("dashboard.categoryActions");
 
   const { link, source_budget, category: categorySummary } = linked;
@@ -88,21 +91,41 @@ export function LinkedCategoryCard({
 
   return (
     <div className="relative rounded-xl border border-border border-dashed bg-card flex flex-col">
-      {dragHandleProps && (
+      {/* Top-right controls: gear (manage link) | grip (drag) */}
+      <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 z-10">
         <button
           type="button"
-          aria-label="Drag to reorder"
-          className="absolute right-1.5 top-1.5 p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
-          {...(dragHandleProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+          aria-label={tActions("adjust")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setManageLinkOpen(true);
+          }}
+          className="p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted"
         >
-          <GripVertical className="size-3.5" strokeWidth={1.8} />
+          <Settings className="size-3.5" strokeWidth={1.8} />
         </button>
-      )}
+        {dragHandleProps && (
+          <button
+            type="button"
+            aria-label="Drag to reorder"
+            className="p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
+            {...(dragHandleProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+          >
+            <GripVertical className="size-3.5" strokeWidth={1.8} />
+          </button>
+        )}
+      </div>
 
-      <div className="p-4 flex flex-col gap-3 flex-1">
+      <button
+        type="button"
+        onClick={() =>
+          router.push(`/budget/${budgetId}/category/${category.id}`)
+        }
+        className="p-4 flex flex-col gap-3 flex-1 text-left rounded-xl hover:bg-muted/40 transition-colors"
+      >
         {/* Header: icon + name + small link indicator */}
         <div
-          className="flex items-center gap-2 min-w-0 pr-6"
+          className="flex items-center gap-2 min-w-0 pr-14"
           title={source_budget.name}
         >
           <span className="shrink-0">
@@ -141,27 +164,7 @@ export function LinkedCategoryCard({
         <div className="text-center text-xs text-muted-foreground tabular-nums">
           {formatCurrency(allocated_amount, currency)} {t("ofBudget")}
         </div>
-
-        {/* Actions */}
-        <div className="mt-auto flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => onAddExpense(link.source_budget_id, category.id)}
-            className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
-          >
-            <Plus className="size-3.5 shrink-0" strokeWidth={1.8} />
-            <span className="truncate">{tl("addExpenseToLinked")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setManageLinkOpen(true)}
-            className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
-          >
-            <Settings className="size-3.5 shrink-0" strokeWidth={1.8} />
-            <span className="truncate">{tActions("adjust")}</span>
-          </button>
-        </div>
-      </div>
+      </button>
 
       <ManageLinkDialog
         link={link}

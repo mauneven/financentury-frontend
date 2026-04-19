@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, Settings, GripVertical } from "lucide-react";
+import { Settings, GripVertical } from "lucide-react";
 import type { CategorySummary, Category } from "@/types/budget";
 import {
   formatCurrency,
@@ -102,21 +102,38 @@ export function CategoryCard({
 
   return (
     <div className="relative rounded-xl border border-border bg-card flex flex-col">
-      {/* Drag handle — top right */}
-      {dragHandleProps && (
+      {/* Top-right controls: gear (edit) | grip (drag) */}
+      <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 z-10">
         <button
           type="button"
-          aria-label="Drag to reorder"
-          className="absolute right-1.5 top-1.5 p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
-          {...(dragHandleProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+          aria-label={tActions("adjust")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setEditOpen(true);
+          }}
+          className="p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted"
         >
-          <GripVertical className="size-3.5" strokeWidth={1.8} />
+          <Settings className="size-3.5" strokeWidth={1.8} />
         </button>
-      )}
+        {dragHandleProps && (
+          <button
+            type="button"
+            aria-label="Drag to reorder"
+            className="p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
+            {...(dragHandleProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+          >
+            <GripVertical className="size-3.5" strokeWidth={1.8} />
+          </button>
+        )}
+      </div>
 
-      <div className="p-4 flex flex-col gap-3 flex-1">
+      <button
+        type="button"
+        onClick={() => router.push(reportsHref)}
+        className="p-4 flex flex-col gap-3 flex-1 text-left rounded-xl hover:bg-muted/40 transition-colors"
+      >
         {/* Header: icon + name */}
-        <div className="flex items-center gap-2 min-w-0 pr-6">
+        <div className="flex items-center gap-2 min-w-0 pr-14">
           <span className="shrink-0" role="img" aria-label={category.name}>
             <CategoryIcon iconKey={category.icon} className="size-5" />
           </span>
@@ -149,29 +166,7 @@ export function CategoryCard({
           {formatCurrency(allocated_amount, currency)} {t("ofBudget")}
         </div>
 
-        {/* Actions */}
-        <div className="mt-auto flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => router.push(reportsHref)}
-            className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
-          >
-            <BarChart3 className="size-3.5 shrink-0" strokeWidth={1.8} />
-            <span className="truncate">{tActions("reports")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditOpen(true);
-            }}
-            className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted flex items-center justify-center gap-1"
-          >
-            <Settings className="size-3.5 shrink-0" strokeWidth={1.8} />
-            <span className="truncate">{tActions("adjust")}</span>
-          </button>
-        </div>
-      </div>
+      </button>
 
       <EditCategoryDialog
         category={rawCategory}

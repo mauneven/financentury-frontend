@@ -21,6 +21,7 @@ import { useFlipList } from "@/hooks/use-flip-list";
 import dynamic from "next/dynamic";
 import { RefreshCw, Settings, Plus, ArrowLeft } from "lucide-react";
 import { useBudgetStore } from "@/store/budget-store";
+import { useAuthStore } from "@/store/auth-store";
 import { useTranslations } from "@/i18n/client";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { cn } from "@/lib/utils";
@@ -227,6 +228,17 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
     () => [...expenses, ...linkedExpensesFromStore],
     [expenses, linkedExpensesFromStore]
   );
+
+  // Map user_id -> display name for expense attribution on shared budgets.
+  const currentUserId = useAuthStore((s) => s.user?.id);
+  const collaboratorsMap = useMemo(() => {
+    const m = new Map<string, { name: string }>();
+    for (const u of summary?.spending_by_user ?? []) {
+      const name = u.profile?.full_name?.trim() || u.profile?.email || "";
+      if (name) m.set(u.user_id, { name });
+    }
+    return m;
+  }, [summary?.spending_by_user]);
 
   const getMergedCategoryId = useCallback((m: MergedCategory) => m.id, []);
   const {
@@ -501,6 +513,8 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             expenses={allExpenses}
             currency={budget.currency}
             categoriesMap={categoriesMap}
+            collaborators={collaboratorsMap}
+            currentUserId={currentUserId}
             onEdit={(exp) => setEditingExpense(exp)}
             onDelete={(id) => deleteExpense(id)}
           />
@@ -648,6 +662,7 @@ function DndCategoryGrid({
                   <LinkedCategoryCard
                     linked={merged.linked}
                     currency={budget.currency}
+                    budgetId={budgetId}
                     onAddExpense={onAddLinkedExpense}
                     dragHandleProps={{
                       ...handle.attributes,
