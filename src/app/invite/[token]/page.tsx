@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Users, AlertCircle, CheckCircle2, Wallet } from "lucide-react";
 
+import { AlertCircle, CheckCircle2, Loader2, Users, Wallet } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useTranslations } from "@/i18n/client";
 import { inviteApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
-import { useTranslations } from "@/i18n/client";
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 const ICON_STROKE = 1.8;
 
@@ -36,6 +36,7 @@ export default function InviteAcceptPage() {
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
+  const acceptRedirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAccept = useCallback(async () => {
     setAccepting(true);
@@ -43,7 +44,10 @@ export default function InviteAcceptPage() {
     try {
       const budget = await inviteApi.accept(params.token);
       setAccepted(true);
-      setTimeout(() => {
+      // Keep a ref so the timer is cleared if the user navigates away before
+      // the 1.5s success animation finishes — prevents calling router.push
+      // after unmount.
+      acceptRedirectTimer.current = setTimeout(() => {
         router.push(`/budget/${budget.id}`);
       }, 1500);
     } catch (err) {
@@ -51,6 +55,14 @@ export default function InviteAcceptPage() {
       setAccepting(false);
     }
   }, [params.token, router, t]);
+
+  useEffect(() => {
+    return () => {
+      if (acceptRedirectTimer.current) {
+        clearTimeout(acceptRedirectTimer.current);
+      }
+    };
+  }, []);
 
   // Fetch invite info (no auth needed)
   useEffect(() => {
@@ -145,7 +157,7 @@ export default function InviteAcceptPage() {
               <h1 className="text-lg font-semibold">{error}</h1>
             </div>
             <Button variant="outline" onClick={() => router.push("/budgets")}>
-              {t("budgetName")}
+              {t("goToBudgets")}
             </Button>
           </CardContent>
         </Card>

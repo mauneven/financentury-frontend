@@ -1,6 +1,7 @@
 "use client";
 
-import { Wallet, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight,Wallet } from "lucide-react";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslations } from "@/i18n/client";
 

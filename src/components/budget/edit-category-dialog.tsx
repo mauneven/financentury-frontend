@@ -1,36 +1,43 @@
 "use client";
 
 import * as React from "react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, ChevronDown, ChevronRight, Link2,Loader2, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Check, Trash2, ChevronDown, ChevronRight, Link2 } from "lucide-react";
 
-import { useBudgetStore } from "@/store/budget-store";
-import { categoryApi } from "@/lib/api";
-import { cn } from "@/lib/utils";
-import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
-import { formatAmount, parseAmount, maskAmountInput } from "@/lib/amount-utils";
-import { formatCurrency } from "@/lib/format";
-
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  useBudgetSummary,
+  useDeleteCategory,
+  useDeleteLink,
+  useUpdateCategory,
+  useUpdateLink,
+} from "@/hooks/use-budget-queries";
 import { useTranslations } from "@/i18n/client";
-import type { Category, BudgetLink } from "@/types/budget";
+import { formatAmount, maskAmountInput, parseAmount } from "@/lib/amount-utils";
+import { categoryApi } from "@/lib/api";
+import { formatCurrency } from "@/lib/format";
+import { CategoryIcon, IconPicker } from "@/lib/icon-picker";
+import { cn } from "@/lib/utils";
+import { useActiveBudgetStore } from "@/store/active-budget-store";
+import type { BudgetLink, Category } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
@@ -40,6 +47,7 @@ import { CURRENCIES } from "@/types/budget";
 const categorySchema = z.object({
   name: z
     .string()
+    .trim()
     .min(1, "Category name is required")
     .max(60, "Name must be 60 characters or less"),
   allocation_value: z
@@ -152,12 +160,14 @@ export function EditCategoryDialog({
   const t = useTranslations("category");
   const tc = useTranslations("common");
   const tl = useTranslations("links");
-  const updateCategory = useBudgetStore((s) => s.updateCategory);
-  const deleteCategoryAction = useBudgetStore((s) => s.deleteCategory);
-  const updateLink = useBudgetStore((s) => s.updateLink);
-  const deleteLink = useBudgetStore((s) => s.deleteLink);
-  const refreshSummary = useBudgetStore((s) => s.refreshSummary);
-  const summary = useBudgetStore((s) => s.summary);
+  const activeBudgetId = useActiveBudgetStore((s) => s.activeBudgetId);
+  const targetBudgetId =
+    link?.target_budget_id ?? activeBudgetId ?? "";
+  const updateCategoryMut = useUpdateCategory(targetBudgetId);
+  const deleteCategoryMut = useDeleteCategory(targetBudgetId);
+  const updateLinkMut = useUpdateLink(targetBudgetId);
+  const deleteLinkMut = useDeleteLink(targetBudgetId);
+  const { data: summary } = useBudgetSummary(targetBudgetId || undefined);
   const currencyInfo = CURRENCIES.find((c) => c.code === summary?.budget.currency);
   const currencySymbol = currencyInfo?.symbol || "$";
   const currencyLocale = currencyInfo?.locale || "en-US";
@@ -252,17 +262,21 @@ export function EditCategoryDialog({
         // Update the category in the source budget (we don't own it).
         await categoryApi.update(
           link.source_budget_id,
-          category.id,
+          link.source_category_id,
           catPayload
         );
         if (filterMode !== link.filter_mode) {
-          await updateLink(link.id, { filter_mode: filterMode });
+          await updateLinkMut.mutateAsync({
+            linkId: link.id,
+            filterMode,
+          });
         }
       } else {
-        await updateCategory(category.id, catPayload);
+        await updateCategoryMut.mutateAsync({
+          catId: category.id,
+          data: catPayload,
+        });
       }
-
-      await refreshSummary();
       onOpenChange(false);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "An error occurred");
@@ -276,11 +290,10 @@ export function EditCategoryDialog({
     setIsDeleting(true);
     try {
       if (isLinked && link) {
-        await deleteLink(link.id);
+        await deleteLinkMut.mutateAsync(link.id);
       } else {
-        await deleteCategoryAction(category.id);
+        await deleteCategoryMut.mutateAsync(category.id);
       }
-      await refreshSummary();
       onOpenChange(false);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "An error occurred");

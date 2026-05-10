@@ -1,10 +1,12 @@
 "use client";
 
-import { useAuthStore } from "@/store/auth-store";
-import { useTheme } from "next-themes";
-import { Sun, Moon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+
+import { Moon,Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/auth-store";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();

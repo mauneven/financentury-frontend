@@ -1,24 +1,25 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback,useEffect, useState } from "react";
+
 import { Loader2, Users, X } from "lucide-react";
 
-import type { Collaborator } from "@/types/budget";
-import { collaboratorApi } from "@/lib/api";
-import { useAuthStore } from "@/store/auth-store";
-import { useTranslations } from "@/i18n/client";
-
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslations } from "@/i18n/client";
+import { collaboratorApi } from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
+import type { Collaborator } from "@/types/budget";
 
 interface CollaboratorsListProps {
   budgetId: string;
@@ -48,7 +49,7 @@ export function CollaboratorsList({ budgetId, isOwner, onCountChange }: Collabor
     } finally {
       setLoading(false);
     }
-  }, [budgetId]);
+  }, [budgetId, onCountChange]);
 
   useEffect(() => {
     fetchCollaborators();
@@ -83,7 +84,7 @@ export function CollaboratorsList({ budgetId, isOwner, onCountChange }: Collabor
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        <Loader2 className="size-5 animate-spin text-muted-foreground" strokeWidth={1.8} />
       </div>
     );
   }
@@ -111,9 +112,11 @@ export function CollaboratorsList({ budgetId, isOwner, onCountChange }: Collabor
               key={collab.id}
               className="flex items-center gap-3 py-3"
             >
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-medium">
-                {getInitials(displayName)}
-              </div>
+              <Avatar>
+                <AvatarFallback className="text-xs font-medium">
+                  {getInitials(displayName)}
+                </AvatarFallback>
+              </Avatar>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -142,9 +145,11 @@ export function CollaboratorsList({ budgetId, isOwner, onCountChange }: Collabor
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => setRemoveTarget(collab)}
+                  aria-label={t("remove")}
+                  disabled={removing}
                   className="shrink-0 text-muted-foreground hover:text-destructive"
                 >
-                  <X className="size-4" />
+                  <X className="size-4" strokeWidth={1.8} />
                 </Button>
               )}
             </div>
@@ -172,7 +177,7 @@ export function CollaboratorsList({ budgetId, isOwner, onCountChange }: Collabor
               onClick={handleRemove}
             >
               {removing ? (
-                <Loader2 className="size-4 mr-1 animate-spin" />
+                <Loader2 className="size-4 mr-1 animate-spin" strokeWidth={1.8} />
               ) : null}
               {t("remove")}
             </Button>

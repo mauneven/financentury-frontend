@@ -2,26 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, GripVertical } from "lucide-react";
-import type { CategorySummary, Category } from "@/types/budget";
+
+import { GripVertical,Settings } from "lucide-react";
+
+import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { useTranslations } from "@/i18n/client";
 import {
   formatCurrency,
   getPercentage,
   getProgressTextColor,
 } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
-import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { CategoryIcon } from "@/lib/icon-picker";
+import { cn } from "@/lib/utils";
+import type { Category,CategorySummary } from "@/types/budget";
 
 interface CategoryCardProps {
   categorySummary: CategorySummary;
   currency: string;
   budgetId: string;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
   /** dnd-kit listeners + attributes from the parent SortableCell. */
   dragHandleProps?: Record<string, unknown>;
+  /** Landing-page presentation mode: no navigation, no edit dialog, no controls. */
+  readOnly?: boolean;
 }
 
 /** Fitness-ring style semicircle gauge with centered percent text. */
@@ -78,6 +80,7 @@ export function CategoryCard({
   currency,
   budgetId,
   dragHandleProps,
+  readOnly,
 }: CategoryCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
@@ -99,6 +102,52 @@ export function CategoryCard({
 
   const reportsHref = `/budget/${budgetId}/category/${category.id}`;
   const rawCategory: Category = category;
+
+  const cardBody = (
+    <>
+      {/* Header: icon + name */}
+      <div className="flex items-center gap-2 min-w-0 pr-14">
+        <span className="shrink-0" role="img" aria-label={category.name}>
+          <CategoryIcon iconKey={category.icon} className="size-5" />
+        </span>
+        <h3 className="text-sm font-semibold text-foreground truncate">
+          {category.name}
+        </h3>
+      </div>
+
+      {/* Semicircle gauge with centered % */}
+      <div className="px-2">
+        <SemicircleGauge percent={percentage} strokeClass={strokeClass} />
+      </div>
+
+      {/* Remaining (big) */}
+      <div className="text-center -mt-1">
+        <p className="text-xs text-muted-foreground">{t("leftLabel")}</p>
+        <p
+          className={cn(
+            "text-xl font-semibold tabular-nums",
+            remaining < 0 ? "text-red-600 dark:text-red-400" : textColor
+          )}
+        >
+          {remaining < 0 ? "-" : ""}
+          {formatCurrency(Math.abs(remaining), currency)}
+        </p>
+      </div>
+
+      {/* Allocated (smaller) */}
+      <div className="text-center text-xs text-muted-foreground tabular-nums">
+        {formatCurrency(allocated_amount, currency)} {t("ofBudget")}
+      </div>
+    </>
+  );
+
+  if (readOnly) {
+    return (
+      <div className="relative rounded-xl border border-border bg-card flex flex-col">
+        <div className="p-4 flex flex-col gap-3 flex-1">{cardBody}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative rounded-xl border border-border bg-card flex flex-col">
@@ -132,40 +181,7 @@ export function CategoryCard({
         onClick={() => router.push(reportsHref)}
         className="p-4 flex flex-col gap-3 flex-1 text-left rounded-xl hover:bg-muted/40 transition-colors"
       >
-        {/* Header: icon + name */}
-        <div className="flex items-center gap-2 min-w-0 pr-14">
-          <span className="shrink-0" role="img" aria-label={category.name}>
-            <CategoryIcon iconKey={category.icon} className="size-5" />
-          </span>
-          <h3 className="text-sm font-semibold text-foreground truncate">
-            {category.name}
-          </h3>
-        </div>
-
-        {/* Semicircle gauge with centered % */}
-        <div className="px-2">
-          <SemicircleGauge percent={percentage} strokeClass={strokeClass} />
-        </div>
-
-        {/* Remaining (big) */}
-        <div className="text-center -mt-1">
-          <p className="text-xs text-muted-foreground">{t("leftLabel")}</p>
-          <p
-            className={cn(
-              "text-xl font-semibold tabular-nums",
-              remaining < 0 ? "text-red-600 dark:text-red-400" : textColor
-            )}
-          >
-            {remaining < 0 ? "-" : ""}
-            {formatCurrency(Math.abs(remaining), currency)}
-          </p>
-        </div>
-
-        {/* Allocated (smaller) */}
-        <div className="text-center text-xs text-muted-foreground tabular-nums">
-          {formatCurrency(allocated_amount, currency)} {t("ofBudget")}
-        </div>
-
+        {cardBody}
       </button>
 
       <EditCategoryDialog

@@ -73,7 +73,24 @@
     "months": "meses",
     "oneTimeDescription": "Sin ciclo de facturación, los ingresos no se renuevan. Excelente para presupuestos de salidas o viajes.",
     "debtPayoffMode": "Pago de deudas",
-    "debtPayoffDescription": "Reduce tus deudas agresivamente mientras cubres lo esencial"
+    "debtPayoffDescription": "Reduce tus deudas agresivamente mientras cubres lo esencial",
+    "categoryHousing": "Vivienda",
+    "categoryFood": "Comida",
+    "categoryTransport": "Transporte",
+    "categoryUtilities": "Servicios",
+    "categoryOutings": "Salidas",
+    "categoryEntertainment": "Entretenimiento",
+    "categoryCards": "Tarjetas",
+    "categoryLoans": "Préstamos",
+    "categoryEmergencyFund": "Fondo de emergencia",
+    "categoryInvestment": "Inversión",
+    "categoryFlights": "Vuelos",
+    "categoryAccommodation": "Hospedaje",
+    "categoryActivities": "Actividades",
+    "categoryLocalTransport": "Transporte local",
+    "categoryDrinks": "Bebidas",
+    "categoryDecoration": "Decoración",
+    "categoryLogistics": "Logística"
   },
   "budgetCard": {
     "perMonth": "/mes",
@@ -107,7 +124,10 @@
     "pickCategory": "Elige una categoría",
     "linking": "Vinculando...",
     "back": "Volver",
-    "noLinkableBudgetsCategory": "Lamentablemente, para agregar una categoría de otro presupuesto necesitas al menos dos presupuestos con la misma moneda."
+    "noLinkableBudgetsCategory": "Lamentablemente, para agregar una categoría de otro presupuesto necesitas al menos dos presupuestos con la misma moneda.",
+    "noCategoriesInBudget": "Este presupuesto aún no tiene categorías.",
+    "maxCategoriesReached": "Se alcanzó el máximo de {max} categorías para este presupuesto.",
+    "addCategoryDescription": "Crea una nueva categoría de gastos para tu presupuesto."
   },
   "unallocated": {
     "budgetTitle": "{percent}% de tu presupuesto no está asignado",
@@ -220,11 +240,11 @@
     "signingIn": "Iniciando sesión..."
   },
   "landing": {
-    "letsStart": "Comencemos",
+    "letsStart": "Comencemos — gratis",
     "authDescription": "Inicia sesión con Google para acceder a tu espacio financiero.",
     "tagline": "Presupuesta con precisión. Rastrea cada gasto. Toma decisiones con datos reales — no con suposiciones.",
-    "statFree": "$0",
-    "statFreeLabel": "Es gratis",
+    "statFree": "",
+    "statFreeLabel": "",
     "statExpenses": "3,000",
     "statExpensesLabel": "Gastos por presupuesto",
     "statBudgets": "7",
@@ -313,6 +333,10 @@
     "errorLoadingSessions": "No se pudieron cargar las sesiones",
     "retry": "Reintentar",
     "lastActive": "Ultima actividad",
+    "justNow": "Justo ahora",
+    "minutesAgo": "hace {count}m",
+    "hoursAgo": "hace {count}h",
+    "daysAgo": "hace {count}d",
     "dangerZone": "Zona de Peligro",
     "deleteAccount": "Eliminar Cuenta",
     "deleteAccountDescription": "Elimina permanentemente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.",
@@ -337,7 +361,10 @@
     "budgetName": "Presupuesto",
     "accepting": "Uniéndose...",
     "invalidLink": "Este enlace de invitación no es válido",
-    "generating": "Generando..."
+    "generating": "Generando...",
+    "goToBudgets": "Ir a tus presupuestos",
+    "share": "Compartir",
+    "shareText": "Únete a mi presupuesto"
   },
   "links": {
     "linkCategory": "Vincular Categoría",

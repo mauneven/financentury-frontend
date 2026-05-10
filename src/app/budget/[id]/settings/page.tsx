@@ -1,17 +1,20 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useBudgetStore } from "@/store/budget-store";
-import { BudgetSettings } from "@/components/budget/budget-settings";
+
 import { ArrowLeft } from "lucide-react";
+
+import { BudgetSettings } from "@/components/budget/budget-settings";
+import { useBudgetSummary } from "@/hooks/use-budget-queries";
 import { useTranslations } from "@/i18n/client";
 
 const ICON_STROKE = 1.8;
 
 export default function BudgetSettingsPage() {
   const params = useParams<{ id: string }>();
-  const summary = useBudgetStore((s) => s.summary);
-  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
+  const { data: summary, isPending: summaryLoading } = useBudgetSummary(
+    params.id
+  );
   const router = useRouter();
   const tc = useTranslations("common");
 

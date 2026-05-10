@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
-import { CategoryIcon, IconPicker, getIconComponent, ICON_OPTIONS } from "@/lib/icon-picker";
+
+import { fireEvent, render } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import { CategoryIcon, ICON_OPTIONS, IconPicker } from "@/lib/icon-picker";
 
 // ---------------------------------------------------------------------------
 // CategoryIcon component

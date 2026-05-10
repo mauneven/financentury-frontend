@@ -1,25 +1,26 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef,useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth-store";
+
 import {
-  Wallet,
   ArrowRight,
   BarChart3,
-  PieChart as PieChartIcon,
-  TrendingUp,
-  Shield,
   Globe,
+  PieChart as PieChartIcon,
+  Shield,
+  TrendingUp,
+  Wallet,
   Zap,
-  ChevronDown,
 } from "lucide-react";
+
 import { AuthModal } from "@/components/auth/auth-modal";
-import dynamic from "next/dynamic";
+import { useAuthStore } from "@/store/auth-store";
 const LandingCharts = dynamic(() => import("@/components/landing/landing-charts").then(m => ({ default: m.LandingCharts })), { ssr: false });
 import { Footer } from "@/components/layout/footer";
-import { ThemeToggle } from "@/components/layout/user-controls";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { ThemeToggle } from "@/components/layout/user-controls";
 import { useTranslations } from "@/i18n/client";
 
 const FEATURES = [
@@ -177,16 +178,7 @@ export default function LandingPage() {
       {/* ── Stats Bar ──────────────────────────────────────────── */}
       <section>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px rounded-xl border border-border overflow-hidden bg-border">
-            <div className="bg-background px-4 py-8 text-center sm:px-6">
-              <p className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">
-                {t("statFree")}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("statFreeLabel")}
-              </p>
-            </div>
-
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px rounded-xl border border-border overflow-hidden bg-border">
             <div className="bg-background px-4 py-8 text-center sm:px-6">
               <p className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">
                 {t("statExpenses")}
@@ -228,23 +220,13 @@ export default function LandingPage() {
 
       {/* ── CTA below stats ───────────────────────────────────── */}
       <section className="py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-center">
           <button
             onClick={() => setAuthOpen(true)}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             {t("letsStart")}
             <ArrowRight className="size-4" strokeWidth={1.8} />
-          </button>
-          <button
-            onClick={() =>
-              document
-                .getElementById("charts")
-                ?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            <ChevronDown className="size-4" strokeWidth={1.8} />
           </button>
         </div>
       </section>

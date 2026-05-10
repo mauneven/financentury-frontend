@@ -1,37 +1,33 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo,useState } from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { format } from "date-fns";
 import {
+  AlertCircle,
   Calendar as CalendarIcon,
   Loader2,
-  AlertCircle,
 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const ICON_STROKE = 1.8;
 
-import type { Category, CategorySummary } from "@/types/budget";
-import { CURRENCIES } from "@/types/budget";
-import { useBudgetStore } from "@/store/budget-store";
-import { expenseApi } from "@/lib/api";
-import { formatCurrency, getPercentage, getProgressTextColor } from "@/lib/format";
-import { maskAmountInput, parseAmount } from "@/lib/amount-utils";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
-import { CategoryIcon } from "@/lib/icon-picker";
-
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -39,18 +35,52 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useTranslations } from "@/i18n/client";
+import { useQueryClient } from "@tanstack/react-query";
+
+import {
+  useBudgetSummary,
+  useCreateExpense,
+} from "@/hooks/use-budget-queries";
+import { maskAmountInput, parseAmount } from "@/lib/amount-utils";
+import { expenseApi } from "@/lib/api";
+import { formatCurrency, getPercentage, getProgressTextColor } from "@/lib/format";
+import { CategoryIcon } from "@/lib/icon-picker";
+import { qk } from "@/lib/query-keys";
+import { cn } from "@/lib/utils";
+import type { Category, CategorySummary } from "@/types/budget";
+import { CURRENCIES } from "@/types/budget";
+
+// Reject dates that are in the future or farther back than a sane bound.
+// Defense-in-depth: the calendar disables future dates, but the underlying
+// form value is a raw string that could be set directly.
+function isValidExpenseDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + "T00:00:00");
+  if (isNaN(d.getTime())) return false;
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  if (d.getTime() > today.getTime()) return false;
+  // Sanity floor — reject anything before year 2000.
+  if (d.getFullYear() < 2000) return false;
+  return true;
+}
 
 const expenseSchema = z.object({
   category_id: z.string().uuid("Please select a category"),
-  amount: z.number().positive("Amount must be greater than 0").max(1e15, "Amount exceeds maximum"),
-  description: z.string().max(500, "Description must be 500 characters or fewer").optional(),
-  expense_date: z.string().min(1, "Date is required"),
+  amount: z
+    .number()
+    .positive("Amount must be greater than 0")
+    .max(1e15, "Amount exceeds maximum"),
+  description: z
+    .string()
+    .max(500, "Description must be 500 characters or fewer")
+    .optional(),
+  expense_date: z
+    .string()
+    .min(1, "Date is required")
+    .refine(isValidExpenseDate, "Date must be valid and not in the future"),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -80,6 +110,7 @@ interface AddExpenseDialogProps {
 export function AddExpenseDialog({
   open,
   onOpenChange,
+  budgetId,
   categories,
   currency,
   preselectedCategoryId,
@@ -88,9 +119,9 @@ export function AddExpenseDialog({
 }: AddExpenseDialogProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
-  const addExpense = useBudgetStore((s) => s.addExpense);
-  const refreshSummaryOnly = useBudgetStore((s) => s.refreshSummaryOnly);
-  const summary = useBudgetStore((s) => s.summary);
+  const queryClient = useQueryClient();
+  const addExpenseMut = useCreateExpense(budgetId);
+  const { data: summary } = useBudgetSummary(budgetId);
 
   const [amountDisplay, setAmountDisplay] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -162,6 +193,7 @@ export function AddExpenseDialog({
   };
 
   const onSubmit = async (data: ExpenseFormValues) => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       const expenseData = {
@@ -170,13 +202,25 @@ export function AddExpenseDialog({
         description: data.description || undefined,
         expense_date: data.expense_date,
       };
+      // Route by source:
+      //   • linked category  → its source budget (linkedCategoryBudgetMap)
+      //   • sourceBudgetId   → explicit override (linked-expense flow from dashboard)
+      //   • otherwise        → the active budget via the scoped mutation
       const categorySourceBudget = linkedCategoryBudgetMap?.get(data.category_id);
       const targetBudget = categorySourceBudget || sourceBudgetId;
-      if (targetBudget) {
+      if (targetBudget && targetBudget !== budgetId) {
+        // Cross-budget linked write. Hit the source budget directly, then
+        // invalidate BOTH that budget's detail subtree (it owns the row)
+        // AND the active budget's summary (it aggregates linked spending).
         await expenseApi.create(targetBudget, expenseData);
-        await refreshSummaryOnly();
+        queryClient.invalidateQueries({
+          queryKey: qk.budget.detail(targetBudget),
+        });
+        queryClient.invalidateQueries({
+          queryKey: qk.budget.detail(budgetId),
+        });
       } else {
-        await addExpense(expenseData);
+        await addExpenseMut.mutateAsync(expenseData);
       }
       onOpenChange(false);
     } catch (err) {

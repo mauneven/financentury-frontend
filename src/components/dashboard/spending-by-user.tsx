@@ -1,9 +1,9 @@
 "use client";
 
-import type { UserSpending } from "@/types/budget";
+import { useTranslations } from "@/i18n/client";
 import { formatCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
+import type { UserSpending } from "@/types/budget";
 
 interface SpendingByUserProps {
   spendingByUser: UserSpending[];
@@ -48,17 +48,18 @@ export function SpendingByUser({
       <p className="text-sm font-medium text-muted-foreground">
         {t("spendingByPerson")}
       </p>
-      {/* Stacked bar */}
+      {/* Stacked bar — percent of total spent per user (clamped 0..100). */}
       {totalSpent > 0 && (
         <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
           {spendingByUser.map((u, i) => {
-            const pct = (u.amount / totalSpent) * 100;
+            const raw = (u.amount / totalSpent) * 100;
+            const pct = Math.max(0, Math.min(100, raw));
             return (
               <div
                 key={u.user_id}
                 className={cn("h-full transition-all duration-300", COLORS[i % COLORS.length])}
                 style={{ width: `${pct}%` }}
-                title={u.profile?.full_name || u.user_id}
+                title={u.profile?.full_name || u.profile?.email || u.user_id}
               />
             );
           })}
@@ -67,7 +68,9 @@ export function SpendingByUser({
       {/* Per-person rows */}
       <div className={cn("space-y-1.5", compact && "text-sm")}>
         {spendingByUser.map((u, i) => {
-          const pct = totalSpent > 0 ? Math.round((u.amount / totalSpent) * 100) : 0;
+          const pct = totalSpent > 0
+            ? Math.max(0, Math.min(100, Math.round((u.amount / totalSpent) * 100)))
+            : 0;
           const name = u.profile?.full_name || u.profile?.email || t("unknownUser");
           return (
             <div key={u.user_id} className="flex items-center gap-2">

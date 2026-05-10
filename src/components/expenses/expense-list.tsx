@@ -1,24 +1,26 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo,useState } from "react";
+
 import { format, parseISO } from "date-fns";
 import { es as dateFnsEs } from "date-fns/locale";
 import {
   MoreHorizontal,
   Pencil,
-  Trash2,
   Receipt,
+  Trash2,
 } from "lucide-react";
 
-import type { Expense } from "@/types/budget";
-import { formatCurrency } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
-import { useLocaleStore } from "@/i18n/locale";
-import { CategoryIcon } from "@/lib/icon-picker";
-
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,15 +28,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTranslations } from "@/i18n/client";
+import { useLocaleStore } from "@/i18n/locale";
+import { formatCurrency } from "@/lib/format";
+import { CategoryIcon } from "@/lib/icon-picker";
+import { cn } from "@/lib/utils";
+import type { Expense } from "@/types/budget";
 
 const ICON_STROKE = 1.8;
 
@@ -268,10 +268,25 @@ function ExpenseRow({
           {formatCurrency(expense.amount, currency)}
         </p>
         <p className="text-xs text-muted-foreground tabular-nums">
-          {getTimeFormatter(locale === "es" ? "es" : "en").format(new Date(expense.created_at))}
-          {expense.updated_at && new Date(expense.updated_at).getTime() - new Date(expense.created_at).getTime() > 60000 && (
-            <span className="ml-1 text-muted-foreground/60">· {t("edited")}</span>
-          )}
+          {(() => {
+            // Guard against a missing/invalid timestamp so the whole row
+            // doesn't crash out of the list.
+            const createdAt = expense.created_at ? new Date(expense.created_at) : null;
+            if (!createdAt || isNaN(createdAt.getTime())) return "";
+            const timeStr = getTimeFormatter(locale === "es" ? "es" : "en").format(createdAt);
+            const updatedAt = expense.updated_at ? new Date(expense.updated_at) : null;
+            const wasEdited =
+              updatedAt && !isNaN(updatedAt.getTime()) &&
+              updatedAt.getTime() - createdAt.getTime() > 60000;
+            return (
+              <>
+                {timeStr}
+                {wasEdited && (
+                  <span className="ml-1 text-muted-foreground/60">· {t("edited")}</span>
+                )}
+              </>
+            );
+          })()}
         </p>
       </div>
 

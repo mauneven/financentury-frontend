@@ -1,25 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Loader2, Link2, ChevronRight, Check } from "lucide-react";
-import type { LinkableBudget, Category } from "@/types/budget";
-import { linkApi } from "@/lib/api";
-import { useBudgetStore } from "@/store/budget-store";
-import { useTranslations } from "@/i18n/client";
-import { CategoryIcon } from "@/lib/icon-picker";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
+import { useEffect,useState } from "react";
 
+import { ArrowLeft,Check, ChevronRight, Link2, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useCreateLink } from "@/hooks/use-budget-queries";
+import { useTranslations } from "@/i18n/client";
+import { linkApi } from "@/lib/api";
+import { formatCurrency } from "@/lib/format";
+import { CategoryIcon } from "@/lib/icon-picker";
+import { cn } from "@/lib/utils";
+import type { Category, LinkableBudget } from "@/types/budget";
 
 interface CreateLinkDialogProps {
   budgetId: string;
@@ -53,7 +54,7 @@ function CreateLinkDialogBody({
 }) {
   const t = useTranslations("links");
   const tc = useTranslations("common");
-  const createLink = useBudgetStore((s) => s.createLink);
+  const createLinkMut = useCreateLink(budgetId);
 
   const [step, setStep] = useState<Step>("budget");
   const [linkableBudgets, setLinkableBudgets] = useState<LinkableBudget[]>([]);
@@ -92,7 +93,7 @@ function CreateLinkDialogBody({
     setSubmitting(true);
     setError(null);
     try {
-      await createLink({
+      await createLinkMut.mutateAsync({
         source_budget_id: selectedBudget.id,
         source_category_id: selectedCategory.id,
         filter_mode: filterMode,
@@ -110,6 +111,15 @@ function CreateLinkDialogBody({
       ? t("pickCategory")
       : t("filterMode");
 
+  const goBack = () => {
+    if (step === "filter") {
+      setStep("category");
+    } else if (step === "category") {
+      setSelectedCategory(null);
+      setStep("budget");
+    }
+  };
+
   return (
     <>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -121,9 +131,23 @@ function CreateLinkDialogBody({
           <DialogDescription>{stepTitle}</DialogDescription>
         </DialogHeader>
 
+        {step !== "budget" && !loading && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={goBack}
+            disabled={submitting}
+            className="-mt-2 w-fit text-muted-foreground"
+          >
+            <ArrowLeft className="size-4 mr-1" strokeWidth={1.8} />
+            {tc("back")}
+          </Button>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            <Loader2 className="size-6 animate-spin text-muted-foreground" strokeWidth={1.8} />
           </div>
         ) : step === "budget" ? (
           <div className="space-y-2">
@@ -145,7 +169,7 @@ function CreateLinkDialogBody({
                       {b.currency} &middot; {formatCurrency(b.monthly_income, b.currency)}
                     </p>
                   </div>
-                  <ChevronRight className="size-4 shrink-0" />
+                  <ChevronRight className="size-4 shrink-0" strokeWidth={1.8} />
                 </button>
               ))
             )}
@@ -168,7 +192,7 @@ function CreateLinkDialogBody({
                     <CategoryIcon iconKey={cat.icon} className="size-4" />
                     <span className="font-semibold">{cat.name}</span>
                   </div>
-                  <ChevronRight className="size-4 shrink-0" />
+                  <ChevronRight className="size-4 shrink-0" strokeWidth={1.8} />
                 </button>
               ))
             )}
@@ -196,7 +220,7 @@ function CreateLinkDialogBody({
                   "flex size-5 items-center justify-center rounded-full border",
                   filterMode === "all" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
                 )}>
-                  {filterMode === "all" && <Check className="size-3" />}
+                  {filterMode === "all" && <Check className="size-3" strokeWidth={1.8} />}
                 </div>
                 <div>
                   <p className="font-semibold">{t("filterAll")}</p>
@@ -216,7 +240,7 @@ function CreateLinkDialogBody({
                   "flex size-5 items-center justify-center rounded-full border",
                   filterMode === "mine" ? "border-emerald-500 bg-emerald-500 text-white" : "border-border"
                 )}>
-                  {filterMode === "mine" && <Check className="size-3" />}
+                  {filterMode === "mine" && <Check className="size-3" strokeWidth={1.8} />}
                 </div>
                 <div>
                   <p className="font-semibold">{t("filterMine")}</p>
@@ -229,11 +253,11 @@ function CreateLinkDialogBody({
             )}
 
             <DialogFooter>
-              <Button onClick={handleCreate} disabled={submitting}>
-                {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              <Button onClick={handleCreate} disabled={submitting} aria-busy={submitting}>
+                {submitting && <Loader2 className="mr-2 size-4 animate-spin" strokeWidth={1.8} />}
                 {submitting ? t("creating") : t("createLink")}
               </Button>
-              <DialogClose render={<Button variant="outline" />}>
+              <DialogClose render={<Button variant="outline" disabled={submitting} />}>
                 {tc("cancel")}
               </DialogClose>
             </DialogFooter>

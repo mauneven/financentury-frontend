@@ -3,32 +3,36 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Plus, ArrowLeft, Settings } from "lucide-react";
+
+import { ArrowLeft, Plus, Settings } from "lucide-react";
 
 const SpendingChart = dynamic(
   () => import("@/components/dashboard/spending-chart").then((mod) => ({ default: mod.SpendingChart })),
   { ssr: false, loading: () => <div className="border border-border rounded-lg bg-card p-6"><div className="h-64 animate-pulse rounded-md bg-muted" /></div> }
 );
 
-import type { Expense, Category, CategorySummary } from "@/types/budget";
+import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { SpendingByUser } from "@/components/dashboard/spending-by-user";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/i18n/client";
+import { expenseApi } from "@/lib/api";
 import {
   formatCurrency,
   getPercentage,
   getProgressColor,
   getProgressTextColor,
 } from "@/lib/format";
-import { useBudgetStore } from "@/store/budget-store";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
-import { CategoryIcon } from "@/lib/icon-picker";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { SpendingByUser } from "@/components/dashboard/spending-by-user";
-import { ExpenseList } from "./expense-list";
+import { CategoryIcon } from "@/lib/icon-picker";
+import { qk } from "@/lib/query-keys";
+import { cn } from "@/lib/utils";
+import type { Category, CategorySummary, Expense } from "@/types/budget";
+
 import { AddExpenseDialog } from "./add-expense-dialog";
 import { EditExpenseDialog } from "./edit-expense-dialog";
-import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
+import { ExpenseList } from "./expense-list";
 
 const ICON_STROKE = 1.8;
 
@@ -54,7 +58,7 @@ export function CategoryDetail({
   const t = useTranslations("expense");
   const tDash = useTranslations("dashboard");
   const tActions = useTranslations("dashboard.categoryActions");
-  const deleteExpense = useBudgetStore((s) => s.deleteExpense);
+  const queryClient = useQueryClient();
 
   const router = useRouter();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -81,10 +85,27 @@ export function CategoryDetail({
     return map;
   }, [categories]);
 
+  // Only show expenses belonging to this category. The page passes the right
+  // source — `expenses` for owned categories, `linkedExpenses` for linked.
   const filteredExpenses = expenses.filter((e) => e.category_id === detailCategory.id);
 
+  // Route deletes through the expense's own budget_id so linked expenses
+  // (whose budget_id refers to a foreign source budget) hit the correct
+  // endpoint. After deletion, invalidate both budgets' detail subtrees:
+  // the source (where the row lived) and the active one (whose summary
+  // aggregates linked spend).
   const handleDelete = async (expenseId: string) => {
-    await deleteExpense(expenseId);
+    const target = filteredExpenses.find((e) => e.id === expenseId);
+    const targetBudgetId = target?.budget_id ?? budgetId;
+    await expenseApi.delete(targetBudgetId, expenseId);
+    queryClient.invalidateQueries({
+      queryKey: qk.budget.detail(targetBudgetId),
+    });
+    if (targetBudgetId !== budgetId) {
+      queryClient.invalidateQueries({
+        queryKey: qk.budget.detail(budgetId),
+      });
+    }
   };
 
   return (

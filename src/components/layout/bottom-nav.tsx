@@ -1,11 +1,9 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname,useRouter } from "next/navigation";
+
 import { Home, Plus, User } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
-import { useLocaleStore } from "@/i18n/locale";
-import { useBudgetStore } from "@/store/budget-store";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslations } from "@/i18n/client";
+import { useLocaleStore } from "@/i18n/locale";
+import { cn } from "@/lib/utils";
+import { useActiveBudgetStore } from "@/store/active-budget-store";
 
 interface BottomNavProps {
   onAddExpense: () => void;
@@ -29,7 +31,7 @@ export function BottomNav({
   const pathname = usePathname();
   const t = useTranslations("bottomNav");
   const { locale, setLocale } = useLocaleStore();
-  const activeBudgetId = useBudgetStore((s) => s.activeBudgetId);
+  const activeBudgetId = useActiveBudgetStore((s) => s.activeBudgetId);
 
   const isHome = pathname === "/";
 

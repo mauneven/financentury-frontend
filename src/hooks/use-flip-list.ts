@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useLayoutEffect, useCallback } from "react";
+import { useCallback,useLayoutEffect, useRef } from "react";
 
 const DURATION = 280;
 const EASING = "cubic-bezier(0.25, 0.46, 0.45, 0.94)";

@@ -1,31 +1,36 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAuthStore } from "@/store/auth-store";
-import { useBudgetStore } from "@/store/budget-store";
-import { budgetWS } from "@/lib/websocket";
+
+import { useQueryClient } from "@tanstack/react-query";
+
+import { qk } from "@/lib/query-keys";
 import type { WSMessage } from "@/lib/websocket";
+import { budgetWS } from "@/lib/websocket";
+import { useActiveBudgetStore } from "@/store/active-budget-store";
+import { useAuthStore } from "@/store/auth-store";
 
 /**
- * Connects to the WebSocket when a valid token is present.
- * Refreshes the summary on relevant messages.
- * Disconnects on sign-out.
+ * Connects to the WebSocket when a valid token is present and translates
+ * incoming events into react-query invalidations. Disconnects on sign-out.
+ *
+ * Mutation events relevant to the active budget invalidate that budget's
+ * summary / expenses / trends / resume keys; react-query then refetches
+ * automatically and the dashboard updates.
  */
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
-  const activeBudgetId = useBudgetStore((s) => s.activeBudgetId);
-  const refreshSummary = useBudgetStore((s) => s.refreshSummary);
+  const activeBudgetId = useActiveBudgetStore((s) => s.activeBudgetId);
+  const queryClient = useQueryClient();
 
-  // Keep mutable refs so the message handler always sees the latest values
-  // without being part of the connect/disconnect effect's dependency array.
+  // Mutable ref so the connection effect doesn't tear down + reconnect the
+  // socket every time the active budget changes.
   const activeBudgetIdRef = useRef(activeBudgetId);
-  const refreshSummaryRef = useRef(refreshSummary);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    activeBudgetIdRef.current = activeBudgetId;
+  }, [activeBudgetId]);
 
-  useEffect(() => { activeBudgetIdRef.current = activeBudgetId; }, [activeBudgetId]);
-  useEffect(() => { refreshSummaryRef.current = refreshSummary; }, [refreshSummary]);
-
-  // Connect / disconnect only when auth state truly changes.
   useEffect(() => {
     if (!token) {
       budgetWS.disconnect();
@@ -45,17 +50,23 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         case "category_deleted":
         case "link_created":
         case "link_updated":
-        case "link_deleted":
-          // Debounce to coalesce rapid WS events (e.g. self-echo after
-          // an optimistic update) into a single refreshSummary call.
+        case "link_deleted": {
+          // Debounce: coalesce rapid WS events into a single invalidate pass.
           if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
           }
           debounceTimerRef.current = setTimeout(() => {
             debounceTimerRef.current = null;
-            refreshSummaryRef.current();
+            const id = activeBudgetIdRef.current;
+            if (!id) return;
+            // Invalidate the whole detail subtree (summary, expenses,
+            // trends, resume, links). React-query refetches anything
+            // that's mounted; unmounted entries become stale and refetch
+            // on next mount.
+            queryClient.invalidateQueries({ queryKey: qk.budget.detail(id) });
           }, 500);
           break;
+        }
         default:
           break;
       }
@@ -70,8 +81,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       }
       budgetWS.disconnect();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, queryClient]);
 
   return <>{children}</>;
 }

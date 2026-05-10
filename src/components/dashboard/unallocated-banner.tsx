@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Plus, ArrowRight, Loader2 } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
-import { useBudgetStore } from "@/store/budget-store";
+
+import { AlertTriangle, ArrowRight, Loader2,Plus } from "lucide-react";
+
+import { useUpdateCategory } from "@/hooks/use-budget-queries";
 import { useTranslations } from "@/i18n/client";
+import { formatCurrency } from "@/lib/format";
 import { CategoryIcon } from "@/lib/icon-picker";
 import { cn } from "@/lib/utils";
+import { useActiveBudgetStore } from "@/store/active-budget-store";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,8 +50,8 @@ export function BudgetUnallocatedBanner({
   const [showRedirect, setShowRedirect] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
-  const updateCategory = useBudgetStore((s) => s.updateCategory);
-  const refreshSummary = useBudgetStore((s) => s.refreshSummary);
+  const activeBudgetId = useActiveBudgetStore((s) => s.activeBudgetId);
+  const updateCategoryMut = useUpdateCategory(activeBudgetId ?? "");
 
   if (unallocatedPercent <= 0) return null;
 
@@ -59,10 +62,12 @@ export function BudgetUnallocatedBanner({
 
     setRedirecting(true);
     try {
-      await updateCategory(selectedId, {
-        allocation_value: target.allocation_value + unallocatedAmount,
+      await updateCategoryMut.mutateAsync({
+        catId: selectedId,
+        data: {
+          allocation_value: target.allocation_value + unallocatedAmount,
+        },
       });
-      await refreshSummary();
       setShowRedirect(false);
       setSelectedId(null);
     } catch {

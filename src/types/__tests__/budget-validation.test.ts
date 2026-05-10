@@ -1,14 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect,it } from "vitest";
+
 import {
-  CURRENCIES,
-  BILLING_PERIODS,
   BALANCED_CATEGORIES,
+  BILLING_PERIODS,
+  type CategoryTemplate,
+  CURRENCIES,
   DEBT_FREE_CATEGORIES,
   DEBT_PAYOFF_CATEGORIES,
-  TRAVEL_CATEGORIES,
   EVENT_CATEGORIES,
   MAX_CATEGORIES_PER_BUDGET,
-  type CategoryTemplate,
+  TRAVEL_CATEGORIES,
 } from "@/types/budget";
 
 // ---------------------------------------------------------------------------

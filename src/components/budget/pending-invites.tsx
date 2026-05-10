@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Link2, Copy, Check, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
-import type { Invite } from "@/types/budget";
-import { inviteApi } from "@/lib/api";
+import { Check, Copy, Link2, Loader2 } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { useTransientFlag } from "@/hooks/use-transient-flag";
 import { useTranslations } from "@/i18n/client";
 import { useLocaleStore } from "@/i18n/locale";
-import { Badge } from "@/components/ui/badge";
+import { inviteApi } from "@/lib/api";
+import type { Invite } from "@/types/budget";
 
 interface PendingInvitesProps {
   budgetId: string;
@@ -25,7 +27,7 @@ export function PendingInvites({ budgetId }: PendingInvitesProps) {
   const { locale } = useLocaleStore();
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedId, flagCopied] = useTransientFlag<string>(2000);
 
   const fetchInvites = useCallback(async () => {
     try {
@@ -54,14 +56,13 @@ export function PendingInvites({ budgetId }: PendingInvitesProps) {
       document.execCommand("copy");
       document.body.removeChild(input);
     }
-    setCopiedId(invite.id);
-    setTimeout(() => setCopiedId(null), 2000);
+    flagCopied(invite.id);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+        <Loader2 className="size-4 animate-spin text-muted-foreground" strokeWidth={1.8} />
       </div>
     );
   }
@@ -70,7 +71,7 @@ export function PendingInvites({ budgetId }: PendingInvitesProps) {
     return (
       <div className="mt-4 pt-4 border-t border-border">
         <div className="flex items-center gap-2 mb-2">
-          <Link2 className="size-4 text-muted-foreground" />
+          <Link2 className="size-4 text-muted-foreground" strokeWidth={1.8} />
           <h3 className="text-sm font-medium">{t("pendingInvites")}</h3>
         </div>
         <p className="text-xs text-muted-foreground">{t("noPendingInvites")}</p>
@@ -78,10 +79,18 @@ export function PendingInvites({ budgetId }: PendingInvitesProps) {
     );
   }
 
+  const badgeVariant = (
+    status: "pending" | "used" | "expired"
+  ): "default" | "secondary" | "destructive" => {
+    if (status === "pending") return "default";
+    if (status === "expired") return "destructive";
+    return "secondary";
+  };
+
   return (
     <div className="mt-4 pt-4 border-t border-border">
       <div className="flex items-center gap-2 mb-3">
-        <Link2 className="size-4 text-muted-foreground" />
+        <Link2 className="size-4 text-muted-foreground" strokeWidth={1.8} />
         <h3 className="text-sm font-medium">{t("pendingInvites")}</h3>
       </div>
 
@@ -107,7 +116,7 @@ export function PendingInvites({ budgetId }: PendingInvitesProps) {
               </span>
 
               <Badge
-                variant={status === "pending" ? "default" : "secondary"}
+                variant={badgeVariant(status)}
                 className="shrink-0"
               >
                 {t(status)}
@@ -117,12 +126,13 @@ export function PendingInvites({ budgetId }: PendingInvitesProps) {
                 <button
                   type="button"
                   onClick={() => handleCopy(invite)}
+                  aria-label={isCopied ? t("used") : "copy"}
                   className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {isCopied ? (
-                    <Check className="size-3.5 text-emerald-600" />
+                    <Check className="size-3.5 text-emerald-600" strokeWidth={1.8} />
                   ) : (
-                    <Copy className="size-3.5" />
+                    <Copy className="size-3.5" strokeWidth={1.8} />
                   )}
                 </button>
               )}

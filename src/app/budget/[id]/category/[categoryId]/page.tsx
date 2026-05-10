@@ -2,8 +2,13 @@
 
 import { useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useBudgetStore } from "@/store/budget-store";
+
 import { CategoryDetail } from "@/components/expenses/category-detail";
+import {
+  useBudgetExpenses,
+  useBudgetSummary,
+  useLinkedExpenses,
+} from "@/hooks/use-budget-queries";
 
 /**
  * Category detail page — replaces the old
@@ -14,10 +19,11 @@ import { CategoryDetail } from "@/components/expenses/category-detail";
 export default function CategoryPage() {
   const params = useParams<{ id: string; categoryId: string }>();
   const router = useRouter();
-  const summary = useBudgetStore((s) => s.summary);
-  const expenses = useBudgetStore((s) => s.expenses);
-  const linkedExpenses = useBudgetStore((s) => s.linkedExpenses);
-  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
+  const { data: summary, isPending: summaryLoading } = useBudgetSummary(
+    params.id
+  );
+  const { data: expenses = [] } = useBudgetExpenses(params.id);
+  const { data: linkedExpenses = [] } = useLinkedExpenses(summary);
 
   /**
    * Look up the category summary — search own list first, then linked.

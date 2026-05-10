@@ -1,7 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { renderHook } from "@testing-library/react";
 import React from "react";
-import { useTranslations, useMessages } from "@/i18n/client";
+
+import { renderHook } from "@testing-library/react";
+import { describe, expect,it } from "vitest";
+
+import { useMessages,useTranslations } from "@/i18n/client";
 
 // ---------------------------------------------------------------------------
 // Helper: wrap hooks in a MessagesContext provider
@@ -11,8 +13,10 @@ import { useTranslations, useMessages } from "@/i18n/client";
 // depends on dynamic imports and locale store, we test useTranslations and
 // useMessages in isolation using a minimal React context wrapper.
 
-// Replicate the context for testing (same shape as client.tsx)
-const { createContext, useContext } = React;
+// Replicate the context for testing (same shape as client.tsx). Pulled off
+// the namespace import so the dependency graph stays explicit even when
+// individual symbols aren't referenced in this file's body.
+const { createContext: _createContext, useContext: _useContext } = React;
 
 // Since MessagesContext is not exported, we test via a wrapper that calls
 // the public hooks. The hooks read from context, so we verify the logic

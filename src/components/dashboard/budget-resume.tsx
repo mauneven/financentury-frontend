@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlertTriangle, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { formatCurrency, getCurrencyInfo } from "@/lib/format";
-import { budgetApi } from "@/lib/api";
+import { AlertTriangle, Calendar, Minus, TrendingDown, TrendingUp } from "lucide-react";
+
+import { useBudgetResume } from "@/hooks/use-budget-queries";
 import { useTranslations } from "@/i18n/client";
+import { formatCurrency, getCurrencyInfo } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { BudgetResumeResponse, BudgetResumePeriod } from "@/types/budget";
+import type { BudgetResumePeriod } from "@/types/budget";
 
 interface BudgetResumeProps {
   budgetId: string;
@@ -61,7 +61,7 @@ function PeriodRow({
             {formatDate(period.period_start)} — {formatDate(period.period_end)}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 ml-5.5 sm:ml-0">
+        <div className="flex items-center gap-1.5 ml-[1.375rem] sm:ml-0">
           <BalanceIndicator balance={period.balance} />
           <span
             className={cn(
@@ -111,34 +111,16 @@ function PeriodRow({
 export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
-  const [data, setData] = useState<BudgetResumeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [refetchNonce, setRefetchNonce] = useState(0);
 
   const locale = getCurrencyInfo(currency)?.locale || "en-US";
   const formatDate = makeDateFormatter(locale);
 
-  useEffect(() => {
-    let cancelled = false;
-    budgetApi
-      .budgetResume(budgetId)
-      .then((res) => {
-        if (!cancelled) {
-          setData(res);
-          setError(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [budgetId, refetchNonce]);
+  // Server state via react-query. Loading + error + data are direct fields
+  // on the result; refetch() handles retries. No effect, no state machine,
+  // no AbortController — react-query manages cancellation on unmount.
+  const { data, isPending: loading, error: queryError, refetch } =
+    useBudgetResume(budgetId);
+  const error = !!queryError;
 
   if (loading) {
     return (
@@ -167,11 +149,7 @@ export function BudgetResume({ budgetId, currency }: BudgetResumeProps) {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setLoading(true);
-                setError(false);
-                setRefetchNonce((n) => n + 1);
-              }}
+              onClick={() => refetch()}
               className="mt-3 px-4 py-2 text-xs font-medium rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted"
             >
               {tc("retry")}

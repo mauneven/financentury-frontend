@@ -1,21 +1,21 @@
+import type { AuthUser } from "@/store/auth-store";
 import type {
   Budget,
+  BudgetLink,
+  BudgetResumeResponse,
   BudgetSummary,
+  Category,
   Collaborator,
   CreateBudgetInput,
-  CreateExpenseInput,
-  CreateCategoryInput,
   CreateBudgetLinkInput,
+  CreateCategoryInput,
+  CreateExpenseInput,
   Expense,
-  Category,
-  TrendsResponse,
-  BudgetResumeResponse,
   Invite,
-  Session,
-  BudgetLink,
   LinkableBudget,
+  Session,
+  TrendsResponse,
 } from "@/types/budget";
-import type { AuthUser } from "@/store/auth-store";
 
 /**
  * Validates that the configured API base uses http/https. The URL is baked
@@ -92,25 +92,17 @@ async function request<T>(
     }
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
   const url = `${API_BASE}${path}`;
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  const res = await fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(10_000),
+    headers: {
+      "Content-Type": "application/json",
+      "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
 
   if (!res.ok) {
     if (res.status === 401 && typeof window !== "undefined") {

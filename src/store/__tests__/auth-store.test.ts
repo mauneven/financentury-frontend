@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach,describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mock dependencies before importing the store
@@ -21,9 +21,8 @@ vi.mock("@/lib/api", () => ({
   },
 }));
 
-import { useAuthStore } from "@/store/auth-store";
 import { budgetWS } from "@/lib/websocket";
-import { authApi } from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -1,11 +1,15 @@
-import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+
+import type { Metadata, Viewport } from "next";
+
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { QueryProvider } from "@/components/query-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/i18n/client";
-import { AuthProvider } from "@/components/auth/auth-provider";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ErrorBoundary } from "@/components/error-boundary";
+
+import "./globals.css";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -39,11 +43,15 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <I18nProvider>
-            <AuthProvider>
-              <TooltipProvider><ErrorBoundary>{children}</ErrorBoundary></TooltipProvider>
-            </AuthProvider>
-          </I18nProvider>
+          <QueryProvider>
+            <I18nProvider>
+              <AuthProvider>
+                <TooltipProvider>
+                  <ErrorBoundary>{children}</ErrorBoundary>
+                </TooltipProvider>
+              </AuthProvider>
+            </I18nProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

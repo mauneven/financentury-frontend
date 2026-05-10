@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // Mock the icon-picker module (same pattern as amount-utils.test.ts)
 vi.mock("@/lib/icon-picker", () => ({
@@ -16,8 +16,8 @@ vi.mock("@/lib/icon-picker", () => ({
 
 import {
   formatAmount,
-  parseAmount,
   maskAmountInput,
+  parseAmount,
   pickRandomIcon,
 } from "@/lib/amount-utils";
 

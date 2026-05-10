@@ -1,50 +1,57 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useCallback,useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+
 import {
+  closestCenter,
   DndContext,
+  type DragEndEvent,
   PointerSensor,
   TouchSensor,
   useSensor,
   useSensors,
-  closestCenter,
-  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  SortableContext,
   rectSortingStrategy,
+  SortableContext,
   useSortable,
-  arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useFlipList } from "@/hooks/use-flip-list";
-import dynamic from "next/dynamic";
-import { RefreshCw, Settings, Plus, ArrowLeft } from "lucide-react";
-import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
-import { useTranslations } from "@/i18n/client";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { cn } from "@/lib/utils";
-import { OverviewCards } from "./overview-cards";
-import { CategoryCard } from "./category-card";
-import { LinkedCategoryCard } from "./linked-category-card";
-import { SpendingByUser } from "./spending-by-user";
-import { BudgetUnallocatedBanner } from "./unallocated-banner";
-import { BudgetResume } from "./budget-resume";
-import { EmptyDashboard } from "./empty-dashboard";
-import { BILLING_PERIODS, MAX_CATEGORIES_PER_BUDGET } from "@/types/budget";
-import type {
-  Expense,
-  CategorySummary,
-  LinkedCategorySummary,
-  Category,
-} from "@/types/budget";
+import { ArrowLeft,Plus, RefreshCw, Settings } from "lucide-react";
+
 import { AddCategoryDialog } from "@/components/budget/add-category-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
 import { EditExpenseDialog } from "@/components/expenses/edit-expense-dialog";
 import { ExpenseList } from "@/components/expenses/expense-list";
-import Link from "next/link";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import {
+  useBudgetExpenses,
+  useBudgetSummary,
+  useDeleteExpense,
+  useLinkedExpenses,
+} from "@/hooks/use-budget-queries";
 import { useDisplayOrder } from "@/hooks/use-display-order";
+import { useFlipList } from "@/hooks/use-flip-list";
+import { useTranslations } from "@/i18n/client";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth-store";
+import type {
+  Category,
+  CategorySummary,
+  Expense,
+  LinkedCategorySummary,
+} from "@/types/budget";
+import { BILLING_PERIODS, MAX_CATEGORIES_PER_BUDGET } from "@/types/budget";
+
+import { BudgetResume } from "./budget-resume";
+import { CategoryCard } from "./category-card";
+import { EmptyDashboard } from "./empty-dashboard";
+import { LinkedCategoryCard } from "./linked-category-card";
+import { OverviewCards } from "./overview-cards";
+import { SpendingByUser } from "./spending-by-user";
+import { BudgetUnallocatedBanner } from "./unallocated-banner";
 
 const SpendingChart = dynamic(
   () => import("./spending-chart").then((mod) => ({ default: mod.SpendingChart })),
@@ -137,13 +144,18 @@ function DashboardSkeleton() {
 }
 
 export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
-  const summary = useBudgetStore((s) => s.summary);
-  const expenses = useBudgetStore((s) => s.expenses);
-  const linkedExpensesFromStore = useBudgetStore((s) => s.linkedExpenses);
-  const deleteExpense = useBudgetStore((s) => s.deleteExpense);
-  const loading = useBudgetStore((s) => s.loading);
-  const error = useBudgetStore((s) => s.error);
-  const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
+  const {
+    data: summary,
+    isPending: summaryPending,
+    error: summaryError,
+    refetch: refetchSummary,
+  } = useBudgetSummary(budgetId);
+  const { data: expenses = [] } = useBudgetExpenses(budgetId);
+  const { data: linkedExpensesFromStore = [] } = useLinkedExpenses(summary);
+  const deleteExpenseMut = useDeleteExpense(budgetId);
+  const loading = summaryPending;
+  const error =
+    summaryError instanceof Error ? summaryError.message : null;
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
@@ -166,19 +178,28 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   const totalCategoryCount = categories.length + linkedCategories.length;
   const atCap = totalCategoryCount >= MAX_CATEGORIES_PER_BUDGET;
 
-  // Merge own + linked into a single flat list.
+  // Merge own + linked into a single flat list. Natural baseline order is by
+  // creation time so linked categories interleave with own ones instead of
+  // being segregated at the tail. User-saved display_order (per-device) still
+  // overrides this via useDisplayOrder below.
   const mergedCategories = useMemo((): MergedCategory[] => {
-    const own: MergedCategory[] = categories.map((c) => ({
-      type: "own",
-      id: c.category.id,
-      summary: c,
-    }));
-    const linked: MergedCategory[] = linkedCategories.map((l) => ({
-      type: "linked",
-      id: `linked-${l.link.id}`,
-      linked: l,
-    }));
-    return [...own, ...linked];
+    type Entry = { merged: MergedCategory; createdAt: string };
+    const entries: Entry[] = [
+      ...categories.map((c) => ({
+        merged: { type: "own" as const, id: c.category.id, summary: c },
+        createdAt: c.category.created_at,
+      })),
+      ...linkedCategories.map((l) => ({
+        merged: {
+          type: "linked" as const,
+          id: `linked-${l.link.id}`,
+          linked: l,
+        },
+        createdAt: l.link.created_at,
+      })),
+    ];
+    entries.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return entries.map((e) => e.merged);
   }, [categories, linkedCategories]);
 
   // Categories map for the expense list (for icon + name resolution).
@@ -241,16 +262,11 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
   }, [summary?.spending_by_user]);
 
   const getMergedCategoryId = useCallback((m: MergedCategory) => m.id, []);
-  const {
-    ordered: orderedCategories,
-    moveUp: moveCategoryUp,
-    moveDown: moveCategoryDown,
-    moveTo: moveCategoryTo,
-  } = useDisplayOrder(
-      `budget-${budgetId}-categories`,
-      mergedCategories,
-      getMergedCategoryId
-    );
+  const { ordered: orderedCategories, moveTo: moveCategoryTo } = useDisplayOrder(
+    `budget-${budgetId}-categories`,
+    mergedCategories,
+    getMergedCategoryId
+  );
 
   const { ref: categoryListRef, capturePositions: captureCategoryPositions } = useFlipList();
 
@@ -279,7 +295,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
           </p>
           <button
             type="button"
-            onClick={() => setActiveBudget(budgetId)}
+            onClick={() => refetchSummary()}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <RefreshCw className="h-4 w-4" strokeWidth={1.8} />
@@ -466,12 +482,9 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             budget={budget}
             budgetId={budgetId}
             onAddLinkedExpense={handleAddLinkedExpense}
-            onReorder={(fromIdx, toIdx, id) => {
+            onReorder={(_fromIdx, toIdx, id) => {
               captureCategoryPositions();
-              // moveTo lives on the hook; use idx difference for moveUp/moveDown
-              // fallback is cleaner but moveTo supports absolute index.
               moveCategoryTo(id, toIdx);
-              void fromIdx;
             }}
             listRef={categoryListRef}
           />
@@ -516,7 +529,7 @@ export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
             collaborators={collaboratorsMap}
             currentUserId={currentUserId}
             onEdit={(exp) => setEditingExpense(exp)}
-            onDelete={(id) => deleteExpense(id)}
+            onDelete={(id) => deleteExpenseMut.mutate(id)}
           />
         </div>
       )}
@@ -618,7 +631,7 @@ function DndCategoryGrid({
   items,
   budget,
   budgetId,
-  onAddLinkedExpense,
+  onAddLinkedExpense: _onAddLinkedExpense,
   onReorder,
   listRef,
 }: DndCategoryGridProps) {
@@ -635,8 +648,6 @@ function DndCategoryGrid({
     const toIdx = ids.indexOf(String(over.id));
     if (fromIdx < 0 || toIdx < 0) return;
     onReorder(fromIdx, toIdx, String(active.id));
-    // local arrayMove not needed — hook persist + re-sort via saved order
-    void arrayMove;
   };
 
   return (
@@ -663,7 +674,6 @@ function DndCategoryGrid({
                     linked={merged.linked}
                     currency={budget.currency}
                     budgetId={budgetId}
-                    onAddExpense={onAddLinkedExpense}
                     dragHandleProps={{
                       ...handle.attributes,
                       ...(handle.listeners ?? {}),

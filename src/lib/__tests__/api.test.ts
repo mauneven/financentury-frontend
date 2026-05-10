@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect,it } from "vitest";
 
 /**
  * normalizeExpense is not exported directly, so we replicate its logic

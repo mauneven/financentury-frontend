@@ -2,26 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Link2, GripVertical } from "lucide-react";
-import type { LinkedCategorySummary } from "@/types/budget";
+
+import { GripVertical,Link2, Settings } from "lucide-react";
+
+import { ManageLinkDialog } from "@/components/budget/manage-link-dialog";
+import { useTranslations } from "@/i18n/client";
 import {
   formatCurrency,
   getPercentage,
   getProgressTextColor,
 } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
 import { CategoryIcon } from "@/lib/icon-picker";
-import { ManageLinkDialog } from "@/components/budget/manage-link-dialog";
+import { cn } from "@/lib/utils";
+import type { LinkedCategorySummary } from "@/types/budget";
 
 interface LinkedCategoryCardProps {
   linked: LinkedCategorySummary;
   currency: string;
   /** Target budget id — we keep the URL scoped to the viewer's budget. */
   budgetId: string;
-  onAddExpense: (sourceBudgetId: string, preselectedCategoryId?: string) => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
   /** dnd-kit listeners + attributes from the parent SortableCell. */
   dragHandleProps?: Record<string, unknown>;
 }
@@ -90,7 +89,7 @@ export function LinkedCategoryCard({
         : "stroke-emerald-600";
 
   return (
-    <div className="relative rounded-xl border border-border border-dashed bg-card flex flex-col">
+    <div className="relative rounded-xl border border-border bg-card flex flex-col">
       {/* Top-right controls: gear (manage link) | grip (drag) */}
       <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 z-10">
         <button

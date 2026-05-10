@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback,useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth-store";
-import { sessionApi } from "@/lib/api";
-import { Card, CardContent } from "@/components/ui/card";
+
+import { Check, ChevronDown, Loader2, LogOut, Monitor, Pencil, ShieldX,Smartphone, Tablet, Trash2, TriangleAlert, X } from "lucide-react";
+
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,11 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AuthGuard } from "@/components/auth/auth-guard";
-import { AppShell } from "@/components/layout/app-shell";
-import { LogOut, Trash2, TriangleAlert, ChevronDown, Pencil, Check, X, Monitor, Smartphone, Tablet, Loader2, ShieldX } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useTranslations } from "@/i18n/client";
+import { sessionApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth-store";
 import type { Session } from "@/types/budget";
 
 const ICON_STROKE = 1.8;
@@ -35,20 +37,26 @@ function DeviceIcon({ type }: { type: string }) {
   }
 }
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(
+  dateStr: string,
+  t: ReturnType<typeof useTranslations>
+): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
-  const diff = now - then;
+  // Guard against clock skew or invalid dates that would produce negative
+  // diffs / NaN and render "NaNm ago" to the user.
+  if (!Number.isFinite(then)) return new Date(dateStr).toLocaleDateString();
+  const diff = Math.max(0, now - then);
 
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t("justNow");
+  if (minutes < 60) return t("minutesAgo", { count: minutes });
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("hoursAgo", { count: hours });
 
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t("daysAgo", { count: days });
 
   return new Date(dateStr).toLocaleDateString();
 }
@@ -146,7 +154,7 @@ function SessionsList({ t }: { t: ReturnType<typeof useTranslations> }) {
               {session.ip_address}
             </p>
             <p className="text-xs text-muted-foreground">
-              {t("lastActive")} {formatRelativeTime(session.last_active_at)}
+              {t("lastActive")} {formatRelativeTime(session.last_active_at, t)}
             </p>
           </div>
 
@@ -205,7 +213,9 @@ export default function AccountPage() {
     setDeleteError(null);
     try {
       await deleteAccount();
-      router.push("/");
+      // `replace` so the deleted account's /account page isn't on the back
+      // stack once the user lands on the marketing page.
+      router.replace("/");
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Failed to delete account");
       setIsDeleting(false);
@@ -309,7 +319,7 @@ export default function AccountPage() {
             <CardContent className="pt-4 pb-4">
               <button
                 className="flex items-center gap-3 w-full py-2 text-sm text-left text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => { signOut(); router.push("/"); }}
+                onClick={() => { signOut(); router.replace("/"); }}
               >
                 <LogOut className="size-4" strokeWidth={ICON_STROKE} />
                 {t("signOut")}

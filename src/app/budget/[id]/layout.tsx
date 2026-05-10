@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
-import { AppShell } from "@/components/layout/app-shell";
+
+import { RefreshCw } from "lucide-react";
+
+import { AuthGuard } from "@/components/auth/auth-guard";
 import { CreateBudgetDialog } from "@/components/budget/create-budget-dialog";
 import { AddExpenseDialog } from "@/components/expenses/add-expense-dialog";
-import { AuthGuard } from "@/components/auth/auth-guard";
-import { RefreshCw } from "lucide-react";
+import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
+import { useBudgetSummary } from "@/hooks/use-budget-queries";
+import { useActiveBudgetStore } from "@/store/active-budget-store";
+import { useAuthStore } from "@/store/auth-store";
 
 const ICON_STROKE = 1.8;
 
@@ -59,38 +62,33 @@ export default function BudgetLayout({
 }) {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const setActiveBudget = useBudgetStore((s) => s.setActiveBudget);
-  const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
-  const budgets = useBudgetStore((s) => s.budgets);
-  const summary = useBudgetStore((s) => s.summary);
-  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
-  const budgetError = useBudgetStore((s) => s.error);
   const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.loading);
   const authInitialized = useAuthStore((s) => s.initialized);
+  const authReady = authInitialized && !authLoading && !!user;
+  const setActiveBudgetId = useActiveBudgetStore((s) => s.setActiveBudgetId);
+
+  // Tell the WS provider which budget is on screen so it can scope event
+  // invalidations correctly. Cleared on unmount so global routes don't
+  // accidentally pick up budget-scoped events.
+  useEffect(() => {
+    setActiveBudgetId(params.id);
+    return () => setActiveBudgetId(null);
+  }, [params.id, setActiveBudgetId]);
+
+  // Server state via react-query. Gating on `authReady && params.id`
+  // keeps unauthenticated/empty-id renders from firing requests.
+  const {
+    data: summary,
+    isPending: summaryLoading,
+    error: queryError,
+    refetch: refetchSummary,
+  } = useBudgetSummary(authReady ? params.id : undefined);
+  const budgetError =
+    queryError instanceof Error ? queryError.message : null;
 
   const [showCreateBudget, setShowCreateBudget] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
-
-  // Track which budget ID we last triggered a load for so we don't re-fetch
-  // on every render, but DO re-fetch when the ID changes.
-  const loadedBudgetRef = useRef<string | null>(null);
-
-  // Wait for auth to be fully ready before making any API calls.
-  const authReady = authInitialized && !authLoading && !!user;
-
-  useEffect(() => {
-    if (authReady && budgets.length === 0) {
-      fetchBudgets();
-    }
-  }, [budgets.length, fetchBudgets, authReady]);
-
-  useEffect(() => {
-    if (authReady && params.id && loadedBudgetRef.current !== params.id) {
-      loadedBudgetRef.current = params.id;
-      setActiveBudget(params.id);
-    }
-  }, [params.id, setActiveBudget, authReady]);
 
   // Flat category list used by the global AddExpenseDialog.
   const categories = useMemo(
@@ -116,10 +114,7 @@ export default function BudgetLayout({
             </p>
             <div className="flex gap-3">
               <Button
-                onClick={() => {
-                  loadedBudgetRef.current = null;
-                  setActiveBudget(params.id);
-                }}
+                onClick={() => refetchSummary()}
                 className="gap-2"
               >
                 <RefreshCw className="h-4 w-4" strokeWidth={ICON_STROKE} />

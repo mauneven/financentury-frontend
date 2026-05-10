@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useFlipList } from "@/hooks/use-flip-list";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
-import { AppShell } from "@/components/layout/app-shell";
 
-import { CreateBudgetDialog } from "@/components/budget/create-budget-dialog";
-import { BudgetCard } from "@/components/budget/budget-card";
-import { Button } from "@/components/ui/button";
-import { Wallet, Plus } from "lucide-react";
-import { useTranslations } from "@/i18n/client";
+import { Plus, Wallet } from "lucide-react";
+
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { BudgetCard } from "@/components/budget/budget-card";
+import { CreateBudgetDialog } from "@/components/budget/create-budget-dialog";
+import { AppShell } from "@/components/layout/app-shell";
+import { Button } from "@/components/ui/button";
+import { useBudgets } from "@/hooks/use-budget-queries";
 import { useDisplayOrder } from "@/hooks/use-display-order";
+import { useFlipList } from "@/hooks/use-flip-list";
+import { useTranslations } from "@/i18n/client";
+import { useAuthStore } from "@/store/auth-store";
 
 const ICON_STROKE = 1.8;
 
@@ -21,13 +22,22 @@ export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("home");
   const tc = useTranslations("common");
-  const budgets = useBudgetStore((s) => s.budgets);
-  const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
-  const loading = useBudgetStore((s) => s.loading);
-  const error = useBudgetStore((s) => s.error);
   const authLoading = useAuthStore((s) => s.loading);
   const authInitialized = useAuthStore((s) => s.initialized);
   const user = useAuthStore((s) => s.user);
+  const authReady = authInitialized && !authLoading && !!user;
+
+  // Server state owned by react-query. `enabled: authReady` suppresses the
+  // network call until the auth bootstrap settles — without this we'd fire
+  // an unauthenticated /budgets request on first render and 401.
+  const {
+    data: budgets = [],
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useBudgets({ enabled: authReady });
+
+  const error = queryError instanceof Error ? queryError.message : null;
   const [showCreateBudget, setShowCreateBudget] = useState(false);
   const { ordered: orderedBudgets, moveUp, moveDown } = useDisplayOrder(
     "budgets",
@@ -36,15 +46,6 @@ export default function HomePage() {
   );
 
   const { ref: budgetListRef, capturePositions: captureBudgetPositions } = useFlipList();
-
-  // Wait for auth to fully resolve before fetching budgets.
-  const authReady = authInitialized && !authLoading && !!user;
-
-  useEffect(() => {
-    if (authReady) {
-      fetchBudgets();
-    }
-  }, [fetchBudgets, authReady]);
 
   return (
     <AuthGuard>
@@ -77,7 +78,7 @@ export default function HomePage() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => fetchBudgets()}
+                onClick={() => refetch()}
                 className="gap-2"
               >
                 <Plus className="size-4" strokeWidth={ICON_STROKE} />
@@ -129,7 +130,7 @@ export default function HomePage() {
                 )}
               </div>
 
-              <div ref={budgetListRef} className="grid gap-4 sm:gap-6">
+              <div ref={budgetListRef} className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {orderedBudgets.map((budget, idx) => (
                   <div key={budget.id} data-flip-key={budget.id}>
                     <BudgetCard

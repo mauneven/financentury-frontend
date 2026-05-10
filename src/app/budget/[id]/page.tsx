@@ -1,8 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useBudgetStore } from "@/store/budget-store";
+
 import { BudgetDashboard } from "@/components/dashboard/budget-dashboard";
+import { useBudgetSummary } from "@/hooks/use-budget-queries";
 
 /**
  * Budget root page — always renders the dashboard.
@@ -12,10 +13,9 @@ import { BudgetDashboard } from "@/components/dashboard/budget-dashboard";
  */
 export default function BudgetDashboardPage() {
   const params = useParams<{ id: string }>();
-  const summary = useBudgetStore((s) => s.summary);
-  const summaryLoading = useBudgetStore((s) => s.summaryLoading);
+  const { data: summary, isPending } = useBudgetSummary(params.id);
 
-  if (!summary && summaryLoading) {
+  if (!summary && isPending) {
     return null; // Layout is showing the skeleton.
   }
 

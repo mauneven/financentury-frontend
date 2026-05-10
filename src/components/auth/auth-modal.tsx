@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef,useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth-store";
-import { Wallet, X, Check } from "lucide-react";
+
+import { Check,Wallet, X } from "lucide-react";
+
 import { useTranslations } from "@/i18n/client";
+import { useAuthStore } from "@/store/auth-store";
 
 interface AuthModalProps {
   open: boolean;

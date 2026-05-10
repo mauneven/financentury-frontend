@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { Copy, Check, Link2, Loader2 } from "lucide-react";
+import { useCallback,useRef, useState } from "react";
 
-import { inviteApi } from "@/lib/api";
-import { useTranslations } from "@/i18n/client";
+import { Check, Copy, Link2, Loader2, Share2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useTranslations } from "@/i18n/client";
+import { useLocaleStore } from "@/i18n/locale";
+import { inviteApi } from "@/lib/api";
 
 interface InviteDialogProps {
   budgetId: string;
@@ -24,12 +25,18 @@ interface InviteDialogProps {
 
 export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps) {
   const t = useTranslations("invite");
+  const { locale } = useLocaleStore();
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const canShare =
+    typeof navigator !== "undefined" &&
+    typeof navigator.share === "function";
 
   const clearCopyTimer = useCallback(() => {
     if (copyTimerRef.current) {
@@ -70,6 +77,22 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
     copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleShare = async () => {
+    if (!inviteUrl || !canShare) return;
+    setSharing(true);
+    try {
+      await navigator.share({
+        title: t("title"),
+        text: t("shareText"),
+        url: inviteUrl,
+      });
+    } catch {
+      // User cancelled or share failed — silent
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const handleOpenChange = (val: boolean) => {
     if (!val) {
       // Reset state and clear timers when closing
@@ -103,16 +126,17 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
             <Button
               onClick={handleGenerate}
               disabled={generating}
+              aria-busy={generating}
               className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
             >
               {generating ? (
                 <>
-                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <Loader2 className="size-4 mr-2 animate-spin" strokeWidth={1.8} />
                   {t("generating")}
                 </>
               ) : (
                 <>
-                  <Link2 className="size-4 mr-2" />
+                  <Link2 className="size-4 mr-2" strokeWidth={1.8} />
                   {t("generate")}
                 </>
               )}
@@ -123,18 +147,21 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
                 <Input
                   readOnly
                   value={inviteUrl}
+                  aria-label={t("title")}
+                  onFocus={(e) => e.currentTarget.select()}
                   className="text-xs"
                 />
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={handleCopy}
+                  aria-label={t("copied")}
                   className="shrink-0"
                 >
                   {copied ? (
-                    <Check className="size-4 text-emerald-600" />
+                    <Check className="size-4 text-emerald-600" strokeWidth={1.8} />
                   ) : (
-                    <Copy className="size-4" />
+                    <Copy className="size-4" strokeWidth={1.8} />
                   )}
                 </Button>
               </div>
@@ -145,9 +172,29 @@ export function InviteDialog({ budgetId, open, onOpenChange }: InviteDialogProps
                 </p>
               )}
 
+              {canShare && (
+                <Button
+                  variant="outline"
+                  onClick={handleShare}
+                  disabled={sharing}
+                  aria-busy={sharing}
+                  className="w-full"
+                >
+                  {sharing ? (
+                    <Loader2 className="size-4 mr-2 animate-spin" strokeWidth={1.8} />
+                  ) : (
+                    <Share2 className="size-4 mr-2" strokeWidth={1.8} />
+                  )}
+                  {t("share")}
+                </Button>
+              )}
+
               {expiresAt && (
                 <p className="text-xs text-muted-foreground">
-                  {t("expires")}: {new Date(expiresAt).toLocaleDateString()}
+                  {t("expires")}: {new Date(expiresAt).toLocaleDateString(
+                    locale === "es" ? "es" : "en",
+                    { year: "numeric", month: "short", day: "numeric" }
+                  )}
                 </p>
               )}
             </div>

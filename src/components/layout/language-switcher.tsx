@@ -1,7 +1,7 @@
 "use client";
 
-import { useLocaleStore } from "@/i18n/locale";
 import { Button } from "@/components/ui/button";
+import { useLocaleStore } from "@/i18n/locale";
 
 export function LanguageSwitcher() {
   const { locale, setLocale } = useLocaleStore();

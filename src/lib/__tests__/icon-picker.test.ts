@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // Mock lucide-react to avoid React component issues in unit tests
 vi.mock("lucide-react", () => {
@@ -51,7 +51,7 @@ vi.mock("@/lib/utils", () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(" "),
 }));
 
-import { ICON_OPTIONS, getIconComponent } from "@/lib/icon-picker";
+import { getIconComponent,ICON_OPTIONS } from "@/lib/icon-picker";
 
 describe("ICON_OPTIONS", () => {
   it("is a non-empty array", () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Integration-style tests for the api.ts module.
@@ -462,7 +462,7 @@ describe("api.ts — exported API modules", () => {
       expect(mockFetch.mock.calls[0][1].method).toBe("POST");
     });
 
-    it("categoryApi.update calls PUT /budgets/:id/categories/:catId", async () => {
+    it("categoryApi.update calls PATCH /budgets/:id/categories/:catId", async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
@@ -476,7 +476,7 @@ describe("api.ts — exported API modules", () => {
         "/budgets/b-1/categories/c-1"
       );
       expect(mockFetch.mock.calls[0][0]).not.toContain("/sections/");
-      expect(mockFetch.mock.calls[0][1].method).toBe("PUT");
+      expect(mockFetch.mock.calls[0][1].method).toBe("PATCH");
     });
 
     it("categoryApi.delete calls DELETE /budgets/:id/categories/:catId", async () => {

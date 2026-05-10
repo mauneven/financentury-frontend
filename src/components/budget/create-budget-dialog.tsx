@@ -1,55 +1,44 @@
 "use client";
 
 import * as React from "react";
-import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Scale,
-  Wallet,
-  PenLine,
   ArrowLeft,
   Check,
-  Loader2,
   CreditCard,
-  Plane,
+  Loader2,
   PartyPopper,
+  PenLine,
+  Plane,
+  Scale,
+  Wallet,
 } from "lucide-react";
+import { Controller,useForm } from "react-hook-form";
+import { z } from "zod";
 
-// Removed recharts PieChart/Pie/Cell — replaced with a lightweight SVG donut.
-import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
-import { pickRandomIcon, maskAmountInput, parseAmount } from "@/lib/amount-utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-import type { Budget, CategoryTemplate } from "@/types/budget";
-import {
-  CURRENCIES,
-  BALANCED_CATEGORIES,
-  DEBT_FREE_CATEGORIES,
-  DEBT_PAYOFF_CATEGORIES,
-  TRAVEL_CATEGORIES,
-  EVENT_CATEGORIES,
-} from "@/types/budget";
-import { detectCurrency } from "@/lib/format";
-import { useBudgetStore } from "@/store/budget-store";
-import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -57,12 +46,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "@/i18n/client";
+import { maskAmountInput, parseAmount,pickRandomIcon } from "@/lib/amount-utils";
+import { detectCurrency } from "@/lib/format";
+// Removed recharts PieChart/Pie/Cell — replaced with a lightweight SVG donut.
+import { CategoryIcon,IconPicker } from "@/lib/icon-picker";
+import { cn } from "@/lib/utils";
+import { useCreateBudget } from "@/hooks/use-budget-queries";
+import type { Budget, CategoryTemplate } from "@/types/budget";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group";
+  BALANCED_CATEGORIES,
+  CURRENCIES,
+  DEBT_FREE_CATEGORIES,
+  DEBT_PAYOFF_CATEGORIES,
+  EVENT_CATEGORIES,
+  TRAVEL_CATEGORIES,
+} from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -283,7 +282,7 @@ export function CreateBudgetDialog({
   onCreated,
 }: CreateBudgetDialogProps) {
   const router = useRouter();
-  const createBudget = useBudgetStore((s) => s.createBudget);
+  const createBudgetMut = useCreateBudget();
   const t = useTranslations("budget");
   const tc = useTranslations("common");
 
@@ -296,11 +295,11 @@ export function CreateBudgetDialog({
   const [incomeDisplay, setIncomeDisplay] = React.useState("");
   const [iconPickerOpen, setIconPickerOpen] = React.useState(false);
 
-  // Detect currency on mount
-  const detectedCurrency = (() => {
+  // Detect currency once on mount from navigator locale. Guarded for SSR.
+  const detectedCurrency = React.useMemo(() => {
     if (typeof window === "undefined") return "USD";
     return detectCurrency();
-  })();
+  }, []);
 
   // Locale-aware formatting happens per-change via maskAmountInput; no local
   // helper needed here.
@@ -390,7 +389,7 @@ export function CreateBudgetDialog({
 
     setIsSubmitting(true);
     try {
-      const budget = await createBudget({
+      const budget = await createBudgetMut.mutateAsync({
         ...values,
         mode,
       });

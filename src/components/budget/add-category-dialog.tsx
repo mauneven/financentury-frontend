@@ -1,36 +1,41 @@
 "use client";
 
 import * as React from "react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, Check, ChevronRight, Link2,Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Check, ChevronRight, ArrowLeft, Link2 } from "lucide-react";
 
-import { useBudgetStore } from "@/store/budget-store";
-import { cn } from "@/lib/utils";
-import { IconPicker, CategoryIcon } from "@/lib/icon-picker";
-import { CURRENCIES, MAX_CATEGORIES_PER_BUDGET } from "@/types/budget";
-import type { LinkableBudget, Category } from "@/types/budget";
-import { formatAmount, parseAmount, maskAmountInput, pickRandomIcon } from "@/lib/amount-utils";
-import { linkApi } from "@/lib/api";
-import { formatCurrency } from "@/lib/format";
-
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  useBudgetSummary,
+  useCreateCategory,
+  useCreateLink,
+} from "@/hooks/use-budget-queries";
 import { useTranslations } from "@/i18n/client";
+import { formatAmount, maskAmountInput, parseAmount, pickRandomIcon } from "@/lib/amount-utils";
+import { linkApi } from "@/lib/api";
+import { formatCurrency } from "@/lib/format";
+import { CategoryIcon, IconPicker } from "@/lib/icon-picker";
+import { cn } from "@/lib/utils";
+import { useActiveBudgetStore } from "@/store/active-budget-store";
+import type { Category, LinkableBudget } from "@/types/budget";
+import { CURRENCIES, MAX_CATEGORIES_PER_BUDGET } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -39,11 +44,12 @@ import { useTranslations } from "@/i18n/client";
 const categorySchema = z.object({
   name: z
     .string()
+    .trim()
     .min(1, "Category name is required")
     .max(60, "Name must be 60 characters or less"),
   allocation_value: z
     .number({ message: "Allocation is required" })
-    .min(0, "Must be 0 or more")
+    .positive("Amount must be greater than 0")
     .max(1e15, "Amount exceeds maximum"),
   icon: z.string().min(1, "Pick an icon"),
 });
@@ -74,10 +80,10 @@ export function AddCategoryDialog({
 }: AddCategoryDialogProps) {
   const t = useTranslations("category");
   const tl = useTranslations("links");
-  const addCategory = useBudgetStore((s) => s.addCategory);
-  const createLink = useBudgetStore((s) => s.createLink);
-  const refreshSummary = useBudgetStore((s) => s.refreshSummary);
-  const summary = useBudgetStore((s) => s.summary);
+  const activeBudgetId = useActiveBudgetStore((s) => s.activeBudgetId);
+  const { data: summary } = useBudgetSummary(activeBudgetId ?? undefined);
+  const addCategoryMut = useCreateCategory(activeBudgetId ?? "");
+  const createLinkMut = useCreateLink(activeBudgetId ?? "");
   const currencyInfo = CURRENCIES.find((c) => c.code === summary?.budget.currency);
   const currencySymbol = currencyInfo?.symbol || "$";
   const currencyLocale = currencyInfo?.locale || "en-US";
@@ -196,13 +202,11 @@ export function AddCategoryDialog({
     }
     setIsSubmitting(true);
     try {
-      await addCategory({
+      await addCategoryMut.mutateAsync({
         name: values.name,
         allocation_value: values.allocation_value,
         icon: values.icon,
       });
-
-      await refreshSummary();
       onOpenChange(false);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "An error occurred");
@@ -232,7 +236,7 @@ export function AddCategoryDialog({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await createLink({
+      await createLinkMut.mutateAsync({
         source_budget_id: selectedBudget.id,
         source_category_id: selectedCategory.id,
         filter_mode: filterMode,

@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+
 import { Wallet } from "lucide-react";
+
 import { useTranslations } from "@/i18n/client";
-import { ThemeToggle, UserIndicator } from "./user-controls";
+
 import { LanguageSwitcher } from "./language-switcher";
+import { ThemeToggle, UserIndicator } from "./user-controls";
 
 export function Navbar() {
   const tApp = useTranslations("app");

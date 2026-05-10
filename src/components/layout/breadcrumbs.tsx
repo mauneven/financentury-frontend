@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePathname, useParams } from "next/navigation";
-import { useBudgetStore } from "@/store/budget-store";
-import { useTranslations } from "@/i18n/client";
-import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useParams,usePathname } from "next/navigation";
+
+import { ChevronRight } from "lucide-react";
+
+import { useBudgets, useBudgetSummary } from "@/hooks/use-budget-queries";
+import { useTranslations } from "@/i18n/client";
 
 interface BreadcrumbSegment {
   label: string;
@@ -21,8 +23,8 @@ export function Breadcrumbs() {
   // Destructure to primitives for stable useMemo deps.
   const paramId = params.id;
   const paramCategoryId = params.categoryId;
-  const summary = useBudgetStore((s) => s.summary);
-  const budgets = useBudgetStore((s) => s.budgets);
+  const { data: summary } = useBudgetSummary(paramId);
+  const { data: budgets = [] } = useBudgets();
   const t = useTranslations("navbar");
 
   const basePath = "/budget";

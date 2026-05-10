@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
+
 import {
-  AreaChart,
   Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
+
+import { useTranslations } from "@/i18n/client";
+import { formatCompact } from "@/lib/format";
 import type { Expense } from "@/types/budget";
 import { CURRENCIES } from "@/types/budget";
-import { formatCompact } from "@/lib/format";
-import { useTranslations } from "@/i18n/client";
 
 interface SpendingChartProps {
   expenses: Expense[];
@@ -78,25 +80,39 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
   const [range, setRange] = useState<Range>("6M");
   const t = useTranslations("dashboard");
 
-  // Group expenses by date and sum amounts.
+  // Group expenses (own + linked) by date and sum amounts.
   const dateTotals = new Map<string, number>();
   for (const exp of expenses) {
-    if (exp.expense_date) {
-      dateTotals.set(
-        exp.expense_date,
-        (dateTotals.get(exp.expense_date) || 0) + exp.amount
-      );
-    }
+    if (!exp?.expense_date) continue;
+    const amount = Number(exp.amount);
+    if (!Number.isFinite(amount)) continue;
+    // Normalize to YYYY-MM-DD so timestamps and date-only both bucket daily.
+    const dayKey = exp.expense_date.slice(0, 10);
+    dateTotals.set(dayKey, (dateTotals.get(dayKey) ?? 0) + amount);
   }
-  const chartData = Array.from(dateTotals.keys())
-    .sort()
-    .map((date) => ({ date, total: dateTotals.get(date) || 0 }));
 
-  // Filter by selected time range.
+  // Zero-fill every day from cutoff → today so the line reflects real daily
+  // spending (with 0 on idle days) instead of connecting sparse expense-days
+  // into an apparent upward climb.
   const rangeMonths = { "1M": 1, "3M": 3, "6M": 6, "1Y": 12 } as const;
   const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
   cutoff.setMonth(cutoff.getMonth() - rangeMonths[range]);
-  const filteredData = chartData.filter((d) => new Date(d.date) >= cutoff);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const filteredData: { date: string; total: number }[] = [];
+  const cursor = new Date(cutoff);
+  while (cursor <= today) {
+    const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+    filteredData.push({ date: iso, total: dateTotals.get(iso) ?? 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // If the user has no expenses in the range at all, treat as empty state.
+  const hasAnySpend = filteredData.some((d) => d.total > 0);
+  if (!hasAnySpend) {
+    filteredData.length = 0;
+  }
 
   if (filteredData.length === 0) {
     return (
@@ -160,16 +176,17 @@ export function SpendingChart({ expenses, currency }: SpendingChartProps) {
               itemStyle={{ color: "var(--foreground)" }}
               formatter={(value) => [
                 formatCompact(Number(value), currency),
-                "Total",
+                t("totalSpent"),
               ]}
             />
             <Area
-              type="natural"
+              type="monotone"
               dataKey="total"
               stroke="var(--foreground)"
               fill="url(#gradient-total)"
               strokeWidth={1.5}
-              dot={{ fill: "var(--foreground)", r: 3, strokeWidth: 0 }}
+              dot={false}
+              activeDot={{ fill: "var(--foreground)", r: 3, strokeWidth: 0 }}
               isAnimationActive
               animationBegin={0}
               animationDuration={700}

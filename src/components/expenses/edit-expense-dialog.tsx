@@ -1,35 +1,34 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect,useState } from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { format } from "date-fns";
 import {
+  AlertCircle,
   Calendar as CalendarIcon,
   Loader2,
   Trash2,
-  AlertCircle,
 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const ICON_STROKE = 1.8;
 
-import type { Expense, Category } from "@/types/budget";
-import { CURRENCIES } from "@/types/budget";
-import { useBudgetStore } from "@/store/budget-store";
-import { maskAmountInput, parseAmount, formatAmount } from "@/lib/amount-utils";
-import { useTranslations } from "@/i18n/client";
-import { CategoryIcon } from "@/lib/icon-picker";
-
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -37,18 +36,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useTranslations } from "@/i18n/client";
+import { formatAmount,maskAmountInput, parseAmount } from "@/lib/amount-utils";
+import { expenseApi } from "@/lib/api";
+import { CategoryIcon } from "@/lib/icon-picker";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { qk } from "@/lib/query-keys";
+import { useActiveBudgetStore } from "@/store/active-budget-store";
+import type { Category,Expense } from "@/types/budget";
+import { CURRENCIES } from "@/types/budget";
+
+function isValidExpenseDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + "T00:00:00");
+  if (isNaN(d.getTime())) return false;
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  if (d.getTime() > today.getTime()) return false;
+  if (d.getFullYear() < 2000) return false;
+  return true;
+}
 
 const expenseSchema = z.object({
   category_id: z.string().uuid("Please select a category"),
-  amount: z.number().positive("Amount must be greater than 0").max(1e15, "Amount exceeds maximum"),
-  description: z.string().max(500, "Description must be 500 characters or fewer").optional(),
-  expense_date: z.string().min(1, "Date is required"),
+  amount: z
+    .number()
+    .positive("Amount must be greater than 0")
+    .max(1e15, "Amount exceeds maximum"),
+  description: z
+    .string()
+    .max(500, "Description must be 500 characters or fewer")
+    .optional(),
+  expense_date: z
+    .string()
+    .min(1, "Date is required")
+    .refine(isValidExpenseDate, "Date must be valid and not in the future"),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -71,15 +95,29 @@ export function EditExpenseDialog({
 }: EditExpenseDialogProps) {
   const t = useTranslations("expense");
   const tc = useTranslations("common");
-  const updateExpense = useBudgetStore((s) => s.updateExpense);
-  const deleteExpense = useBudgetStore((s) => s.deleteExpense);
+  const queryClient = useQueryClient();
+  const activeBudgetId = useActiveBudgetStore((s) => s.activeBudgetId);
+
+  // Invalidate both the expense's own budget (the row's source of truth)
+  // and the currently-viewed active budget (whose summary aggregates linked
+  // spending). One helper covers both update + delete paths.
+  const invalidateAffectedBudgets = () => {
+    queryClient.invalidateQueries({
+      queryKey: qk.budget.detail(expense.budget_id),
+    });
+    if (activeBudgetId && activeBudgetId !== expense.budget_id) {
+      queryClient.invalidateQueries({
+        queryKey: qk.budget.detail(activeBudgetId),
+      });
+    }
+  };
 
   const [amountDisplay, setAmountDisplay] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const currencyInfo = CURRENCIES.find((c) => c.code === currency);
   const currencySymbol = currencyInfo?.symbol || "$";
@@ -100,9 +138,16 @@ export function EditExpenseDialog({
   const watchedDate = watch("expense_date");
 
   useEffect(() => {
+    // Reset every piece of transient state when the dialog opens so a
+    // previous submit/delete failure or in-flight flag doesn't leak into
+    // the next session.
     if (open && expense) {
       setAmountDisplay(formatAmount(expense.amount, currencyLocale));
       setShowDeleteConfirm(false);
+      setIsSubmitting(false);
+      setIsDeleting(false);
+      setSubmitError(null);
+      setCalendarOpen(false);
 
       reset({
         category_id: expense.category_id,
@@ -132,12 +177,13 @@ export function EditExpenseDialog({
     setSubmitError(null);
     setIsSubmitting(true);
     try {
-      await updateExpense(expense.budget_id, expense.id, {
+      await expenseApi.update(expense.budget_id, expense.id, {
         category_id: data.category_id,
         amount: data.amount,
         description: data.description || undefined,
         expense_date: data.expense_date,
       });
+      invalidateAffectedBudgets();
       onOpenChange(false);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "An error occurred");
@@ -149,7 +195,10 @@ export function EditExpenseDialog({
     setSubmitError(null);
     setIsDeleting(true);
     try {
-      await deleteExpense(expense.id);
+      // Always delete against the expense's own budget — for linked
+      // expenses that's a foreign source budget, not the active one.
+      await expenseApi.delete(expense.budget_id, expense.id);
+      invalidateAffectedBudgets();
       onOpenChange(false);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "An error occurred");
@@ -280,7 +329,12 @@ export function EditExpenseDialog({
             )}
           </div>
 
-          {submitError && <p className="text-xs text-destructive">{submitError}</p>}
+          {submitError && (
+            <p className="flex items-center gap-1 text-xs text-destructive">
+              <AlertCircle className="size-3" strokeWidth={ICON_STROKE} />
+              {submitError}
+            </p>
+          )}
 
           <DialogFooter>
             {!showDeleteConfirm ? (

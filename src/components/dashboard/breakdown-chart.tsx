@@ -1,9 +1,10 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import type { BudgetSummary } from "@/types/budget";
-import { formatCompact, getPercentage } from "@/lib/format";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+
 import { useTranslations } from "@/i18n/client";
+import { formatCompact, getPercentage } from "@/lib/format";
+import type { BudgetSummary } from "@/types/budget";
 
 const CATEGORY_COLORS = [
   "#6366f1", // indigo
@@ -33,6 +34,8 @@ export function BreakdownChart({ summary }: BreakdownChartProps) {
   const scopedSpent = total_spent;
   const scopedBudget = total_budget;
   const spentPercentage = getPercentage(scopedSpent, scopedBudget);
+  // Cap the arc at a full circle so over-budget doesn't overlap itself.
+  const arcPercentage = Math.min(spentPercentage, 100);
   const remaining = Math.max(scopedBudget - scopedSpent, 0);
   const t = useTranslations("dashboard");
 
@@ -134,7 +137,7 @@ export function BreakdownChart({ summary }: BreakdownChartProps) {
                 strokeWidth={2}
                 stroke="var(--background)"
                 startAngle={90}
-                endAngle={90 - (spentPercentage / 100) * 360}
+                endAngle={90 - (arcPercentage / 100) * 360}
                 isAnimationActive
                 animationBegin={150}
                 animationDuration={800}

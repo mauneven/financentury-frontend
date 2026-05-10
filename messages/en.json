@@ -220,11 +220,11 @@
     "signingIn": "Signing in..."
   },
   "landing": {
-    "letsStart": "Let's start",
+    "letsStart": "Let's start — free",
     "authDescription": "Sign in with Google to access your financial workspace.",
     "tagline": "Budget with precision. Track every expense. Make decisions with real data — not guesses.",
-    "statFree": "$0/Month",
-    "statFreeLabel": "It's free",
+    "statFree": "",
+    "statFreeLabel": "",
     "statExpenses": "3,000",
     "statExpensesLabel": "Expenses per budget",
     "statBudgets": "7",
@@ -313,6 +313,10 @@
     "errorLoadingSessions": "Could not load sessions",
     "retry": "Retry",
     "lastActive": "Last active",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
     "dangerZone": "Danger Zone",
     "deleteAccount": "Delete Account",
     "deleteAccountDescription": "Permanently delete your account and all associated data. This action cannot be undone.",
@@ -337,7 +341,10 @@
     "budgetName": "Budget",
     "accepting": "Joining...",
     "invalidLink": "This invite link is invalid",
-    "generating": "Generating..."
+    "generating": "Generating...",
+    "share": "Share",
+    "shareText": "Join my budget",
+    "goToBudgets": "Go to your budgets"
   },
   "links": {
     "linkCategory": "Link Category",

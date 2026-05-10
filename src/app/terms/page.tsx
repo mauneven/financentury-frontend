@@ -1,9 +1,11 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "@/i18n/client";
+
+import { ArrowLeft } from "lucide-react";
+
 import { Footer } from "@/components/layout/footer";
+import { useTranslations } from "@/i18n/client";
 
 export default function TermsPage() {
   const t = useTranslations("terms");

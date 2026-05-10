@@ -1,38 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import {
-  ChevronDown,
-  ChevronUp,
-  Home,
-  UtensilsCrossed,
-  Car,
-  Lightbulb,
-  PartyPopper,
-  Coffee,
-  ShoppingCart,
-  TrendingUp,
-  Landmark,
-  Coins,
-} from "lucide-react";
+
+import { BreakdownChart } from "@/components/dashboard/breakdown-chart";
+import { CategoryCard } from "@/components/dashboard/category-card";
+import { OverviewCards } from "@/components/dashboard/overview-cards";
+import { SpendingChart } from "@/components/dashboard/spending-chart";
 import { useTranslations } from "@/i18n/client";
 import { cn } from "@/lib/utils";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import {
+  BALANCED_CATEGORIES,
+  type BudgetMode,
+  type BudgetSummary,
+  type CategorySummary,
+  type CategoryTemplate,
+  DEBT_FREE_CATEGORIES,
+  DEBT_PAYOFF_CATEGORIES,
+  type Expense,
+} from "@/types/budget";
 
 type Currency = "USD" | "EUR" | "COP" | "MXN" | "BRL";
 
@@ -41,41 +26,11 @@ interface IncomePreset {
   value: number;
 }
 
-interface FinancialProfile {
+interface ProfileOption {
   key: string;
-  needs: number;
-  wants: number;
-  savings: number;
-  debt: number;
+  mode: BudgetMode;
+  template: CategoryTemplate;
 }
-
-interface DayExpense {
-  day: number;
-  amount: number;
-  cumulative: number;
-}
-
-interface CategorySlice {
-  name: string;
-  translationKey: string;
-  value: number;
-  spent: number;
-  color: string;
-  icon: React.ReactNode;
-}
-
-interface DemoSection {
-  name: string;
-  translationKey: string;
-  icon: React.ReactNode;
-  categories: CategorySlice[];
-  allocated: number;
-  spent: number;
-}
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 const CURRENCIES: Currency[] = ["USD", "EUR", "COP", "MXN", "BRL"];
 
@@ -125,298 +80,19 @@ const DEFAULT_INCOME_INDEX: Record<Currency, number> = {
   BRL: 2,
 };
 
-const PROFILES: FinancialProfile[] = [
-  { key: "profileDebtFree", needs: 50, wants: 30, savings: 20, debt: 0 },
-  { key: "profileLowDebt", needs: 50, wants: 30, savings: 10, debt: 10 },
-  { key: "profileRecovery", needs: 50, wants: 30, savings: 0, debt: 20 },
+const PROFILES: ProfileOption[] = [
+  { key: "profileDebtFree", mode: "debt-free", template: DEBT_FREE_CATEGORIES },
+  { key: "profileLowDebt", mode: "balanced", template: BALANCED_CATEGORIES },
+  { key: "profileRecovery", mode: "debt-payoff", template: DEBT_PAYOFF_CATEGORIES },
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  catHousing: "#6366f1",
-  catFood: "#f43f5e",
-  catTransport: "#f97316",
-  catUtilities: "#14b8a6",
-  catEntertainment: "#eab308",
-  catDining: "#22c55e",
-  catShopping: "#ec4899",
-  catEmergencyFund: "#3b82f6",
-  catInvestment: "#6366f1",
-  catDebt: "#f43f5e",
-};
-
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  catHousing: <Home className="size-4" strokeWidth={1.8} />,
-  catFood: <UtensilsCrossed className="size-4" strokeWidth={1.8} />,
-  catTransport: <Car className="size-4" strokeWidth={1.8} />,
-  catUtilities: <Lightbulb className="size-4" strokeWidth={1.8} />,
-  catEntertainment: <PartyPopper className="size-4" strokeWidth={1.8} />,
-  catDining: <Coffee className="size-4" strokeWidth={1.8} />,
-  catShopping: <ShoppingCart className="size-4" strokeWidth={1.8} />,
-  catEmergencyFund: <Landmark className="size-4" strokeWidth={1.8} />,
-  catInvestment: <TrendingUp className="size-4" strokeWidth={1.8} />,
-  catDebt: <Coins className="size-4" strokeWidth={1.8} />,
-};
-
-const SECTION_ICONS: Record<string, React.ReactNode> = {
-  sectionNeeds: <Home className="size-5" strokeWidth={1.8} />,
-  sectionWants: <PartyPopper className="size-5" strokeWidth={1.8} />,
-  sectionSavings: <Landmark className="size-5" strokeWidth={1.8} />,
-  sectionDebt: <Coins className="size-5" strokeWidth={1.8} />,
-};
-
-const TOOLTIP_STYLE: React.CSSProperties = {
-  backgroundColor: "var(--card)",
-  border: "1px solid var(--border)",
-  borderRadius: "0.75rem",
-  fontSize: "0.75rem",
-  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  color: "var(--foreground)",
-};
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatAmount(value: number, currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: "$",
-    EUR: "\u20AC",
-    COP: "$",
-    MXN: "$",
-    BRL: "R$",
-  };
-  const sym = symbols[currency] || "$";
-  if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `${sym}${(value / 1000).toFixed(0)}K`;
-  return `${sym}${Math.round(value)}`;
-}
-
-function formatFull(value: number, currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: "$",
-    EUR: "\u20AC",
-    COP: "$",
-    MXN: "$",
-    BRL: "R$",
-  };
-  const sym = symbols[currency] || "$";
-  return `${sym}${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
-
-function formatAxisValue(value: number, currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: "$",
-    EUR: "\u20AC",
-    COP: "$",
-    MXN: "$",
-    BRL: "R$",
-  };
-  const sym = symbols[currency] || "$";
-  if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `${sym}${(value / 1000).toFixed(0)}K`;
-  return `${sym}${value}`;
-}
-
-/** Deterministic seeded pseudo-random number generator */
 function seededRandom(seed: number): () => number {
-  let s = seed;
+  let s = seed || 1;
   return () => {
-    s = (s * 16807 + 0) % 2147483647;
+    s = (s * 16807) % 2147483647;
     return (s - 1) / 2147483646;
   };
 }
-
-function getProgressColor(pct: number): string {
-  if (pct >= 100) return "bg-red-500";
-  if (pct >= 90) return "bg-amber-500";
-  return "bg-emerald-500";
-}
-
-function getProgressTextColor(pct: number): string {
-  if (pct >= 100) return "text-red-600 dark:text-red-400";
-  if (pct >= 90) return "text-amber-600 dark:text-amber-400";
-  return "text-emerald-600 dark:text-emerald-400";
-}
-
-function generateAreaChartData(
-  income: number,
-  profile: FinancialProfile
-): DayExpense[] {
-  const totalBudget = income * ((profile.needs + profile.wants) / 100);
-  const rand = seededRandom(income + profile.needs * 100 + profile.debt * 10);
-
-  const allDays = Array.from({ length: 30 }, (_, i) => i + 1);
-  const expenseDays = new Set<number>();
-  expenseDays.add(1);
-  expenseDays.add(5);
-  expenseDays.add(10);
-  expenseDays.add(15);
-  expenseDays.add(20);
-  expenseDays.add(25);
-
-  while (expenseDays.size < 18) {
-    const idx = Math.floor(rand() * 30);
-    expenseDays.add(allDays[idx]);
-  }
-
-  const dayAmounts = new Map<number, number>();
-  let remaining = totalBudget;
-
-  const rent = income * (profile.needs / 100) * (0.3 + rand() * 0.1);
-  dayAmounts.set(1, rent);
-  remaining -= rent;
-
-  const otherDays = Array.from(expenseDays).filter((d) => d !== 1);
-  const weights = otherDays.map(() => 0.3 + rand() * 0.7);
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-
-  otherDays.forEach((day, i) => {
-    const amount = (remaining * weights[i]) / totalWeight;
-    const varied = amount * (0.6 + rand() * 0.8);
-    dayAmounts.set(day, Math.max(varied, 0));
-  });
-
-  let cumulative = 0;
-  const data: DayExpense[] = [];
-  for (let day = 1; day <= 30; day++) {
-    const amount = dayAmounts.get(day) || 0;
-    cumulative += amount;
-    data.push({
-      day,
-      amount: Math.round(amount),
-      cumulative: Math.round(cumulative),
-    });
-  }
-
-  return data;
-}
-
-function generateSections(
-  income: number,
-  profile: FinancialProfile
-): DemoSection[] {
-  const rand = seededRandom(income * 3 + profile.debt * 7);
-  const sections: DemoSection[] = [];
-
-  // Needs section
-  const needsTotal = income * (profile.needs / 100);
-  const needsSplit = [0.4, 0.25, 0.2, 0.15];
-  const needsKeys = ["catHousing", "catFood", "catTransport", "catUtilities"];
-  const needsCats: CategorySlice[] = needsSplit.map((pct, i) => {
-    const allocated = Math.round(needsTotal * pct);
-    const spentRatio = 0.55 + rand() * 0.4; // 55-95% spent
-    const spent = Math.round(allocated * spentRatio);
-    return {
-      name: needsKeys[i],
-      translationKey: needsKeys[i],
-      value: allocated,
-      spent,
-      color: CATEGORY_COLORS[needsKeys[i]],
-      icon: CATEGORY_ICONS[needsKeys[i]],
-    };
-  });
-  const needsSpent = needsCats.reduce((s, c) => s + c.spent, 0);
-  sections.push({
-    name: "sectionNeeds",
-    translationKey: "sectionNeeds",
-    icon: SECTION_ICONS["sectionNeeds"],
-    categories: needsCats,
-    allocated: Math.round(needsTotal),
-    spent: needsSpent,
-  });
-
-  // Wants section
-  const wantsTotal = income * (profile.wants / 100);
-  const wantsSplit = [0.35, 0.35, 0.3];
-  const wantsKeys = ["catEntertainment", "catDining", "catShopping"];
-  const wantsCats: CategorySlice[] = wantsSplit.map((pct, i) => {
-    const allocated = Math.round(wantsTotal * pct);
-    const spentRatio = 0.4 + rand() * 0.5; // 40-90% spent
-    const spent = Math.round(allocated * spentRatio);
-    return {
-      name: wantsKeys[i],
-      translationKey: wantsKeys[i],
-      value: allocated,
-      spent,
-      color: CATEGORY_COLORS[wantsKeys[i]],
-      icon: CATEGORY_ICONS[wantsKeys[i]],
-    };
-  });
-  const wantsSpent = wantsCats.reduce((s, c) => s + c.spent, 0);
-  sections.push({
-    name: "sectionWants",
-    translationKey: "sectionWants",
-    icon: SECTION_ICONS["sectionWants"],
-    categories: wantsCats,
-    allocated: Math.round(wantsTotal),
-    spent: wantsSpent,
-  });
-
-  // Savings section
-  if (profile.savings > 0) {
-    const savingsTotal = income * (profile.savings / 100);
-    const savingsKeys =
-      profile.savings >= 20
-        ? ["catEmergencyFund", "catInvestment"]
-        : ["catEmergencyFund"];
-    const savingsSplit =
-      profile.savings >= 20 ? [0.5, 0.5] : [1];
-    const savingsCats: CategorySlice[] = savingsSplit.map((pct, i) => {
-      const allocated = Math.round(savingsTotal * pct);
-      const spentRatio = 0.3 + rand() * 0.4; // 30-70% "spent" (saved)
-      const spent = Math.round(allocated * spentRatio);
-      return {
-        name: savingsKeys[i],
-        translationKey: savingsKeys[i],
-        value: allocated,
-        spent,
-        color: CATEGORY_COLORS[savingsKeys[i]],
-        icon: CATEGORY_ICONS[savingsKeys[i]],
-      };
-    });
-    const savingsSpent = savingsCats.reduce((s, c) => s + c.spent, 0);
-    sections.push({
-      name: "sectionSavings",
-      translationKey: "sectionSavings",
-      icon: SECTION_ICONS["sectionSavings"],
-      categories: savingsCats,
-      allocated: Math.round(savingsTotal),
-      spent: savingsSpent,
-    });
-  }
-
-  // Debt section
-  if (profile.debt > 0) {
-    const debtTotal = income * (profile.debt / 100);
-    const allocated = Math.round(debtTotal);
-    const spentRatio = 0.6 + rand() * 0.35;
-    const spent = Math.round(allocated * spentRatio);
-    const debtCats: CategorySlice[] = [
-      {
-        name: "catDebt",
-        translationKey: "catDebt",
-        value: allocated,
-        spent,
-        color: CATEGORY_COLORS["catDebt"],
-        icon: CATEGORY_ICONS["catDebt"],
-      },
-    ];
-    sections.push({
-      name: "sectionDebt",
-      translationKey: "sectionDebt",
-      icon: SECTION_ICONS["sectionDebt"],
-      categories: debtCats,
-      allocated,
-      spent,
-    });
-  }
-
-  return sections;
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
 
 function SelectorButton({
   label,
@@ -443,262 +119,91 @@ function SelectorButton({
   );
 }
 
-function DemoOverviewCards({
-  totalBudget,
-  totalSpent,
-  currency,
-  t,
-}: {
-  totalBudget: number;
-  totalSpent: number;
-  currency: string;
-  t: (key: string) => string;
-}) {
-  const remaining = totalBudget - totalSpent;
-  const spentPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
-  const isOver = remaining < 0;
-  const remainingPct = totalBudget > 0 ? Math.round(((totalBudget - totalSpent) / totalBudget) * 100) : 0;
+function buildSummary(
+  income: number,
+  currency: Currency,
+  profile: ProfileOption,
+  rand: () => number
+): { summary: BudgetSummary; expenses: Expense[] } {
+  const now = new Date().toISOString();
+  const budgetId = "landing-demo";
 
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {/* Total Budget */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
-        <p className="text-xs font-medium text-muted-foreground">
-          {t("demoTotalBudget")}
-        </p>
-        <p className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums tracking-tight text-foreground">
-          {formatFull(totalBudget, currency)}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {t("demoMonthly")}
-        </p>
-      </div>
+  const categories: CategorySummary[] = profile.template.map((tpl, i) => {
+    const allocated = Math.round(income * (tpl.pct / 100));
+    const spentRatio = 0.4 + rand() * 0.55;
+    const spent = Math.round(allocated * spentRatio);
+    return {
+      category: {
+        id: `${budgetId}-cat-${i}`,
+        budget_id: budgetId,
+        name: tpl.name,
+        allocation_value: allocated,
+        icon: tpl.icon,
+        sort_order: i,
+        created_at: now,
+      },
+      allocated_amount: allocated,
+      total_spent: spent,
+      expense_count: Math.round(spent / 50) + 1,
+    };
+  });
 
-      {/* Total Spent */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
-        <p className="text-xs font-medium text-muted-foreground">
-          {t("demoTotalSpent")}
-        </p>
-        <p className="mt-2 text-2xl sm:text-3xl font-bold tabular-nums tracking-tight text-foreground">
-          {formatFull(totalSpent, currency)}
-        </p>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="inline-block size-2 rounded-full bg-foreground/40" />
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {spentPct}% {t("used")}
-          </p>
-        </div>
-      </div>
+  const total_spent = categories.reduce((s, c) => s + c.total_spent, 0);
 
-      {/* Remaining */}
-      <div
-        className={cn(
-          "rounded-xl border border-border bg-card p-4 sm:p-5",
-          isOver ? "border-l-4 border-l-red-500" : "border-l-4 border-l-emerald-500"
-        )}
-      >
-        <p className="text-xs font-medium text-muted-foreground">
-          {t("demoRemaining")}
-        </p>
-        <p
-          className={cn(
-            "mt-2 text-2xl sm:text-3xl font-bold tabular-nums tracking-tight",
-            isOver ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
-          )}
-        >
-          {isOver ? "-" : ""}
-          {formatFull(Math.abs(remaining), currency)}
-        </p>
-        <div className="mt-1 flex items-center gap-2">
-          <span
-            className={cn(
-              "inline-block size-2 rounded-full",
-              isOver ? "bg-red-500" : "bg-emerald-500"
-            )}
-          />
-          <p
-            className={cn(
-              "text-xs tabular-nums",
-              isOver ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"
-            )}
-          >
-            {remainingPct}% {t("demoRemainingLabel")}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  const summary: BudgetSummary = {
+    budget: {
+      id: budgetId,
+      user_id: "landing-user",
+      name: "Demo Budget",
+      icon: "landmark",
+      monthly_income: income,
+      currency,
+      billing_period_months: 1,
+      billing_cutoff_day: 1,
+      mode: profile.mode,
+      created_at: now,
+      updated_at: now,
+    },
+    categories,
+    total_budget: income,
+    total_spent,
+  };
+
+  // Build 6 months of expense history, descending to the current month.
+  const expenses: Expense[] = [];
+  const today = new Date();
+  let eid = 0;
+  for (let monthsAgo = 5; monthsAgo >= 0; monthsAgo--) {
+    const base = new Date(today.getFullYear(), today.getMonth() - monthsAgo, 1);
+    const daysInMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+    // Each category scatters ~6 expenses across the month. Scale magnitude
+    // with a per-month drift so the spending-trend line isn't flat.
+    const monthDrift = 0.7 + rand() * 0.6;
+    for (const c of categories) {
+      const target = c.total_spent * monthDrift;
+      const ticks = 5 + Math.floor(rand() * 3);
+      const weights = Array.from({ length: ticks }, () => 0.3 + rand());
+      const wsum = weights.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < ticks; i++) {
+        const day = 1 + Math.floor(rand() * daysInMonth);
+        const iso = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const amount = Math.round((target * weights[i]) / wsum);
+        if (amount <= 0) continue;
+        expenses.push({
+          id: `exp-${eid++}`,
+          budget_id: budgetId,
+          category_id: c.category.id,
+          amount,
+          description: c.category.name,
+          expense_date: iso,
+          created_at: now,
+        });
+      }
+    }
+  }
+
+  return { summary, expenses };
 }
-
-function DemoSectionCard({
-  section,
-  currency,
-  t,
-}: {
-  section: DemoSection;
-  currency: string;
-  t: (key: string) => string;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const pct = section.allocated > 0 ? Math.round((section.spent / section.allocated) * 100) : 0;
-  const remaining = section.allocated - section.spent;
-  const progressColor = getProgressColor(pct);
-  const textColor = getProgressTextColor(pct);
-
-  return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="p-4 sm:p-5">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-foreground">{section.icon}</span>
-            <div>
-              <h3 className="text-base font-semibold text-foreground">
-                {t(section.translationKey)}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {section.categories.length} {section.categories.length === 1 ? t("demoCategory") : t("demoCategories")}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsExpanded((p) => !p)}
-              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted flex items-center gap-1"
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="size-3" strokeWidth={1.8} />
-                  <span className="hidden sm:inline">{t("demoCollapse")}</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="size-3" strokeWidth={1.8} />
-                  <span className="hidden sm:inline">{t("demoBreakdown")}</span>
-                </>
-              )}
-            </button>
-            <div className="text-right">
-              <p className="text-lg sm:text-xl font-bold tabular-nums text-foreground">
-                {formatAmount(section.allocated, currency)}
-              </p>
-              <p className={cn("text-xs font-medium tabular-nums", textColor)}>
-                {pct}% {t("used")}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Spent / Left */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-          <span>
-            {t("demoSpent")}:{" "}
-            <span className="font-semibold tabular-nums text-foreground">
-              {formatAmount(section.spent, currency)}
-            </span>
-          </span>
-          <span>
-            {t("demoLeft")}:{" "}
-            <span
-              className={cn(
-                "font-semibold tabular-nums",
-                remaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground"
-              )}
-            >
-              {remaining < 0 ? "-" : ""}
-              {formatAmount(Math.abs(remaining), currency)}
-            </span>
-          </span>
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className={cn("h-full rounded-full transition-all duration-300", progressColor)}
-            style={{ width: `${Math.min(pct, 100)}%` }}
-          />
-        </div>
-
-        {/* Expandable categories */}
-        <div
-          className={cn(
-            "grid transition-[grid-template-rows] duration-200 ease-in-out",
-            isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-          )}
-        >
-          <div className="overflow-hidden">
-            <div className="mt-4 border-t border-border pt-4 space-y-0">
-              {section.categories.map((cat, idx) => {
-                const catPct = cat.value > 0 ? Math.round((cat.spent / cat.value) * 100) : 0;
-                const catProgress = getProgressColor(catPct);
-                const catText = getProgressTextColor(catPct);
-                const catRemaining = cat.value - cat.spent;
-
-                return (
-                  <div
-                    key={cat.name}
-                    className={cn(
-                      "flex flex-col gap-1.5 px-2 py-2.5",
-                      idx !== 0 && "border-t border-border"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">{cat.icon}</span>
-                        <span className="text-sm font-medium text-foreground">
-                          {t(cat.translationKey)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-semibold tabular-nums text-foreground">
-                          {formatAmount(cat.value, currency)}
-                        </span>
-                        <span
-                          className={cn(
-                            "min-w-[2rem] text-right text-xs font-medium tabular-nums",
-                            catText
-                          )}
-                        >
-                          {catPct}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={cn("h-full rounded-full transition-all duration-300", catProgress)}
-                        style={{ width: `${Math.min(catPct, 100)}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="tabular-nums">
-                        {formatAmount(cat.spent, currency)} {t("demoSpent").toLowerCase()}
-                      </span>
-                      <span
-                        className={cn(
-                          "tabular-nums",
-                          catRemaining < 0 ? "text-red-600 dark:text-red-400" : ""
-                        )}
-                      >
-                        {catRemaining < 0 ? "-" : ""}
-                        {formatAmount(Math.abs(catRemaining), currency)} {t("demoLeft").toLowerCase()}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main Component
-// ---------------------------------------------------------------------------
 
 export function LandingCharts() {
   const t = useTranslations("landing");
@@ -718,31 +223,18 @@ export function LandingCharts() {
     setIncomeIndex(DEFAULT_INCOME_INDEX[c]);
   };
 
-  // Generate data
-  const areaData = useMemo(
-    () => generateAreaChartData(income, profile),
-    [income, profile]
-  );
-
-  const sections = useMemo(
-    () => generateSections(income, profile),
-    [income, profile]
-  );
-
-  const totalBudget = income;
-  const totalSpent = sections.reduce((s, sec) => s + sec.spent, 0);
-  const budgetPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
-  const budgetProgressColor = budgetPct >= 100 ? "bg-red-600" : budgetPct >= 75 ? "bg-yellow-500" : "bg-emerald-600";
-  const budgetTextColor = budgetPct >= 100 ? "text-red-600 dark:text-red-400" : budgetPct >= 75 ? "text-yellow-600 dark:text-yellow-400" : "text-emerald-600";
-
-  // Flatten for pie chart
-  const categoryData = sections.flatMap((sec) => sec.categories);
-  const spentPercentage = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+  const { summary, expenses } = useMemo(() => {
+    const seed =
+      income +
+      profileIndex * 97 +
+      (currency.charCodeAt(0) + currency.charCodeAt(1)) * 13;
+    return buildSummary(income, currency, profile, seededRandom(seed));
+  }, [income, currency, profile, profileIndex]);
 
   return (
     <div className="w-full">
       {/* ── Controls bar ─────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4 mb-4">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4 mb-6">
         <div className="flex flex-wrap gap-6">
           {/* Currency */}
           <div className="space-y-1.5">
@@ -797,249 +289,25 @@ export function LandingCharts() {
         </div>
       </div>
 
-      {/* ── Dashboard mock ───────────────────────────────────── */}
-      <div className="space-y-4">
-        {/* Overview Cards */}
-        <DemoOverviewCards
-          totalBudget={totalBudget}
-          totalSpent={totalSpent}
-          currency={currency}
-          t={t}
-        />
+      {/* Real dashboard components below — identical to /budget/[id]. */}
+      <div className="space-y-6">
+        <OverviewCards summary={summary} />
 
-        {/* Budget usage bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-sm">
-            <span className="text-xs font-medium text-muted-foreground">
-              {t("demoOfBudgetUsed")}
-            </span>
-            <span className={cn("font-semibold tabular-nums", budgetTextColor)}>
-              {budgetPct}%
-            </span>
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className={cn("h-full rounded-full transition-all duration-300", budgetProgressColor)}
-              style={{ width: `${Math.min(budgetPct, 100)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Charts Grid */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {/* Area Chart */}
-          <div className="lg:col-span-2 rounded-xl border border-border bg-card">
-            <div className="border-b border-border px-5 py-3">
-              <h3 className="text-sm font-semibold text-foreground">
-                {t("spendingTrends")}
-              </h3>
-            </div>
-            <div className="p-4 sm:p-5">
-              <div
-                className="h-56 sm:h-64 w-full [&_.recharts-surface]:outline-none [&_.recharts-surface:focus]:outline-none"
-                style={{ outline: "none" }}
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={areaData}
-                    margin={{ top: 5, right: 5, left: -10, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id="landing-area-gradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="var(--foreground)"
-                          stopOpacity={0.15}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="var(--foreground)"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--border)"
-                      strokeOpacity={0.5}
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="day"
-                      ticks={[1, 5, 10, 15, 20, 25, 30]}
-                      tick={{
-                        fontSize: 11,
-                        fill: "var(--muted-foreground)",
-                      }}
-                      tickLine={false}
-                      axisLine={{
-                        stroke: "var(--border)",
-                        strokeWidth: 1,
-                      }}
-                    />
-                    <YAxis
-                      tick={{
-                        fontSize: 11,
-                        fill: "var(--muted-foreground)",
-                      }}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value: number) =>
-                        formatAxisValue(value, currency)
-                      }
-                      width={50}
-                    />
-                    <Tooltip
-                      contentStyle={TOOLTIP_STYLE}
-                      labelStyle={{
-                        fontWeight: 600,
-                        marginBottom: 4,
-                        color: "var(--foreground)",
-                      }}
-                      labelFormatter={(label) => `${t("day")} ${label}`}
-                      itemStyle={{ color: "var(--foreground)" }}
-                      formatter={(value) => [
-                        formatAmount(Number(value), currency),
-                        t("cumulative"),
-                      ]}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="cumulative"
-                      stroke="var(--foreground)"
-                      fill="url(#landing-area-gradient)"
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive
-                      animationBegin={0}
-                      animationDuration={900}
-                      animationEasing="ease-out"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+          <div className="lg:col-span-2">
+            <SpendingChart expenses={expenses} currency={currency} />
           </div>
-
-          {/* Donut Chart */}
-          <div className="rounded-xl border border-border bg-card">
-            <div className="border-b border-border px-5 py-3">
-              <h3 className="text-sm font-semibold text-foreground">
-                {t("breakdown")}
-              </h3>
-            </div>
-            <div className="px-3 sm:px-5 py-5">
-              <div className="relative h-44 sm:h-48 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    {/* Background muted ring — no tooltip */}
-                    <Pie
-                      data={[{ value: 1 }]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="55%"
-                      outerRadius="80%"
-                      dataKey="value"
-                      strokeWidth={0}
-                      isAnimationActive
-                      animationBegin={0}
-                      animationDuration={600}
-                      animationEasing="ease-out"
-                      cursor="default"
-                      activeShape={undefined}
-                      tooltipType="none"
-                    >
-                      <Cell fill="var(--muted)" />
-                    </Pie>
-                    {/* Category slices */}
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="55%"
-                      outerRadius="80%"
-                      paddingAngle={1}
-                      dataKey="spent"
-                      nameKey="translationKey"
-                      strokeWidth={2}
-                      stroke="var(--background)"
-                      startAngle={90}
-                      endAngle={90 - (spentPercentage / 100) * 360}
-                      isAnimationActive
-                      animationBegin={200}
-                      animationDuration={900}
-                      animationEasing="ease-out"
-                      activeShape={undefined}
-                      cursor="pointer"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={index} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={TOOLTIP_STYLE}
-                      wrapperStyle={{ zIndex: 50 }}
-                      itemStyle={{ color: "var(--foreground)" }}
-                      formatter={(value, name) => [
-                        formatAmount(Number(value), currency),
-                        t(String(name)),
-                      ]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <p className="text-xl font-bold tabular-nums text-foreground">
-                    {formatAmount(totalSpent, currency)}
-                  </p>
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {spentPercentage}% {t("used")}
-                  </p>
-                </div>
-              </div>
-
-              {/* Legend */}
-              <div className="mt-3 grid grid-cols-2 gap-1.5">
-                {categoryData.map((entry) => (
-                  <div
-                    key={entry.name}
-                    className="flex items-center gap-1.5 min-h-[24px]"
-                  >
-                    <div
-                      className="size-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="truncate text-xs text-muted-foreground">
-                      {t(entry.translationKey)}
-                    </span>
-                    <span className="ml-auto text-xs font-semibold tabular-nums text-foreground">
-                      {formatAmount(entry.spent, currency)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <BreakdownChart summary={summary} />
         </div>
 
-        {/* Section Breakdown */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between border-b border-border pb-2">
-            <h2 className="text-base font-semibold text-foreground">
-              {t("demoSectionBreakdown")}
-            </h2>
-          </div>
-          {sections.map((sec) => (
-            <DemoSectionCard
-              key={sec.name}
-              section={sec}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {summary.categories.map((c) => (
+            <CategoryCard
+              key={c.category.id}
+              categorySummary={c}
               currency={currency}
-              t={t}
+              budgetId={summary.budget.id}
+              readOnly
             />
           ))}
         </div>

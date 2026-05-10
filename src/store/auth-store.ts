@@ -1,9 +1,10 @@
 "use client";
 
 import { create } from "zustand";
-import { budgetWS } from "@/lib/websocket";
-import { authApi } from "@/lib/api";
+
 import { seedDisplayOrderCache } from "@/hooks/use-display-order";
+import { authApi } from "@/lib/api";
+import { budgetWS } from "@/lib/websocket";
 
 export interface AuthUser {
   id: string;
@@ -105,15 +106,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
     fetch(`${API_BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
-      signal: controller.signal,
+      signal: AbortSignal.timeout(5_000),
     })
       .then((res) => {
-        clearTimeout(timeoutId);
         if (!res.ok) throw new Error("Unauthorized");
         return res.json();
       })
@@ -123,7 +120,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ user, token, loading: false });
       })
       .catch(() => {
-        clearTimeout(timeoutId);
         localStorage.removeItem("financentury_token");
         set({ user: null, token: null, loading: false });
       });

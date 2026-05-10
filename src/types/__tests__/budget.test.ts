@@ -1,14 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect,it } from "vitest";
+
 import type { BudgetMode } from "@/types/budget";
 import {
-  CURRENCIES,
-  BILLING_PERIODS,
   BALANCED_CATEGORIES,
+  BILLING_PERIODS,
+  CURRENCIES,
   DEBT_FREE_CATEGORIES,
   DEBT_PAYOFF_CATEGORIES,
-  TRAVEL_CATEGORIES,
   EVENT_CATEGORIES,
   MAX_CATEGORIES_PER_BUDGET,
+  TRAVEL_CATEGORIES,
 } from "@/types/budget";
 
 describe("BudgetMode type", () => {

@@ -1,10 +1,10 @@
 "use client";
 
-import type { BudgetSummary } from "@/types/budget";
-import { BILLING_PERIODS } from "@/types/budget";
+import { useTranslations } from "@/i18n/client";
 import { formatCurrency, getPercentage } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "@/i18n/client";
+import type { BudgetSummary } from "@/types/budget";
+import { BILLING_PERIODS } from "@/types/budget";
 
 interface OverviewCardsProps {
   summary: BudgetSummary;

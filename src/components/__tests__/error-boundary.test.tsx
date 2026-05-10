@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
+
+import { fireEvent,render, screen } from "@testing-library/react";
+import { beforeEach,describe, expect, it, vi } from "vitest";
+
 import { ErrorBoundary } from "@/components/error-boundary";
 
 // Suppress console.error from React's error boundary logging during tests

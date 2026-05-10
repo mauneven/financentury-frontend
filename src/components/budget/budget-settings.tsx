@@ -1,28 +1,34 @@
 "use client";
 
 import * as React from "react";
-import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Settings, Trash2, Loader2, Check, Users, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import type { Budget } from "@/types/budget";
-import { CURRENCIES, BILLING_PERIODS } from "@/types/budget";
-import { budgetApi } from "@/lib/api";
-import { maskAmountInput, parseAmount, formatAmount } from "@/lib/amount-utils";
-import { useBudgetStore } from "@/store/budget-store";
-import { useAuthStore } from "@/store/auth-store";
-
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, Link2,Loader2, Settings, Trash2, Users } from "lucide-react";
+import { Controller,useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { CollaboratorsList } from "@/components/budget/collaborators-list";
-import { PendingInvites } from "@/components/budget/pending-invites";
 import { InviteDialog } from "@/components/budget/invite-dialog";
-
+import { PendingInvites } from "@/components/budget/pending-invites";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -30,22 +36,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { useQueryClient } from "@tanstack/react-query";
+
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group";
+  useDeleteBudget,
+  useUpdateBudget,
+} from "@/hooks/use-budget-queries";
 import { useTranslations } from "@/i18n/client";
+import { formatAmount, maskAmountInput, parseAmount } from "@/lib/amount-utils";
+import { qk } from "@/lib/query-keys";
+import { useAuthStore } from "@/store/auth-store";
+import type { Budget } from "@/types/budget";
+import { BILLING_PERIODS, CURRENCIES } from "@/types/budget";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -85,8 +88,9 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
   const tInvite = useTranslations("invite");
   const tCollab = useTranslations("collaborators");
   const router = useRouter();
-  const deleteBudget = useBudgetStore((s) => s.deleteBudget);
-  const refreshSummary = useBudgetStore((s) => s.refreshSummary);
+  const queryClient = useQueryClient();
+  const deleteBudgetMut = useDeleteBudget();
+  const updateBudgetMut = useUpdateBudget(budget.id);
   // Narrow selector: only `user` used here.
   const user = useAuthStore((s) => s.user);
   const isOwner = budget.user_id === user?.id;
@@ -136,8 +140,12 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
     setSubmitError(null);
     setIsSaving(true);
     try {
-      await budgetApi.update(budget.id, values);
-      await refreshSummary();
+      await updateBudgetMut.mutateAsync(values);
+      // Currency change can affect the summary aggregation contract; bust
+      // the detail subtree explicitly so dependent widgets refetch.
+      queryClient.invalidateQueries({
+        queryKey: qk.budget.detail(budget.id),
+      });
       onSaved?.();
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "An error occurred");
@@ -150,7 +158,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
     setSubmitError(null);
     setIsDeleting(true);
     try {
-      await deleteBudget(budget.id);
+      await deleteBudgetMut.mutateAsync(budget.id);
       setDeleteDialogOpen(false);
       router.push("/budgets");
     } catch (e) {
@@ -350,12 +358,12 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
         >
           {isSaving ? (
             <>
-              <Loader2 className="size-4 mr-1 animate-spin" />
+              <Loader2 className="size-4 mr-1 animate-spin" strokeWidth={1.8} />
               {t("saving")}
             </>
           ) : (
             <>
-              <Check className="size-4 mr-1" />
+              <Check className="size-4 mr-1" strokeWidth={1.8} />
               {t("saveChanges")}
             </>
           )}
@@ -380,7 +388,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
                   onClick={() => setInviteDialogOpen(true)}
                   className="min-h-[44px]"
                 >
-                  <Link2 className="size-4 mr-1" />
+                  <Link2 className="size-4 mr-1" strokeWidth={1.8} />
                   {tInvite("generate")}
                 </Button>
               )}
@@ -414,7 +422,7 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
               onClick={() => setDeleteDialogOpen(true)}
               className="min-h-[44px]"
             >
-              <Trash2 className="size-4 mr-1" />
+              <Trash2 className="size-4 mr-1" strokeWidth={1.8} />
               {t("deleteBudget")}
             </Button>
           </div>
@@ -444,12 +452,12 @@ export function BudgetSettings({ budget, onSaved }: BudgetSettingsProps) {
                 >
                   {isDeleting ? (
                     <>
-                      <Loader2 className="size-4 mr-1 animate-spin" />
+                      <Loader2 className="size-4 mr-1 animate-spin" strokeWidth={1.8} />
                       {t("deleting")}
                     </>
                   ) : (
                     <>
-                      <Trash2 className="size-4 mr-1" />
+                      <Trash2 className="size-4 mr-1" strokeWidth={1.8} />
                       {tc("delete")}
                     </>
                   )}

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+
 import { Wallet } from "lucide-react";
+
 import { useTranslations } from "@/i18n/client";
 
 export function Footer() {
