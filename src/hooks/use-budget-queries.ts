@@ -17,12 +17,14 @@ import {
 import { qk } from "@/lib/query-keys";
 import { useAuthStore } from "@/store/auth-store";
 import type {
+  BudgetResumeResponse,
   BudgetSummary,
   CreateBudgetInput,
   CreateBudgetLinkInput,
   CreateCategoryInput,
   CreateExpenseInput,
   Expense,
+  TrendsResponse,
 } from "@/types/budget";
 
 // ---- Reads -----------------------------------------------------------------
@@ -39,6 +41,45 @@ export function useBudgetSummary(budgetId: string | undefined) {
   return useQuery({
     queryKey: qk.budget.summary(budgetId ?? ""),
     queryFn: () => budgetApi.summary(budgetId!),
+    enabled: !!budgetId,
+  });
+}
+
+/**
+ * useBudgetDashboard — single round-trip variant of the dashboard mount
+ * fetch.
+ *
+ * PERF: backed by the aggregate `/budgets/:id/dashboard` endpoint, this
+ * hook fetches summary + expenses + trends + resume in ONE request and
+ * seeds the four per-query caches via `setQueryData`. Existing readers
+ * (`useBudgetSummary`, `useBudgetExpenses`, `useBudgetTrends`,
+ * `useBudgetResume`) keep working unchanged — they hit the seeded cache
+ * without firing their own fetch on first paint.
+ *
+ * Net effect on a cold dashboard mount: 4 GETs become 1 GET. Sub-fields
+ * also stay invalidatable independently because each is a separate
+ * cache key.
+ */
+export function useBudgetDashboard(budgetId: string | undefined) {
+  const qc = useQueryClient();
+  return useQuery<{
+    summary: BudgetSummary;
+    expenses: Expense[];
+    trends: TrendsResponse;
+    resume: BudgetResumeResponse;
+  }>({
+    queryKey: qk.budget.dashboard(budgetId ?? ""),
+    queryFn: async () => {
+      const env = await budgetApi.dashboard(budgetId!);
+      // Seed the per-query caches so siblings on the page (which still
+      // call useBudgetSummary / useBudgetExpenses / etc.) read straight
+      // from the cache without firing duplicate network requests.
+      qc.setQueryData(qk.budget.summary(budgetId!), env.summary);
+      qc.setQueryData(qk.budget.expenses(budgetId!), env.expenses);
+      qc.setQueryData(qk.budget.trends(budgetId!), env.trends);
+      qc.setQueryData(qk.budget.resume(budgetId!), env.resume);
+      return env;
+    },
     enabled: !!budgetId,
   });
 }

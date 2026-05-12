@@ -46,13 +46,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCreateBudget } from "@/hooks/use-budget-queries";
 import { useTranslations } from "@/i18n/client";
 import { maskAmountInput, parseAmount,pickRandomIcon } from "@/lib/amount-utils";
 import { detectCurrency } from "@/lib/format";
 // Removed recharts PieChart/Pie/Cell — replaced with a lightweight SVG donut.
 import { CategoryIcon,IconPicker } from "@/lib/icon-picker";
 import { cn } from "@/lib/utils";
-import { useCreateBudget } from "@/hooks/use-budget-queries";
 import type { Budget, CategoryTemplate } from "@/types/budget";
 import {
   BALANCED_CATEGORIES,

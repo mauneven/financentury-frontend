@@ -20,6 +20,10 @@ export const qk = {
     summary: (id: string) => ["budget", "detail", id, "summary"] as const,
     trends: (id: string) => ["budget", "detail", id, "trends"] as const,
     resume: (id: string) => ["budget", "detail", id, "resume"] as const,
+    // dashboard: aggregate envelope that seeds summary / expenses / trends /
+    // resume caches in one round-trip. Sub-readers continue using their own
+    // keys (above) — `dashboard` is a sibling, not a replacement.
+    dashboard: (id: string) => ["budget", "detail", id, "dashboard"] as const,
     expenses: (id: string) => ["budget", "detail", id, "expenses"] as const,
     links: (id: string) => ["budget", "detail", id, "links"] as const,
     linkable: (id: string) => ["budget", "detail", id, "linkable"] as const,

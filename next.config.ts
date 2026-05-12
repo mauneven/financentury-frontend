@@ -19,11 +19,17 @@ import type { NextConfig } from "next";
  */
 const cspHeader = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  // Cloudflare Turnstile loads its api.js from challenges.cloudflare.com.
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' http: https: ws: wss:",
+  // Turnstile beacons / token issuance call back to challenges.cloudflare.com.
+  // The `https:` wildcard already covers it, but the explicit entry documents
+  // intent and survives any future tightening of connect-src.
+  "connect-src 'self' http: https: ws: wss: https://challenges.cloudflare.com",
+  // Turnstile renders the challenge inside an iframe hosted by Cloudflare.
+  "frame-src https://challenges.cloudflare.com",
   // Google OAuth requires form-action to accounts.google.com.
   "form-action 'self' https://accounts.google.com",
   "frame-ancestors 'none'",

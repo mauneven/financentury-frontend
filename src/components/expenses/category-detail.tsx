@@ -11,6 +11,8 @@ const SpendingChart = dynamic(
   { ssr: false, loading: () => <div className="border border-border rounded-lg bg-card p-6"><div className="h-64 animate-pulse rounded-md bg-muted" /></div> }
 );
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { EditCategoryDialog } from "@/components/budget/edit-category-dialog";
 import { SpendingByUser } from "@/components/dashboard/spending-by-user";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
@@ -23,8 +25,6 @@ import {
   getProgressColor,
   getProgressTextColor,
 } from "@/lib/format";
-import { useQueryClient } from "@tanstack/react-query";
-
 import { CategoryIcon } from "@/lib/icon-picker";
 import { qk } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";

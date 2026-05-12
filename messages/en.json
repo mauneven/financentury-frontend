@@ -219,6 +219,11 @@
     "tryAgain": "Try again",
     "signingIn": "Signing in..."
   },
+  "captcha": {
+    "verifying": "Verifying...",
+    "prompt": "Please complete the security check",
+    "failed": "Verification failed — please try again"
+  },
   "landing": {
     "letsStart": "Let's start — free",
     "authDescription": "Sign in with Google to access your financial workspace.",

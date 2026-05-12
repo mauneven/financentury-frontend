@@ -162,9 +162,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new Error("OAuth state mismatch. Please try signing in again.");
     }
 
+    // Drain the captcha token captured in the auth-modal before the user
+    // was sent to Google. Always remove it (one-shot, even if missing) so
+    // a stale token can't be replayed on a later attempt.
+    const captchaToken =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("captcha_token")
+        : null;
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("captcha_token");
+    }
+
     const res = await fetch(`${API_BASE}/auth/google`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(captchaToken
+          ? { "X-Captcha-Token": captchaToken, "X-App-Platform": "web" }
+          : {}),
+      },
       body: JSON.stringify({
         code,
         redirect_uri: window.location.origin + "/auth/callback",

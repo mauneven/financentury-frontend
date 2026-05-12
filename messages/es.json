@@ -239,6 +239,11 @@
     "tryAgain": "Intentar de nuevo",
     "signingIn": "Iniciando sesión..."
   },
+  "captcha": {
+    "verifying": "Verificando...",
+    "prompt": "Completa la verificación de seguridad",
+    "failed": "La verificación falló — inténtalo de nuevo"
+  },
   "landing": {
     "letsStart": "Comencemos — gratis",
     "authDescription": "Inicia sesión con Google para acceder a tu espacio financiero.",

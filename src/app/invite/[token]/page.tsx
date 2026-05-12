@@ -5,6 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 
 import { AlertCircle, CheckCircle2, Loader2, Users, Wallet } from "lucide-react";
 
+import {
+  isTurnstileConfigured,
+  TurnstileWidget,
+  type TurnstileWidgetHandle,
+} from "@/components/captcha/turnstile-widget";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslations } from "@/i18n/client";
@@ -26,6 +31,7 @@ export default function InviteAcceptPage() {
   const router = useRouter();
   const t = useTranslations("invite");
   const tAuth = useTranslations("auth");
+  const tCaptcha = useTranslations("captcha");
   // Narrow selectors — avoid re-renders on unrelated auth-store changes.
   const user = useAuthStore((s) => s.user);
   const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
@@ -37,6 +43,15 @@ export default function InviteAcceptPage() {
   const [error, setError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
   const acceptRedirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Captcha state. The invite preview is unauthenticated and easy to scrape,
+  // so we require Turnstile verification before calling GET /invites/:token.
+  // When Turnstile isn't configured (local dev) the gate is skipped via
+  // `captchaRequired = false`.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState(false);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const captchaRequired = isTurnstileConfigured();
 
   const handleAccept = useCallback(async () => {
     setAccepting(true);
@@ -64,11 +79,18 @@ export default function InviteAcceptPage() {
     };
   }, []);
 
-  // Fetch invite info (no auth needed)
+  // Fetch invite info (no auth needed, but bot-protected via Turnstile).
+  // Gate on `captchaToken` so we only make the API call once Cloudflare has
+  // handed us a one-shot token. When Turnstile isn't configured we fetch
+  // immediately so dev environments keep working.
   useEffect(() => {
     if (!params.token) return;
+    if (captchaRequired && !captchaToken) return;
     inviteApi
-      .getInfo(params.token)
+      .getInfo(
+        params.token,
+        captchaToken ? { captchaToken } : undefined
+      )
       .then((data) => {
         setInfo(data);
         setLoading(false);
@@ -76,8 +98,14 @@ export default function InviteAcceptPage() {
       .catch(() => {
         setError(t("invalidLink"));
         setLoading(false);
+        // The token is one-shot — reset so the user can retry without a
+        // full page reload.
+        if (captchaRequired) {
+          setCaptchaToken(null);
+          turnstileRef.current?.reset();
+        }
       });
-  }, [params.token, t]);
+  }, [params.token, t, captchaRequired, captchaToken]);
 
   // Auto-accept if user just logged in and we have a valid invite
   useEffect(() => {
@@ -133,13 +161,53 @@ export default function InviteAcceptPage() {
     signInWithGoogle();
   };
 
-  // Loading state
+  // Loading state. If Turnstile is enabled and we don't have a token yet,
+  // render the challenge inline so the user can complete it — otherwise the
+  // page would appear frozen on a spinner while the fetch is blocked.
   if (loading || !initialized) {
+    const showCaptchaGate = captchaRequired && !captchaToken;
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-        </div>
+        {showCaptchaGate ? (
+          <Card className="w-full max-w-sm">
+            <CardContent className="flex flex-col items-center gap-4 pt-8 pb-8">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-foreground shadow-lg">
+                <Wallet className="size-6 text-background" strokeWidth={ICON_STROKE} />
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                {tCaptcha("prompt")}
+              </p>
+              <div className="w-full" aria-live="polite">
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  action="invite-preview"
+                  size="compact"
+                  onToken={(token) => {
+                    setCaptchaToken(token);
+                    setCaptchaError(false);
+                  }}
+                  onError={() => {
+                    setCaptchaToken(null);
+                    setCaptchaError(true);
+                  }}
+                  onExpire={() => setCaptchaToken(null)}
+                />
+              </div>
+              {captchaError && (
+                <p className="text-xs text-destructive text-center">
+                  {tCaptcha("failed")}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+            <p className="text-xs text-muted-foreground">
+              {tCaptcha("verifying")}
+            </p>
+          </div>
+        )}
       </div>
     );
   }

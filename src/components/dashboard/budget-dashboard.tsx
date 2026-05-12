@@ -27,6 +27,7 @@ import { EditExpenseDialog } from "@/components/expenses/edit-expense-dialog";
 import { ExpenseList } from "@/components/expenses/expense-list";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import {
+  useBudgetDashboard,
   useBudgetExpenses,
   useBudgetSummary,
   useDeleteExpense,
@@ -144,6 +145,12 @@ function DashboardSkeleton() {
 }
 
 export function BudgetDashboard({ budgetId }: BudgetDashboardProps) {
+  // PERF: aggregate fetch — one GET seeds summary / expenses / trends /
+  // resume caches. Sub-readers (useBudgetSummary etc. below) hit the
+  // seeded data without firing their own fetch on first paint, so a
+  // cold dashboard mount = 1 RTT instead of 4.
+  useBudgetDashboard(budgetId);
+
   const {
     data: summary,
     isPending: summaryPending,

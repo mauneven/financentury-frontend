@@ -75,10 +75,24 @@ function sanitizeErrorMessage(msg: string): string {
   return cleaned.length > 500 ? cleaned.slice(0, 500) : cleaned;
 }
 
+/**
+ * Extra per-request options not present on the standard `RequestInit`.
+ *
+ * `captchaToken` is a one-shot Cloudflare Turnstile token. When provided we
+ * forward it to the backend as `X-Captcha-Token` so the bot-protection
+ * middleware can verify it against siteverify. Pair with `X-App-Platform:
+ * web` so the backend can distinguish web from mobile traffic in metrics.
+ */
+interface RequestExtras {
+  captchaToken?: string;
+}
+
 async function request<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit & RequestExtras = {}
 ): Promise<T> {
+  const { captchaToken, ...fetchOptions } = options;
+
   let token: string | null = null;
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("financentury_token");
@@ -94,13 +108,16 @@ async function request<T>(
 
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     signal: AbortSignal.timeout(10_000),
     headers: {
       "Content-Type": "application/json",
       "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
+      ...(captchaToken
+        ? { "X-Captcha-Token": captchaToken, "X-App-Platform": "web" }
+        : {}),
+      ...fetchOptions.headers,
     },
   });
 
@@ -126,10 +143,15 @@ async function request<T>(
 
 // Auth
 export const authApi = {
-  googleLogin: (code: string, redirectUri: string) =>
+  googleLogin: (
+    code: string,
+    redirectUri: string,
+    options?: { captchaToken?: string }
+  ) =>
     request<{ token: string; user: AuthUser }>("/auth/google", {
       method: "POST",
       body: JSON.stringify({ code, redirect_uri: redirectUri }),
+      captchaToken: options?.captchaToken,
     }),
   me: () => request<AuthUser>("/auth/me"),
   deleteAccount: () =>
@@ -179,6 +201,18 @@ export const budgetApi = {
 
   budgetResume: (id: string) =>
     request<BudgetResumeResponse>(`/budgets/${id}/budget-resume`),
+
+  // PERF: aggregate endpoint that returns summary + expenses + trends +
+  // resume in one envelope. The dashboard hook seeds the four per-query
+  // caches so existing useBudgetSummary / useBudgetExpenses / etc. stay
+  // populated transparently.
+  dashboard: (id: string) =>
+    request<{
+      summary: BudgetSummary;
+      expenses: Expense[];
+      trends: TrendsResponse;
+      resume: BudgetResumeResponse;
+    }>(`/budgets/${id}/dashboard`),
 };
 
 // Budget Links
@@ -240,14 +274,14 @@ export const inviteApi = {
       `/budgets/${budgetId}/invite`,
       { method: "POST" }
     ),
-  getInfo: (token: string) =>
+  getInfo: (token: string, options?: { captchaToken?: string }) =>
     request<{
       budget_name: string;
       inviter_name: string;
       expires_at: string;
       is_expired: boolean;
       is_used: boolean;
-    }>(`/invites/${token}`),
+    }>(`/invites/${token}`, { captchaToken: options?.captchaToken }),
   accept: (token: string) =>
     request<Budget>(`/invites/${token}/accept`, { method: "POST" }),
 };

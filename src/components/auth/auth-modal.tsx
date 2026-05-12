@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { Check,Wallet, X } from "lucide-react";
 
+import {
+  isTurnstileConfigured,
+  TurnstileWidget,
+  type TurnstileWidgetHandle,
+} from "@/components/captcha/turnstile-widget";
 import { useTranslations } from "@/i18n/client";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -27,6 +32,7 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
   const authLoading = useAuthStore((s) => s.loading);
   const tLanding = useTranslations("landing");
   const tAuth = useTranslations("auth");
+  const tCaptcha = useTranslations("captcha");
 
   // Local override lets us move to "success"/"error" after the initial callback prop,
   // and to "idle" on user dismiss. When null, we derive state from props + auth store.
@@ -35,6 +41,14 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
   >(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const redirectTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Captcha state. The token is one-shot — we stash it in sessionStorage on
+  // submit so /auth/callback can forward it to /auth/google, then reset the
+  // widget if the auth flow ends in an error.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState(false);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const captchaRequired = isTurnstileConfigured();
 
   // Derive the callback flow state from props + auth store + local override.
   // This avoids setState-in-effect cascades: the state IS the computation.
@@ -79,6 +93,13 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
     return () => { if (redirectTimer.current) clearTimeout(redirectTimer.current); };
   }, []);
 
+  // The Turnstile widget only renders in the idle state, so a transition
+  // to "error" unmounts it (and drops the stale token in component state).
+  // sessionStorage is drained by handleGoogleCallback, so we don't need a
+  // separate effect to clean up after a failed auth — clicking "Try
+  // Again" sets localOverride back to "idle", which remounts the widget
+  // with a fresh challenge.
+
   if (!open) return null;
 
   const handleClose = () => {
@@ -88,7 +109,31 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
     }
     setLocalError(null);
     setLocalOverride("idle");
+    setCaptchaToken(null);
+    setCaptchaError(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("captcha_token");
+    }
     onOpenChange(false);
+  };
+
+  const handleGoogleClick = () => {
+    if (captchaRequired) {
+      if (!captchaToken) {
+        // The Google button shouldn't be reachable without a token (it's
+        // disabled below), but guard the path anyway so a programmatic
+        // click can't bypass the check.
+        setCaptchaError(true);
+        return;
+      }
+      // Persist for the callback page — sessionStorage survives the
+      // round-trip through accounts.google.com and is scoped to this
+      // origin.
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("captcha_token", captchaToken);
+      }
+    }
+    signInWithGoogle();
   };
 
   // ── Callback flow UI (loading / success / error) ──
@@ -174,10 +219,41 @@ export function AuthModal({ open, onOpenChange, callbackState, callbackError }: 
             </div>
 
             <div className="flex flex-col gap-3">
+              {captchaRequired && (
+                <div
+                  className="flex flex-col items-center gap-2"
+                  aria-live="polite"
+                >
+                  <TurnstileWidget
+                    ref={turnstileRef}
+                    action="auth-google-signin"
+                    onToken={(token) => {
+                      setCaptchaToken(token);
+                      setCaptchaError(false);
+                    }}
+                    onError={() => {
+                      setCaptchaToken(null);
+                      setCaptchaError(true);
+                    }}
+                    onExpire={() => setCaptchaToken(null)}
+                  />
+                  {captchaError ? (
+                    <p className="text-xs text-destructive text-center">
+                      {tCaptcha("failed")}
+                    </p>
+                  ) : !captchaToken ? (
+                    <p className="text-xs text-muted-foreground text-center">
+                      {tCaptcha("prompt")}
+                    </p>
+                  ) : null}
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => signInWithGoogle()}
-                className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                onClick={handleGoogleClick}
+                disabled={captchaRequired && !captchaToken}
+                aria-disabled={captchaRequired && !captchaToken}
+                className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-background"
               >
                 <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
